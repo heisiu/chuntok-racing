@@ -1,0 +1,1656 @@
+<!DOCTYPE html>
+<html lang="zh-HK"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>真鐸學校・極速乘法方程式</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/mqtt@5.3.5/dist/mqtt.min.js"></script>
+<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}</script>
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:#0b1b33;font-family:system-ui,"PingFang HK","Microsoft JhengHei",sans-serif;touch-action:none;user-select:none;-webkit-user-select:none}
+#c{position:fixed;inset:0;width:100%;height:100%}
+.scr{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:20;background:radial-gradient(circle at 20% 15%,#38bdf855,transparent 45%),radial-gradient(circle at 85% 90%,#f472b655,transparent 45%),linear-gradient(135deg,#0f1f5acc,#1d4ed8bb 55%,#0ea5e9aa)}
+.scr.on{display:flex}
+.scr.on .card{animation:pop .35s cubic-bezier(.2,1.3,.4,1)}
+@keyframes pop{from{opacity:0;transform:translateY(18px) scale(.94)}to{opacity:1;transform:none}}
+.card{background:linear-gradient(180deg,#fff,#eef5ff);border:3px solid #ffffffcc;border-radius:28px;padding:16px 22px;max-width:920px;width:95%;max-height:94vh;overflow:auto;box-shadow:0 18px 50px #0007,inset 0 2px 0 #fff}
+.card h1,.card h2{background:linear-gradient(90deg,#1d4ed8,#7c3aed);-webkit-background-clip:text;background-clip:text;color:transparent!important}
+.btn{border-radius:16px;font-weight:800;padding:8px 14px;transition:transform .1s,box-shadow .15s,filter .15s;box-shadow:0 4px 0 #0002,0 6px 12px #0001}
+.btn:hover:not(:disabled){filter:brightness(1.06);transform:translateY(-1px)}
+.btn:active{transform:translateY(2px) scale(.96);box-shadow:0 1px 0 #0002}
+.btn:disabled{opacity:.4;box-shadow:none}
+#startBtn,#goLogin,#again{background:linear-gradient(180deg,#4ade80,#16a34a)!important;box-shadow:0 5px 0 #166534,0 10px 20px #16a34a55;letter-spacing:.08em}
+#startBtn{animation:glow 2s ease-in-out infinite}
+@keyframes glow{50%{box-shadow:0 5px 0 #166534,0 10px 28px #4ade80cc}}
+.sel{outline:4px solid #f59e0b;outline-offset:1px;background:linear-gradient(180deg,#fffbeb,#fde68a)!important;box-shadow:0 0 0 4px #fbbf2455,0 6px 14px #f59e0b66}
+#myProg{background:linear-gradient(135deg,#e0f2fe,#ede9fe)!important;border:2px solid #fff}
+.schoolBadge{display:inline-flex;align-items:center;gap:8px;padding:5px 22px 5px 10px;border-radius:999px;background:linear-gradient(180deg,#fde68a,#f59e0b);color:#78350f;font-weight:900;font-size:21px;letter-spacing:.35em;text-indent:.35em;border:3px solid #fff;box-shadow:0 4px 0 #b45309,0 8px 18px #f59e0b88,inset 0 2px 0 #fff8;position:relative;overflow:hidden}
+.schoolBadge::after{content:'';position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(100deg,transparent,#ffffffaa,transparent);animation:shine 3s ease-in-out infinite}
+@keyframes shine{0%,60%{left:-60%}100%{left:130%}}
+.schoolBadge.sm{font-size:14px;padding:3px 14px 3px 8px;letter-spacing:.25em;text-indent:.25em;box-shadow:0 3px 0 #b45309,0 5px 10px #f59e0b66,inset 0 2px 0 #fff8}
+.gameTitle{display:inline-block;font-weight:900;font-style:italic;letter-spacing:.06em;line-height:1.1;background:linear-gradient(180deg,#ef4444 0%,#f97316 45%,#facc15 100%);-webkit-background-clip:text;background-clip:text;color:transparent!important;-webkit-text-stroke:2px #1e3a8a;paint-order:stroke fill;filter:drop-shadow(0 4px 0 #1e3a8a) drop-shadow(0 8px 10px #1e3a8a55);transform:skewX(-6deg)}
+.card h1.gameTitle,.card h2.gameTitle{background:linear-gradient(180deg,#ef4444 0%,#f97316 45%,#facc15 100%);-webkit-background-clip:text;background-clip:text}
+.speedLine{height:5px;border-radius:3px;background:linear-gradient(90deg,transparent,#1d4ed8,#7c3aed,transparent);margin:6px auto 0;width:70%}
+.subTitle{display:inline-block;margin-top:4px;padding:2px 16px;border-radius:999px;background:#1e3a8a;color:#fde68a;font-weight:800;font-size:14px;letter-spacing:.2em}
+#hud{position:fixed;inset:0;pointer-events:none;z-index:10;display:none;color:#fff;text-shadow:0 2px 4px #0008}
+.ctl{position:fixed;bottom:16px;width:min(22vh,130px);height:min(22vh,130px);border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffffff66,#ffffff22);border:4px solid #fffc;color:#fff;font-size:44px;display:flex;align-items:center;justify-content:center;pointer-events:auto;backdrop-filter:blur(6px);box-shadow:0 6px 20px #0005,inset 0 2px 6px #fff6}
+.ctl.on{background:radial-gradient(circle at 35% 30%,#fff,#ffffff99);transform:scale(.94)}
+.chip{border-radius:14px;padding:2px 16px;font-weight:900;font-size:28px;min-width:70px;text-align:center;border:3px solid #fff;box-shadow:0 4px 10px #0006}
+#hQ{background:linear-gradient(180deg,#0b1b33cc,#1e3a8acc)!important;border:3px solid #ffffffaa;box-shadow:0 6px 18px #0008}
+#hud .btn{backdrop-filter:blur(4px);border:2px solid #fff6}
+#mini{box-shadow:0 6px 18px #0007}
+#rot{position:fixed;inset:0;z-index:99;display:none;background:#0b1b33;color:#fff;flex-direction:column;align-items:center;justify-content:center;font-size:22px}
+@media (orientation:portrait){#rot{display:flex}}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="rot"><div style="font-size:64px">📱↻</div><div class="mt-3 font-bold">請將裝置打橫使用</div></div>
+
+<!-- 登入 -->
+<div id="sLogin" class="scr"><div class="card text-center">
+  <div class="text-center mb-2"><div class="schoolBadge"><img class="schoolLogoImg hidden" style="height:30px;width:auto;object-fit:contain;letter-spacing:0" alt="校徽"><span class="schoolLogoFallback" style="font-size:26px;letter-spacing:0">🏫</span>真鐸學校</div>
+  <div class="mt-2"><h1 class="gameTitle text-5xl">🏎️ 極速乘法方程式</h1></div>
+  <div class="speedLine"></div><div class="subTitle">答對乘法　衝過終點</div></div>
+  <div id="resume" class="my-1"></div>
+  <div class="text-left">
+  <p class="font-bold text-slate-600">① 年級</p>
+  <div id="grBox" class="grid grid-cols-6 gap-2 my-1"></div>
+  <p class="font-bold text-slate-600">② 班別</p>
+  <div id="clsBox" class="grid grid-cols-3 gap-2 my-1"></div>
+  <label for="noBox" class="block font-bold text-slate-600">③ 學號</label>
+  <select id="noBox" disabled class="my-1 block w-full rounded-xl border-2 border-slate-300 bg-slate-50 p-2 text-xl font-bold text-slate-800 text-center"><option value="">請先選擇年級及班別</option></select>
+  </div>
+  <button id="goLogin" class="btn text-white text-2xl w-full mt-1" disabled>開始比賽 ▶</button>
+  <div class="flex gap-2 mt-2">
+    <button id="guestBtn" class="btn bg-amber-100 text-amber-800 flex-1">🙋 訪客模式（不記錄成績）</button>
+    <button id="teachBtn" class="btn bg-slate-200 text-slate-700 flex-1">👩‍🏫 老師後台</button>
+  </div>
+</div></div>
+
+<!-- 主選單 -->
+<div id="sMenu" class="scr"><div class="card">
+  <div class="flex justify-between items-center gap-2 flex-wrap">
+    <div><div class="schoolBadge sm"><img class="schoolLogoImg hidden" style="height:20px;width:auto;object-fit:contain;letter-spacing:0" alt="校徽"><span class="schoolLogoFallback" style="letter-spacing:0">🏫</span>真鐸學校</div><div><h2 class="gameTitle text-3xl">🏎️ 極速乘法方程式</h2></div></div>
+    <div class="bg-white rounded-2xl px-3 py-1 shadow"><span id="who" class="font-bold text-slate-700"></span> <button id="logout" class="btn bg-slate-200 text-sm py-1">轉換用戶</button><div id="syncTag" class="text-xs text-slate-400 text-right">連線中…</div></div>
+  </div>
+  <div class="grid grid-cols-2 gap-4 mt-2">
+    <div>
+      <p class="font-black text-blue-800 mb-1">🏎️ 選擇真鐸專屬戰車</p>
+      <div id="drvBox" class="grid grid-cols-5 gap-2"></div>
+      <p class="text-xs text-slate-400 mt-1">撳 🔒 車手可查看解鎖方法（每架車均有專屬編號與「真鐸 CHUN TOK」車尾翼塗裝！）</p>
+      <label class="flex items-center gap-2 mt-1.5 bg-sky-50 border border-sky-200 rounded-xl px-3 py-1 text-xs font-bold text-blue-900 cursor-pointer">
+        <input id="glbToggle" type="checkbox" checked class="w-3.5 h-3.5 accent-blue-600">
+        <span>🏎️ 啟用 Kenney 3D 跑車模型庫（不勾選則使用真鐸 F1 戰車）</span>
+      </label>
+    </div>
+    <div>
+      <p class="font-black text-blue-800 mb-1">🤖 電腦對手難度</p><div id="dfBox" class="flex gap-2"></div>
+      <p class="font-black text-blue-800 mt-2 mb-1">✖️ 練習乘數表</p><div id="tbBox" class="grid gap-1" style="grid-template-columns:1.6fr repeat(8,1fr)"></div>
+      <p class="font-black text-blue-800 mt-2 mb-1">🎨 畫質</p>
+      <div class="flex gap-2"><button id="qLo" class="btn bg-slate-100 flex-1">🔋 省電</button><button id="qHi" class="btn bg-slate-100 flex-1">✨ 高畫質</button><button id="qUl" class="btn bg-slate-100 flex-1">💎 極致</button></div>
+      <div id="myProg" class="mt-2 text-sm bg-sky-50 rounded-xl p-2 text-slate-700"></div>
+    </div>
+  </div>
+  <button id="startBtn" class="btn text-white text-3xl w-full mt-3 py-3">🏁 單人練習</button>
+  <div class="grid grid-cols-3 gap-2 mt-2">
+    <button id="mpBtn" class="btn bg-gradient-to-b from-sky-400 to-blue-600 text-white text-lg">🌐 連機對戰（開房/入房）</button>
+    <button id="quickMpBtn" class="btn bg-gradient-to-b from-purple-400 to-indigo-600 text-white text-lg">⚡ 快速加入公開房</button>
+    <button id="lbBtn" class="btn bg-gradient-to-b from-amber-100 to-amber-300 text-amber-900 text-lg">🏆 排行榜</button>
+  </div>
+</div></div>
+
+<!-- 連機大廳 -->
+<div id="sMpLobby" class="scr"><div class="card">
+  <div class="flex justify-between items-center mb-3">
+    <h2 class="text-2xl font-black">🌐 學生連機對戰大廳</h2>
+    <button id="mpBack" class="btn bg-slate-200">⬅ 返回主選單</button>
+  </div>
+  <div class="grid grid-cols-2 gap-4">
+    <div class="bg-sky-50 border-2 border-sky-200 rounded-2xl p-4 text-center">
+      <div class="text-4xl mb-1">🏠</div>
+      <h3 class="text-xl font-black text-sky-900">自己開房做房主</h3>
+      <p class="text-xs text-slate-500 mt-1">產生 4 位數字房號，叫屋企或班入面嘅同學一齊入嚟玩！</p>
+      <div class="bg-white rounded-xl p-2 mt-2 text-left text-sm">
+        <div>✖️ 乘數表：<b id="mpTblTxt" class="text-blue-700"></b></div>
+        <div class="mt-1">🗺️ 賽道：
+          <select id="mpTrackSel" class="border rounded-lg px-2 py-1 font-bold text-slate-700">
+            <option value="meadow-0">🌳 綠野・經典彎道</option>
+            <option value="meadow-1">🌳 綠野・山谷長直路</option>
+            <option value="meadow-2">🌳 綠野・蛇形彎道</option>
+            <option value="city-0">🌇 城市・環城大道</option>
+            <option value="city-1">🌇 城市・L 字街</option>
+            <option value="city-2">🌇 城市・海旁彎道</option>
+          </select>
+        </div>
+        <label class="flex items-center gap-2 mt-2 cursor-pointer font-bold text-slate-700">
+          <input id="mpPubChk" type="checkbox" checked class="w-4 h-4 accent-blue-600"> 開放俾其他同學「快速加入」
+        </label>
+      </div>
+      <button id="btnCreateRoom" class="btn bg-gradient-to-b from-sky-400 to-blue-600 text-white text-xl w-full mt-3 py-3">➕ 立即開房</button>
+    </div>
+    <div class="bg-amber-50 border-2 border-amber-200 rounded-2xl p-4 text-center">
+      <div class="text-4xl mb-1">🔑</div>
+      <h3 class="text-xl font-black text-amber-900">輸入同學房號</h3>
+      <p class="text-xs text-slate-500 mt-1">輸入同學話俾你知嘅 4 位數字房號加入對戰</p>
+      <input id="inpRoomCode" type="text" inputmode="numeric" maxlength="4" placeholder="例如：8392" class="mt-3 w-full rounded-2xl border-3 border-amber-400 bg-white p-3 text-center text-3xl font-black tracking-widest text-slate-800">
+      <button id="btnJoinRoom" class="btn bg-gradient-to-b from-amber-400 to-orange-500 text-white text-xl w-full mt-3 py-3">🚪 加入房間</button>
+    </div>
+  </div>
+  <p id="mpErr" class="text-center text-red-600 font-bold mt-2 text-sm"></p>
+</div></div>
+
+<!-- 等候室 -->
+<div id="sMpWait" class="scr"><div class="card text-center" style="max-width:680px">
+  <div class="flex justify-between items-center">
+    <span class="badge bg-blue-100 text-blue-800 px-3 py-1 rounded-full font-black text-sm" id="waitTrackBadge"></span>
+    <button id="btnLeaveRoom" class="btn bg-red-100 text-red-700 text-sm">🚪 離開房間</button>
+  </div>
+  <p class="text-slate-500 font-bold mt-1">叫同學輸入以下 4 位房號加入（最多 4 人，不足自動補電腦車）：</p>
+  <div id="waitCode" class="text-6xl font-black tracking-widest text-blue-700 bg-sky-50 border-4 border-sky-300 rounded-3xl py-2 my-2 inline-block px-10">----</div>
+  <div id="waitPlayers" class="grid grid-cols-2 gap-3 my-3 text-left"></div>
+  <div id="hostControls">
+    <button id="btnHostStart" class="btn bg-gradient-to-b from-green-400 to-green-600 text-white text-2xl w-full py-3">🏁 房主開始比賽（不足 4 人補 AI）</button>
+  </div>
+  <div id="guestControls" class="hidden text-lg font-black text-amber-700 bg-amber-50 rounded-2xl py-3">⏳ 等待房主開始比賽…</div>
+</div></div>
+
+<!-- 老師後台 -->
+<div id="sAdmin" class="scr"><div class="card text-center" style="max-width:600px">
+  <h2 class="text-3xl font-black">👩‍🏫 老師後台</h2>
+  <p class="text-sm text-slate-500 mt-1">此區只供老師使用。老師帳戶的成績不會計入報告。</p>
+  <div class="grid gap-2.5 mt-3">
+    <button id="adLb" class="btn bg-gradient-to-b from-amber-100 to-amber-300 text-amber-900 text-xl py-3">🏆 排行榜</button>
+    <button id="adRp" class="btn bg-gradient-to-b from-sky-100 to-sky-300 text-sky-900 text-xl py-3">📊 老師報告</button>
+    <button id="adTest" class="btn bg-gradient-to-b from-slate-100 to-slate-300 text-slate-800 text-xl py-3">🧪 老師測試（全部車手已解鎖）</button>
+    <div class="bg-sky-50 border-2 border-sky-200 rounded-2xl p-3 text-left">
+      <div class="font-black text-sky-900 text-base">☁️ Firebase Storage 雲端圖檔管理（全校一開 Game 自動讀取）</div>
+      <p class="text-xs text-slate-600 mt-1">在此上傳圖片去你嘅 Firebase Storage (<code>chuntok-racing.firebasestorage.app</code>)，或貼上已上傳嘅 Firebase 公開 Download URL：</p>
+      <input id="inpUpDrivers" type="file" accept="image/*" class="hidden">
+      <input id="inpUpBadge" type="file" accept="image/*" class="hidden">
+      <div class="grid grid-cols-2 gap-2 mt-2">
+        <button id="btnUpDrivers" class="btn bg-blue-600 text-white text-xs py-2">📤 上傳 10 合 1 車手圖上 Firebase</button>
+        <button id="btnUpBadge" class="btn bg-amber-600 text-white text-xs py-2">📤 上傳真鐸校牌圖上 Firebase</button>
+      </div>
+      <div class="mt-2 grid gap-1.5 text-xs">
+        <input id="inpUrlDrivers" type="text" placeholder="或直接貼上 Firebase Storage 車手圖 Download URL…" class="border rounded-lg px-2 py-1.5 w-full">
+        <input id="inpUrlBadge" type="text" placeholder="或直接貼上 Firebase Storage 真鐸校牌 Download URL…" class="border rounded-lg px-2 py-1.5 w-full">
+        <button id="btnSaveUrls" class="btn bg-emerald-600 text-white text-xs py-1.5">💾 儲存網址並立即套用</button>
+      </div>
+      <p id="upStatus" class="text-xs font-bold text-blue-700 mt-1.5"></p>
+    </div>
+  </div>
+  <button id="adBack" class="btn bg-slate-200 mt-3">⬅ 返回登入頁</button>
+</div></div>
+
+<!-- 排行榜 -->
+<div id="sLb" class="scr"><div class="card">
+  <div class="flex justify-between items-center"><h2 class="text-2xl font-black">🏆 排行榜</h2><button id="lbBack" class="btn bg-slate-200">⬅ 返回</button></div>
+  <div class="flex gap-2 my-2"><button id="lbA" class="btn bg-slate-100 flex-1 sel">🎯 答對率（本月）</button><button id="lbW" class="btn bg-slate-100 flex-1">🏅 勝出場數</button></div>
+  <div class="flex gap-2 mb-2" id="lbGr"></div>
+  <p class="text-xs text-slate-500 mb-1" id="lbNote"></p>
+  <div id="lbBox" class="text-slate-700">載入中…</div>
+</div></div>
+
+<!-- 老師報告 -->
+<div id="sRp" class="scr"><div class="card" style="max-width:1000px">
+  <div class="flex justify-between items-center flex-wrap gap-2"><h2 class="text-2xl font-black">📊 老師報告</h2><div><button id="rpXls" class="btn bg-green-600 text-white">📥 匯出 Excel</button> <button id="rpBack" class="btn bg-slate-200">⬅ 返回</button></div></div>
+  <div class="flex gap-2 my-2 flex-wrap" id="rpGr"></div>
+  <div id="rpBox" class="text-slate-700">載入中…</div>
+</div></div>
+
+<!-- 選擇賽道 -->
+<div id="sTrack" class="scr"><div class="card text-center"><h2 class="text-2xl font-black mb-2">🗺️ 選擇賽道</h2>
+<div class="grid grid-cols-2 gap-4"><button data-t="meadow" class="tk btn bg-gradient-to-b from-green-100 to-green-300 text-green-900 py-6 text-2xl">🌳 綠野山谷<div class="text-sm font-bold mt-1">草地、樹林、高山、熱氣球</div></button><button data-t="city" class="tk btn bg-gradient-to-b from-orange-100 to-orange-300 text-orange-900 py-6 text-2xl">🌇 城市街景<div class="text-sm font-bold mt-1">大廈、街燈</div></button></div>
+<p class="text-sm text-slate-500 mt-2">兩條賽道都有道具：⚡ 加速、🛡️ 護盾；小心 💣 炸彈及 🍌 香蕉皮！</p>
+<button id="tkBack" class="btn bg-slate-200 mt-2">⬅ 返回</button></div></div>
+
+<!-- 選擇路線 -->
+<div id="sRoute" class="scr"><div class="card text-center"><h2 id="rtTitle" class="text-2xl font-black mb-2">🛣️ 選擇路線</h2>
+<div id="rtBox" class="grid grid-cols-3 gap-3"></div>
+<button id="rtBack" class="btn bg-slate-200 mt-3">⬅ 返回選擇賽道</button></div></div>
+
+<!-- 結果 -->
+<div id="sResult" class="scr"><div class="card" id="resBox"></div></div>
+
+<!-- HUD -->
+<div id="hud">
+  <canvas id="fxLines" width="800" height="450" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;opacity:0;transition:opacity .2s"></canvas>
+  <div class="fixed top-2 left-3 text-lg font-black leading-tight">
+    <div>圈數 <span id="hLap">1/3</span></div><div>名次 <span id="hPos" class="text-3xl text-yellow-300">1</span>/4</div>
+    <div class="text-sm">答對 <span id="hScore">0/0</span></div>
+    <div class="text-sm" id="hTod"></div>
+    <div class="text-xs text-sky-300" id="hRoomTag"></div>
+  </div>
+  <canvas id="mini" width="300" height="300" style="position:fixed;right:16px;bottom:calc(min(22vh,130px) + 28px);width:min(30vh,150px);height:min(30vh,150px);border-radius:16px;background:#0f172a88;border:3px solid #fff8"></canvas>
+  <div class="fixed top-2 right-3 text-right font-black">
+    <button id="songBtn" style="pointer-events:auto" class="btn bg-white/30 text-white text-sm py-1 mb-1">🎵 換歌</button>
+    <button id="muteBtn" style="pointer-events:auto" class="btn bg-white/30 text-white text-sm py-1 mb-1">🔊</button>
+    <button id="pauseBtn" style="pointer-events:auto" class="btn bg-white/30 text-white text-sm py-1 mb-1">⏸ 暫停</button>
+    <div class="bg-slate-900/75 border-2 border-white/50 rounded-2xl px-3 py-1 mt-1 inline-block">
+      <div><span id="hSpd" class="text-3xl text-amber-300">0</span> <span class="text-xs">km/h</span></div>
+      <div class="w-28 h-2 bg-slate-700 rounded-full overflow-hidden mt-1"><div id="hRpm" class="h-full bg-gradient-to-r from-green-400 via-yellow-400 to-red-500" style="width:0%"></div></div>
+    </div>
+  </div>
+  <div class="fixed left-1/2 -translate-x-1/2 top-2 text-center">
+    <div id="hQ" class="bg-black/55 rounded-2xl px-6 py-1 text-4xl font-black">準備</div>
+    <div id="hOpts" class="flex gap-3 justify-center mt-1"></div>
+    <button id="readBtn" style="pointer-events:auto" class="btn bg-white/30 text-white text-sm py-1 mt-1">🔈 讀題</button>
+  </div>
+  <div id="hMsg" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-6xl font-black text-center whitespace-nowrap"></div>
+  <div id="bL" class="ctl" style="left:16px">◀</div>
+  <div id="bR" class="ctl" style="right:16px">▶</div>
+</div>
+
+<!-- 解鎖說明 -->
+<div id="lockOv" style="position:fixed;inset:0;z-index:40;display:none;background:#0009;align-items:center;justify-content:center"><div class="card text-center" style="max-width:380px">
+<div id="lkIcon" style="width:80px;height:80px;border-radius:50%;margin:0 auto" class="flex items-center justify-center text-4xl overflow-hidden border-3 border-white shadow">🔒</div>
+<h2 id="lkName" class="text-2xl font-black text-blue-800 mt-2"></h2>
+<p id="lkHow" class="text-xl font-bold text-slate-700 mt-2"></p>
+<div class="bg-slate-200 rounded-full h-4 mt-3 overflow-hidden"><div id="lkBar" class="bg-green-500 h-4"></div></div>
+<p id="lkProg" class="text-lg font-black text-green-700 mt-1"></p>
+<button id="lkOk" class="btn bg-blue-600 text-white text-xl w-full mt-3">知道了</button></div></div>
+
+<!-- 暫停 -->
+<div id="pauseOv" style="position:fixed;inset:0;z-index:30;display:none;background:#0009;align-items:center;justify-content:center"><div class="card text-center" style="max-width:420px">
+<h2 class="text-3xl font-black text-blue-800 mb-3">⏸ 暫停中</h2>
+<button id="resumeBtn" class="btn bg-green-500 text-white text-2xl w-full py-3">▶ 繼續比賽</button>
+<button id="quitBtn" class="btn bg-red-100 text-red-700 text-lg w-full mt-3">🚪 離開比賽（今場不計成績）</button></div></div>
+
+<script type="module">
+import * as THREE from 'three';
+import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import {getAuth,signInAnonymously} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import {getFirestore,doc,setDoc,getDoc,addDoc,collection,getDocs,query,orderBy,limit,serverTimestamp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import {getStorage,ref as sRef,uploadBytes,getDownloadURL} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
+const $=id=>document.getElementById(id);
+
+/* ===== Firebase Storage 固定網址設定（上傳後或貼入公開 Download URL 即可全校自動載入） ===== */
+// 1. 10合1車手圖 Firebase Storage 網址（若留空，開機會自動去 Firebase Storage 讀取 assets/drivers_sheet.png）
+let FIREBASE_SHEET_URL = '';
+// 2. 真鐸校牌 Firebase Storage 網址（若留空，開機會自動去 Firebase Storage 讀取 assets/school_badge.png）
+let FIREBASE_BADGE_URL = '';
+let schoolBadgeImg = null;
+
+// 1:1 還原《真鐸車手頭像十款.png》水彩插畫細節（作為雲端圖片載入完成前嘅 0 秒預覽）
+function makeChunTokAvatarDataURI(kind){
+  const cv=document.createElement('canvas');cv.width=200;cv.height=200;
+  const g=cv.getContext('2d');
+  const rr=(x,y,w,h,r)=>{g.beginPath();g.roundRect(x,y,w,h,r);g.fill()};
+  // 繪畫真鐸心口盾牌校徽
+  const drawBadge=(bx,by)=>{
+    g.save();g.translate(bx,by);
+    g.fillStyle='#5b21b6';g.strokeStyle='#fde047';g.lineWidth=2;
+    g.beginPath();g.moveTo(0,-9);g.lineTo(8,-5);g.lineTo(7,5);g.lineTo(0,10);g.lineTo(-7,5);g.lineTo(-8,-5);g.closePath();g.fill();g.stroke();
+    g.fillStyle='#fff';g.beginPath();g.arc(0,-1,3.2,0,7);g.fill();
+    g.restore();
+  };
+  // 繪畫帶黑色賽車手套嘅拳頭 / 手掌
+  const drawGlove=(gx,gy,pose='fist')=>{
+    g.save();g.translate(gx,gy);
+    g.fillStyle='#1f2937';g.strokeStyle='#0f172a';g.lineWidth=2;
+    if(pose==='v'){
+      g.lineCap='round';g.lineWidth=7;g.strokeStyle='#1f2937';
+      g.beginPath();g.moveTo(-4,6);g.lineTo(-9,-14);g.moveTo(4,6);g.lineTo(9,-14);g.stroke();
+    }else if(pose==='open'){
+      g.lineCap='round';g.lineWidth=5.5;g.strokeStyle='#1f2937';
+      [-10,-4,3,10].forEach((dx,i)=>{g.beginPath();g.moveTo(dx*.4,4);g.lineTo(dx,-12-(i===1||i===2?3:0));g.stroke()});
+    }
+    g.beginPath();g.arc(0,4,12,0,7);g.fill();g.stroke();
+    g.fillStyle='#374151';g.beginPath();g.arc(-3,1,5,0,7);g.fill();
+    g.restore();
+  };
+
+  // 1. 後層馬尾（如火箭號、流星號）
+  if(kind==='bow'){
+    g.fillStyle='#432312';g.beginPath();g.moveTo(132,74);g.quadraticCurveTo(176,65,172,126);g.quadraticCurveTo(150,126,136,96);g.fill();
+  }else if(kind==='glasses'){
+    g.fillStyle='#1e1612';g.beginPath();g.arc(146,128,16,0,7);g.fill();
+    g.fillStyle='#f8fafc';g.beginPath();g.arc(136,118,5,0,7);g.arc(143,115,5,0,7);g.fill();
+  }
+
+  // 2. 身體與賽車服 / 西裝
+  g.save();
+  if(kind==='chan'){
+    // 陳校長：揮手手勢 + 黑色西裝 + 白恤衫 + 深藍領呔
+    g.strokeStyle='#fed7aa';g.lineWidth=14;g.lineCap='round';
+    g.beginPath();g.moveTo(46,162);g.quadraticCurveTo(22,140,30,115);g.stroke();
+    g.fillStyle='#fed7aa';g.beginPath();g.arc(30,110,12,0,7);g.fill();
+    [-9,-3,3,9].forEach(dx=>{g.lineWidth=5;g.beginPath();g.moveTo(30+dx*.5,108);g.lineTo(30+dx*1.2,91);g.stroke()});
+    g.fillStyle='#1e293b';g.beginPath();g.moveTo(42,196);g.lineTo(56,142);g.lineTo(144,142);g.lineTo(158,196);g.closePath();g.fill();
+    g.fillStyle='#ffffff';g.beginPath();g.moveTo(82,142);g.lineTo(100,182);g.lineTo(118,142);g.closePath();g.fill();
+    g.fillStyle='#1e3a8a';g.beginPath();g.moveTo(96,146);g.lineTo(104,146);g.lineTo(106,184);g.lineTo(100,192);g.lineTo(94,184);g.closePath();g.fill();
+    drawBadge(126,172);
+  }else if(kind==='tam'){
+    // 譚主任：黑銀賽車服 + 右手托黑超
+    g.fillStyle='#1f2937';g.beginPath();g.moveTo(44,196);g.lineTo(56,142);g.lineTo(144,142);g.lineTo(156,196);g.closePath();g.fill();
+    g.strokeStyle='#9ca3af';g.lineWidth=7;g.beginPath();g.moveTo(64,144);g.lineTo(100,170);g.lineTo(136,144);g.stroke();
+    drawBadge(124,172);
+    g.strokeStyle='#1f2937';g.lineWidth=15;g.lineCap='round';
+    g.beginPath();g.moveTo(54,164);g.quadraticCurveTo(32,142,46,98);g.stroke();
+    g.fillStyle='#fed7aa';g.beginPath();g.arc(49,92,9,0,7);g.fill();
+  }else{
+    // 學生車手：白底藍/紫條紋真鐸賽車服
+    const stripeCol=(kind==='bow'||kind==='helmetP'||kind==='glasses')?'#6d28d9':'#1d4ed8';
+    g.fillStyle='#ffffff';g.strokeStyle=stripeCol;g.lineWidth=5;
+    g.beginPath();g.moveTo(46,196);g.lineTo(58,142);g.lineTo(142,142);g.lineTo(154,196);g.closePath();g.fill();g.stroke();
+    g.fillStyle=stripeCol;g.fillRect(54,154,92,12);
+    g.fillStyle='#1e293b';rr(84,136,32,12,5);
+    drawBadge(122,174);
+    if(kind==='headband'||kind==='helmetB'||kind==='boy'){
+      g.strokeStyle='#1d4ed8';g.lineWidth=14;g.lineCap='round';
+      g.beginPath();g.moveTo(56,162);g.quadraticCurveTo(32,148,38,118);g.stroke();
+      drawGlove(38,112,'fist');
+    }else if(kind==='bow'){
+      drawGlove(144,124,'v');
+    }else if(kind==='cap'){
+      g.strokeStyle='#1d4ed8';g.lineWidth=13;g.lineCap='round';
+      g.beginPath();g.moveTo(56,160);g.quadraticCurveTo(30,130,44,86);g.stroke();
+      drawGlove(46,82,'fist');
+    }else if(kind==='headphone'){
+      drawGlove(44,108,'fist');drawGlove(154,130,'v');
+    }else if(kind==='helmetP'){
+      drawGlove(32,120,'open');drawGlove(168,120,'open');
+    }
+  }
+  g.restore();
+
+  // 3. 頸部與耳仔
+  g.fillStyle='#f5c299';rr(88,124,24,24,8);
+  g.fillStyle='#fed7aa';
+  g.beginPath();g.arc(52,96,11,0,7);g.arc(148,96,11,0,7);g.fill();
+
+  // 4. 頭盔後殼（雷霆號 / 極光號）
+  if(kind==='helmetB'||kind==='helmetP'){
+    const hc=kind==='helmetB'?'#2563eb':'#f3e8ff', sc=kind==='helmetB'?'#e2e8f0':'#7c3aed';
+    g.fillStyle=hc;g.strokeStyle=sc;g.lineWidth=6;
+    g.beginPath();g.arc(100,84,60,Math.PI*.88,Math.PI*.12,false);
+    g.lineTo(148,124);g.quadraticCurveTo(100,138,52,124);g.closePath();g.fill();g.stroke();
+    if(kind==='helmetP'){g.fillStyle='#7c3aed';g.fillRect(88,24,24,36)}
+    else{g.fillStyle='#f8fafc';g.beginPath();g.arc(100,82,58,-Math.PI*.75,-Math.PI*.25);g.lineWidth=8;g.stroke()}
+  }
+
+  // 5. 面部圓形（帶水彩柔和漸變陰影）
+  const fg=g.createRadialGradient(92,80,10,100,90,52);
+  fg.addColorStop(0,'#ffe4c4');fg.addColorStop(0.82,'#fed7aa');fg.addColorStop(1,'#f3be8a');
+  g.fillStyle=fg;g.beginPath();g.arc(100,90,48,0,7);g.fill();
+  // 水彩胭脂
+  g.fillStyle='rgba(251,113,133,0.42)';
+  g.beginPath();g.ellipse(68,102,9,5.5,0,0,7);g.ellipse(132,102,9,5.5,0,0,7);g.fill();
+
+  // 6. 髮型與頭飾（皇冠 / 頭帶 / 鴨嘴帽 / 蝴蝶結 / 耳機）
+  if(kind!=='helmetB'&&kind!=='helmetP'){
+    g.fillStyle=(kind==='bow'||kind==='headphone')?'#4a2511':'#2d1a10';
+    g.beginPath();
+    g.arc(100,82,51,Math.PI*1.05,Math.PI*1.95);
+    g.quadraticCurveTo(148,54,146,84);
+    g.quadraticCurveTo(130,58,108,62);
+    g.quadraticCurveTo(92,52,76,62);
+    g.quadraticCurveTo(58,58,54,84);
+    g.closePath();g.fill();
+    // 頭頂呆毛/髮束細節
+    g.beginPath();g.moveTo(86,34);g.quadraticCurveTo(102,16,122,32);g.quadraticCurveTo(110,38,96,36);g.fill();
+    // 頭髮水彩高光弧線
+    g.strokeStyle='rgba(255,255,255,0.22)';g.lineWidth=4;g.lineCap='round';
+    g.beginPath();g.arc(100,76,40,Math.PI*1.2,Math.PI*1.75);g.stroke();
+  }
+
+  if(kind==='chan'){
+    // 陳校長皇冠
+    g.save();g.translate(88,24) || g.rotate(-0.12);
+    g.fillStyle='#facc15';g.strokeStyle='#ca8a04';g.lineWidth=2.5;
+    g.beginPath();g.moveTo(-32,18);g.lineTo(-26,-10);g.lineTo(-10,6);g.lineTo(0,-16);g.lineTo(12,6);g.lineTo(28,-10);g.lineTo(32,18);g.closePath();g.fill();g.stroke();
+    g.fillStyle='#a855f7';g.beginPath();g.arc(0,5,4.2,0,7);g.fill();
+    g.fillStyle='#ec4899';g.beginPath();g.arc(-16,8,3,0,7);g.arc(16,8,3,0,7);g.fill();
+    g.restore();
+  }else if(kind==='headband'){
+    // 閃電號藍白運動頭帶
+    g.fillStyle='#1e40af';g.strokeStyle='#ffffff';g.lineWidth=2.5;
+    rr(50,52,100,17,6);g.strokeRect(52,55,96,11);
+    g.beginPath();g.moveTo(52,60.5);g.lineTo(148,60.5);g.stroke();
+  }else if(kind==='bow'){
+    // 火箭號紫色蝴蝶結
+    g.save();g.translate(132,42);g.rotate(0.25);
+    g.fillStyle='#7c3aed';g.strokeStyle='#4c1d95';g.lineWidth=2;
+    g.beginPath();g.moveTo(0,0);g.lineTo(-18,-12);g.lineTo(-14,10);g.closePath();g.fill();g.stroke();
+    g.beginPath();g.moveTo(0,0);g.lineTo(18,-10);g.lineTo(14,12);g.closePath();g.fill();g.stroke();
+    g.fillStyle='#a78bfa';g.beginPath();g.arc(0,0,5,0,7);g.fill();
+    g.restore();
+  }else if(kind==='cap'){
+    // 旋風號藍白鴨嘴帽
+    g.fillStyle='#1e40af';g.beginPath();g.arc(100,72,52,Math.PI*1.02,Math.PI*1.98);g.closePath();g.fill();
+    g.fillStyle='#ffffff';g.beginPath();g.ellipse(100,48,26,24,0,Math.PI,0,true);g.fill();
+    g.fillStyle='#1e3a8a';g.strokeStyle='#ffffff';g.lineWidth=2.5;
+    g.beginPath();g.moveTo(36,72);g.quadraticCurveTo(96,50,152,70);g.quadraticCurveTo(100,64,36,72);g.fill();g.stroke();
+  }else if(kind==='headphone'){
+    // 彩虹號耳機
+    g.strokeStyle='#1e293b';g.lineWidth=8;g.beginPath();g.arc(100,86,56,Math.PI*1.05,Math.PI*1.95);g.stroke();
+    g.fillStyle='#1e3a8a';g.strokeStyle='#0f172a';g.lineWidth=2.5;
+    g.beginPath();g.ellipse(44,92,11,20,0,0,7);g.fill();g.stroke();
+    g.beginPath();g.ellipse(156,92,11,20,0,0,7);g.fill();g.stroke();
+  }
+
+  // 7. 眉毛、眼睛與眼鏡
+  g.strokeStyle='#3b2314';g.lineWidth=3.2;g.lineCap='round';
+  g.beginPath();g.arc(78,76,10,Math.PI*1.15,Math.PI*1.85);g.stroke();
+  g.beginPath();g.arc(122,76,10,Math.PI*1.15,Math.PI*1.85);g.stroke();
+
+  const drawEye=(ex,ey)=>{
+    g.fillStyle='#ffffff';g.beginPath();g.ellipse(ex,ey,10,11,0,0,7);g.fill();
+    g.fillStyle='#3b2314';g.beginPath();g.arc(ex,ey,7.8,0,7);g.fill();
+    g.fillStyle='#111827';g.beginPath();g.arc(ex,ey,4.5,0,7);g.fill();
+    g.fillStyle='#ffffff';g.beginPath();g.arc(ex-2.5,ey-3,2.6,0,7);g.arc(ex+2.5,ey+2.5,1.2,0,7);g.fill();
+  };
+
+  if(kind==='headphone'){
+    g.strokeStyle='#291811';g.lineWidth=4.2;
+    g.beginPath();g.arc(78,92,9,Math.PI*1.1,Math.PI*1.9);g.stroke();
+    g.beginPath();g.arc(122,92,9,Math.PI*1.1,Math.PI*1.9);g.stroke();
+  }else if(kind==='bow'){
+    drawEye(78,90);
+    g.strokeStyle='#291811';g.lineWidth=4.2;
+    g.beginPath();g.arc(122,92,9,Math.PI*1.1,Math.PI*1.9);g.stroke();
+  }else{
+    drawEye(78,90);drawEye(122,90);
+  }
+
+  if(kind==='tam'){
+    // 譚主任黑超太陽眼鏡
+    g.fillStyle='#111827';g.strokeStyle='#374151';g.lineWidth=3;
+    rr(56,78,38,24,9);g.stroke();rr(106,78,38,24,9);g.stroke();
+    g.lineWidth=4;g.beginPath();g.moveTo(94,86);g.lineTo(106,86);g.stroke();
+    g.strokeStyle='rgba(255,255,255,0.45)';g.lineWidth=3;
+    g.beginPath();g.moveTo(64,84);g.lineTo(76,84);g.moveTo(114,84);g.lineTo(126,84);g.stroke();
+  }else if(kind==='glasses'){
+    // 流星號圓框眼鏡
+    g.strokeStyle='#1f2937';g.lineWidth=4;
+    g.beginPath();g.arc(78,90,17,0,7);g.stroke();
+    g.beginPath();g.arc(122,90,17,0,7);g.stroke();
+    g.beginPath();g.moveTo(95,90);g.lineTo(105,90);g.stroke();
+  }
+
+  // 8. 鼻子與笑容嘴巴
+  g.fillStyle='#e5a97c';g.beginPath();g.arc(100,98,2.5,0,7);g.fill();
+  if(kind==='tam'||kind==='glasses'){
+    g.strokeStyle='#9a3412';g.lineWidth=3.5;g.lineCap='round';
+    g.beginPath();g.arc(100,104,11,Math.PI*0.15,Math.PI*0.85);g.stroke();
+  }else{
+    g.fillStyle='#be123c';g.beginPath();g.arc(100,107,13,0,Math.PI,false);g.closePath();g.fill();
+    g.fillStyle='#ffffff';g.fillRect(90,107,20,4);
+    g.fillStyle='#fb7185';g.beginPath();g.ellipse(100,116,7,4,0,0,7);g.fill();
+  }
+
+  return cv.toDataURL('image/png');
+}
+
+/* ===== Firebase（只存班別及學號，不存姓名，並連接 Firebase Storage） ===== */
+const FB={ok:false,db:null,st:null};
+try{const app=initializeApp({apiKey:"AIzaSyCCqRocv1fsExjhIo3WVymQwJtOEgUfGYc",authDomain:"chuntok-racing.firebaseapp.com",projectId:"chuntok-racing",storageBucket:"chuntok-racing.firebasestorage.app",messagingSenderId:"583186654240",appId:"1:583186654240:web:65e748cf5074a79a4e0845"});
+ FB.db=getFirestore(app);FB.st=getStorage(app);signInAnonymously(getAuth(app)).then(()=>{FB.ok=true;syncTag('☁️ 已連線');autoFetchFirebaseStorageAssets()}).catch(e=>{console.warn('Firebase 登入失敗',e);syncTag('📴 離線模式');autoFetchFirebaseStorageAssets()})}catch(e){console.warn('Firebase 初始化失敗',e)}
+function syncTag(t){const e=$('syncTag');if(e)e.textContent=t}
+async function fbRetry(){const q=(await store.get('pendingUp'))||[];if(!q.length||!FB.ok)return;const rest=[];
+ for(const it of q){try{await fbWrite(it)}catch(e){rest.push(it)}}await store.set('pendingUp',rest);syncTag(rest.length?'📴 '+rest.length+' 筆待上傳':'☁️ 已同步')}
+async function fbWrite(it){if(it.k==='race'){await addDoc(collection(FB.db,'races'),{...it.d,ts:serverTimestamp()})}else if(it.k==='player'){await setDoc(doc(FB.db,'players',it.id),{...it.d,ts:serverTimestamp()},{merge:true})}}
+async function fbUp(it){if(user.type!=='student')return;
+ if(!FB.ok){const q=(await store.get('pendingUp'))||[];q.push(it);await store.set('pendingUp',q.slice(-50));syncTag('📴 待上傳');return}
+ try{await fbWrite(it);syncTag('☁️ 已同步')}catch(e){console.warn('上傳失敗',e);const q=(await store.get('pendingUp'))||[];q.push(it);await store.set('pendingUp',q.slice(-50));syncTag('📴 待上傳')}}
+async function fbRestore(){if(user.type!=='student'||!FB.ok)return;
+ try{const s=await getDoc(doc(FB.db,'players',uid()));if(s.exists()){const d=s.data(),lw=(await store.get('wins_'+uid()))||0,ltw=(await store.get('tw_'+uid()))||{};
+  if((d.wins||0)>lw)await store.set('wins_'+uid(),d.wins);
+  if(d.tw){const m={...ltw};for(const k in d.tw)m[k]=Math.max(m[k]||0,d.tw[k]);await store.set('tw_'+uid(),m)}
+  if(d.stats){const ls=(await store.get('stats_'+uid()))||{};for(const k in d.stats){const a=d.stats[k],b=ls[k]||{n:0,w:0};if(a.n>b.n)ls[k]=a}await store.set('stats_'+uid(),ls)}}}catch(e){console.warn('還原失敗',e)}}
+
+/* ===== 設定與 10 位真鐸車手（對應 10 合 1 圖片格仔位置及 Kenney 模型） ===== */
+const GRADES=[1,2,3,4,5,6], GNAME=['','一','二','三','四','五','六'], CLASSES=['信','望','愛'], MAXNO=35, LAPS=3, GPL=5, TOTALQ=LAPS*GPL;
+const KENNEY_CDN='https://cdn.jsdelivr.net/gh/anasron/threejs-kenney-car-kit@master/public/gltf/';
+// row, col 對應你張《真鐸車手頭像十款.png》嘅 5 行 x 2 列格仔位置
+const DRIVERS=[
+ {name:'閃電號',color:0xef4444,num:'02',row:1,col:0,kind:'headband',glb:KENNEY_CDN+'race.glb'},
+ {name:'火箭號',color:0x3b82f6,num:'03',row:1,col:1,kind:'bow',tbl:3,need:5,glb:KENNEY_CDN+'race-future.glb'},
+ {name:'旋風號',color:0x22c55e,num:'04',row:2,col:0,kind:'cap',tbl:4,need:5,glb:KENNEY_CDN+'sedan-sports.glb'},
+ {name:'流星號',color:0xfacc15,num:'05',row:2,col:1,kind:'glasses',tbl:5,need:5,glb:KENNEY_CDN+'hatchback-sports.glb'},
+ {name:'彩虹號',color:0xa855f7,num:'06',row:3,col:0,kind:'headphone',tbl:6,need:5,glb:KENNEY_CDN+'suv-luxury.glb'},
+ {name:'雷霆號',color:0xf97316,num:'07',row:3,col:1,kind:'helmetB',tbl:7,need:5,glb:KENNEY_CDN+'police.glb'},
+ {name:'極光號',color:0x06b6d4,num:'08',row:4,col:0,kind:'helmetP',tbl:8,need:5,glb:KENNEY_CDN+'kart.glb'},
+ {name:'疾風號',color:0x84cc16,num:'09',row:4,col:1,kind:'boy',tbl:9,need:5,glb:KENNEY_CDN+'Convertible.glb'},
+ {name:'譚主任',color:0x0f766e,num:'TAM',row:0,col:1,kind:'tam',boss:'tam',need:5,crown:true,glb:KENNEY_CDN+'race-future.glb'},
+ {name:'陳校長',color:0xd4a017,num:'CHAN',row:0,col:0,kind:'chan',boss:'chan',need:10,crown:true,glb:KENNEY_CDN+'race.glb'}
+];
+// 開機即刻為全部 10 個車手產生水彩立體頭像（唔使等、唔使撳掣載入！）
+DRIVERS.forEach(d=>{d.img=makeChunTokAvatarDataURI(d.kind)});
+
+// 智能 10 合 1 原圖切圖器（供自動載入 FIREBASE_SHEET_URL 或同目錄 drivers_sheet.png 使用）
+function sliceSheetTo10(img){
+  const W=img.naturalWidth||img.width, H=img.naturalHeight||img.height;
+  const full=document.createElement('canvas');full.width=W;full.height=H;
+  const fctx=full.getContext('2d');fctx.drawImage(img,0,0);
+  const fdata=fctx.getImageData(0,0,W,H).data;
+  const isBg=(x,y)=>{const p=(y*W+x)*4;return fdata[p+3]<20||(fdata[p]>236&&fdata[p+1]>236&&fdata[p+2]>236)};
+  const rowSplits=[0];
+  for(let r=1;r<5;r++){
+    const guess=Math.round(r*H/5), span=Math.round(H*0.045);
+    let bestY=guess, minInk=1e9;
+    for(let y=Math.max(0,guess-span);y<=Math.min(H-1,guess+span);y++){
+      let ink=0;for(let x=0;x<W;x+=2)if(!isBg(x,y))ink++;
+      if(ink<minInk){minInk=ink;bestY=y}
+    }
+    rowSplits.push(bestY);
+  }
+  rowSplits.push(H);
+  const cw=Math.floor(W/2);
+
+  return DRIVERS.map(d=>{
+    const x0=d.col*cw, y0=rowSplits[d.row], rw=cw, rh=rowSplits[d.row+1]-y0;
+    const tmp=document.createElement('canvas');tmp.width=rw;tmp.height=rh;
+    const tctx=tmp.getContext('2d');tctx.drawImage(img,x0,y0,rw,rh,0,0,rw,rh);
+    const id=tctx.getImageData(0,0,rw,rh), dt=id.data;
+    const vis=new Uint8Array(rw*rh), q=[];
+    const push=(x,y)=>{if(x<0||x>=rw||y<0||y>=rh)return;const idx=y*rw+x;if(vis[idx])return;
+      const p=idx*4;if(dt[p+3]<20||(dt[p]>234&&dt[p+1]>234&&dt[p+2]>234)){vis[idx]=1;dt[p+3]=0;q.push(idx)}};
+    for(let x=0;x<rw;x++){push(x,0);push(x,rh-1)}
+    for(let y=0;y<rh;y++){push(0,y);push(rw-1,y)}
+    while(q.length){const cur=q.pop(),cx=cur%rw,cy=(cur/rw)|0;push(cx+1,cy);push(cx-1,cy);push(cx,cy+1);push(cx,cy-1)}
+    let minX=rw,maxX=0,minY=rh,maxY=0;
+    for(let y=0;y<rh;y++){
+      for(let x=0;x<rw;x++){
+        const p=(y*rw+x)*4;
+        if(dt[p+3]>30){
+          if(y<rh*0.02||y>rh*0.98){dt[p+3]=0;continue}
+          if(x<minX)minX=x;if(x>maxX)maxX=x;if(y<minY)minY=y;if(y>maxY)maxY=y;
+        }
+      }
+    }
+    tctx.putImageData(id,0,0);
+    const out=document.createElement('canvas');out.width=160;out.height=160;
+    const octx=out.getContext('2d');
+    if(maxX>minX&&maxY>minY){
+      const bw=maxX-minX+1, bh=maxY-minY+1;
+      const side=Math.max(bw,bh)*1.08;
+      const cx=(minX+maxX)/2, cy=minY+bh*0.47;
+      octx.drawImage(tmp,cx-side/2,cy-side/2,side,side,0,0,160,160);
+    }else{
+      const side=Math.min(rw,rh);
+      octx.drawImage(tmp,(rw-side)/2,(rh-side)/2,side,side,0,0,160,160);
+    }
+    return out.toDataURL('image/webp',0.88);
+  });
+}
+
+function tryAutoLoadSheet(url){
+  if(!url)return;
+  const im=new Image();im.crossOrigin='anonymous';
+  im.onload=async()=>{
+    try{
+      const arr=sliceSheetTo10(im);
+      arr.forEach((u,i)=>DRIVERS[i].img=u);
+      await store.set('customAvatars10',arr);
+      if(user){const w=await getWins(),tw=await getTW();renderDrivers(w,tw)}
+    }catch(e){console.warn('切圖失敗，請檢查 Firebase Storage CORS 設定',e)}
+  };
+  im.src=url;
+}
+
+// 智慧型比例縮放繪圖（無論真鐸校牌係正方形、圓形定長方形橫額，都自動置中兼保持原比例唔變形！）
+function drawImageProp(ctx,img,x,y,maxW,maxH){
+  if(!img)return;
+  const iw=img.naturalWidth||img.width||1, ih=img.naturalHeight||img.height||1;
+  const s=Math.min(maxW/iw,maxH/ih);
+  const w=iw*s, h=ih*s;
+  ctx.drawImage(img,x+(maxW-w)/2,y+(maxH-h)/2,w,h);
+}
+
+// 自動幫真鐸校牌去除四角白底（如果原本係 JPG 白底圖都會自動變透明！）
+function cleanBadgeWhiteBg(img){
+  try{
+    const W=Math.min(512,img.naturalWidth||img.width||256), H=Math.round(W*((img.naturalHeight||img.height||256)/(img.naturalWidth||img.width||256)));
+    const cv=document.createElement('canvas');cv.width=W;cv.height=H;
+    const ctx=cv.getContext('2d');ctx.drawImage(img,0,0,W,H);
+    const id=ctx.getImageData(0,0,W,H), dt=id.data, vis=new Uint8Array(W*H), q=[];
+    const push=(x,y)=>{if(x<0||x>=W||y<0||y>=H)return;const idx=y*W+x;if(vis[idx])return;
+      const p=idx*4;if(dt[p+3]<20||(dt[p]>238&&dt[p+1]>238&&dt[p+2]>238)){vis[idx]=1;dt[p+3]=0;q.push(idx)}};
+    for(let x=0;x<W;x++){push(x,0);push(x,H-1)}
+    for(let y=0;y<H;y++){push(0,y);push(W-1,y)}
+    while(q.length){const cur=q.pop(),cx=cur%W,cy=(cur/W)|0;push(cx+1,cy);push(cx-1,cy);push(cx,cy+1);push(cx,cy-1)}
+    ctx.putImageData(id,0,0);
+    return cv;
+  }catch(e){return img}
+}
+
+// 載入真鐸校牌圖片並套用到 UI 校牌、3D 起點龍門架、賽車車鼻及車尾翼
+function tryAutoLoadBadge(url){
+  if(!url)return;
+  const im=new Image();im.crossOrigin='anonymous';
+  im.onload=()=>{
+    schoolBadgeImg=cleanBadgeWhiteBg(im);
+    const cleanUrl=schoolBadgeImg.toDataURL?schoolBadgeImg.toDataURL('image/png'):url;
+    document.querySelectorAll('.schoolLogoImg').forEach(el=>{el.src=cleanUrl;el.classList.remove('hidden')});
+    document.querySelectorAll('.schoolLogoFallback').forEach(el=>el.classList.add('hidden'));
+    if(window._startBanners){
+      window._startBanners.forEach(bn=>{
+        const btx=makeStartBannerTex();
+        bn.material.map.dispose();bn.material.map=btx;bn.material.needsUpdate=true;
+      });
+    }
+  };
+  im.src=url;
+}
+
+// 開機自動從 Firebase Storage (chuntok-racing.firebasestorage.app) 讀取車手圖與真鐸校牌
+async function autoFetchFirebaseStorageAssets(){
+  const savedUrls=await store.get('fbAssetUrls')||{};
+  if(savedUrls.drivers&&!FIREBASE_SHEET_URL)FIREBASE_SHEET_URL=savedUrls.drivers;
+  if(savedUrls.badge&&!FIREBASE_BADGE_URL)FIREBASE_BADGE_URL=savedUrls.badge;
+  if($('inpUrlDrivers'))$('inpUrlDrivers').value=FIREBASE_SHEET_URL||'';
+  if($('inpUrlBadge'))$('inpUrlBadge').value=FIREBASE_BADGE_URL||'';
+
+  if(FIREBASE_SHEET_URL)tryAutoLoadSheet(FIREBASE_SHEET_URL);
+  else if(FB.st){
+    for(const p of ['assets/drivers_sheet.png','drivers_sheet.png','真鐸車手頭像十款.png']){
+      try{const u=await getDownloadURL(sRef(FB.st,p));FIREBASE_SHEET_URL=u;if($('inpUrlDrivers'))$('inpUrlDrivers').value=u;tryAutoLoadSheet(u);break}catch(e){}
+    }
+  }
+  if(FIREBASE_BADGE_URL)tryAutoLoadBadge(FIREBASE_BADGE_URL);
+  else if(FB.st){
+    for(const p of ['assets/school_badge.png','school_badge.png','badge.png','logo.png']){
+      try{const u=await getDownloadURL(sRef(FB.st,p));FIREBASE_BADGE_URL=u;if($('inpUrlBadge'))$('inpUrlBadge').value=u;tryAutoLoadBadge(u);break}catch(e){}
+    }
+  }
+}
+
+// 老師後台：一鍵上傳車手圖 / 真鐸校牌去 Firebase Storage
+if($('btnUpDrivers')){
+  $('btnUpDrivers').onclick=()=>$('inpUpDrivers').click();
+  $('inpUpDrivers').onchange=async e=>{
+    const f=e.target.files&&e.target.files[0];if(!f||!FB.st)return;
+    $('upStatus').textContent='⏳ 正在上傳 10 合 1 車手圖至 Firebase Storage (assets/drivers_sheet.png)…';
+    try{
+      const r=sRef(FB.st,'assets/drivers_sheet.png');
+      await uploadBytes(r,f);
+      const u=await getDownloadURL(r);
+      FIREBASE_SHEET_URL=u;$('inpUrlDrivers').value=u;
+      const cur=(await store.get('fbAssetUrls'))||{};cur.drivers=u;await store.set('fbAssetUrls',cur);
+      tryAutoLoadSheet(u);
+      $('upStatus').textContent='✅ 車手圖已成功上傳至 Firebase Storage 並即時套用！';
+    }catch(err){
+      console.warn(err);
+      $('upStatus').textContent='⚠️ 上傳被拒（請先在 Firebase Console -> Storage -> Rules 開放寫入權限，或手動上傳後貼上 Download URL）';
+    }
+  };
+  $('btnUpBadge').onclick=()=>$('inpUpBadge').click();
+  $('inpUpBadge').onchange=async e=>{
+    const f=e.target.files&&e.target.files[0];if(!f||!FB.st)return;
+    $('upStatus').textContent='⏳ 正在上傳真鐸校牌至 Firebase Storage (assets/school_badge.png)…';
+    try{
+      const r=sRef(FB.st,'assets/school_badge.png');
+      await uploadBytes(r,f);
+      const u=await getDownloadURL(r);
+      FIREBASE_BADGE_URL=u;$('inpUrlBadge').value=u;
+      const cur=(await store.get('fbAssetUrls'))||{};cur.badge=u;await store.set('fbAssetUrls',cur);
+      tryAutoLoadBadge(u);
+      $('upStatus').textContent='✅ 真鐸校牌已成功上傳至 Firebase Storage 並套用到全場橫額與賽車！';
+    }catch(err){
+      console.warn(err);
+      $('upStatus').textContent='⚠️ 上傳被拒（請先在 Firebase Console -> Storage -> Rules 開放寫入權限，或手動上傳後貼上 Download URL）';
+    }
+  };
+  $('btnSaveUrls').onclick=async()=>{
+    const uD=$('inpUrlDrivers').value.trim(), uB=$('inpUrlBadge').value.trim();
+    FIREBASE_SHEET_URL=uD;FIREBASE_BADGE_URL=uB;
+    await store.set('fbAssetUrls',{drivers:uD,badge:uB});
+    if(uD)tryAutoLoadSheet(uD);
+    if(uB)tryAutoLoadBadge(uB);
+    $('upStatus').textContent='✅ 已儲存並套用 Firebase Storage 圖片網址！';
+  };
+}
+
+let useExternalGLB=true;
+$('glbToggle').onchange=e=>{useExternalGLB=e.target.checked};
+const gltfLoader=new GLTFLoader(), glbCache={};
+
+const winsOf=(d,tw)=>(d.tbl?tw[d.tbl]:tw.all)||0;
+function lockOf(d,tw){if(user.type==='teacher'||!d.need)return false;return winsOf(d,tw)<d.need}
+function showLock(d,tw){const w=Math.min(winsOf(d,tw),d.need);
+ $('lkIcon').style.background='#'+d.color.toString(16).padStart(6,'0');
+ $('lkIcon').innerHTML=`<img src="${d.img}" style="width:100%;height:100%;object-fit:contain;opacity:.5">`;
+ $('lkName').textContent='🔒 '+d.name;
+ $('lkHow').textContent=d.tbl?`揀「${d.tbl}」乘數表，勝出 ${d.need} 場`:`揀「全部」乘數表，勝出 ${d.need} 場`;
+ $('lkBar').style.width=(w/d.need*100)+'%';$('lkProg').textContent=`已勝 ${w} / ${d.need} 場`;$('lockOv').style.display='flex'}
+$('lkOk').onclick=()=>$('lockOv').style.display='none';
+const UNLOCK_ACC=80;let guestWins=0,guestTW={};
+async function getTW(){if(user.type==='teacher')return{};return user.type==='guest'?{...guestTW}:((await store.get('tw_'+uid()))||{})}
+async function setTW(o){if(user.type==='guest')guestTW=o;else await store.set('tw_'+uid(),o)}
+const TBL=new Set([2,3,4,5,6,7,8,9]);let prefsOK=false;
+function savePrefs(){if(prefsOK)store.set('prefs',{q:qLv,mute:AU.mute,tbl:[...TBL]})}
+const DIFF={'易':{sp:.80,acc:.55},'中':{sp:.92,acc:.75},'難':{sp:1.0,acc:.9}};
+
+/* ===== 儲存 ===== */
+const store={
+ async get(k){try{const v=window.sayoStorage?await window.sayoStorage.getItem(k):localStorage.getItem(k);return v?JSON.parse(v):null}catch(e){return null}},
+ async set(k,v){const s=JSON.stringify(v);try{window.sayoStorage?await window.sayoStorage.setItem(k,s):localStorage.setItem(k,s)}catch(e){}}};
+
+let user=null, diff='中', driverIdx=0, hiQ=false, guestStats={};
+const uid=()=>user.type==='student'?`${user.grade}${user.cls}-${user.no}`:user.type+'_'+Math.floor(100+Math.random()*900);
+let mySessionId='';
+const label=()=>user.type==='student'?`${GNAME[user.grade]}年級 ${user.cls}班 ${user.no}號`:user.type==='guest'?'訪客（成績不會記錄）':'老師（不計入報告）';
+const shortName=()=>user.type==='student'?`${user.grade}${user.cls}(${user.no})`:user.type==='guest'?'訪客':'老師';
+const ALL_SCR=['sLogin','sMenu','sResult','sTrack','sRoute','sLb','sRp','sAdmin','sMpLobby','sMpWait'];
+const show=id=>{for(const s of ALL_SCR)$(s).classList.toggle('on',s===id);$('hud').style.display=id?'none':'block'};
+
+/* ===== 登入 ===== */
+let selGr=null, selCls=null, selNo=null;
+function fillNo(){selNo=null;if(!(selGr&&selCls)){$('noBox').innerHTML='<option value="">請先選擇年級及班別</option>';$('noBox').disabled=true;return}
+ $('noBox').innerHTML='<option value="">請選擇學號</option>';
+ for(let i=1;i<=MAXNO;i++){const o=document.createElement('option');o.value=String(i);o.textContent=`${i}號`;$('noBox').appendChild(o)}
+ $('noBox').disabled=false}
+GRADES.forEach(g=>{const b=document.createElement('button');b.className='btn bg-gradient-to-b from-sky-100 to-sky-200 text-sky-800 text-2xl py-2';b.textContent=g;
+ b.onclick=()=>{selGr=g;[...$('grBox').children].forEach(x=>x.classList.toggle('sel',x===b));fillNo();chk()};$('grBox').appendChild(b)});
+CLASSES.forEach(c=>{const b=document.createElement('button');b.className='btn bg-gradient-to-b from-pink-100 to-pink-200 text-pink-800 text-2xl py-2';b.textContent=c;
+ b.onclick=()=>{selCls=c;[...$('clsBox').children].forEach(x=>x.classList.toggle('sel',x===b));fillNo();chk()};
+ $('clsBox').appendChild(b)});
+$('noBox').addEventListener('change',()=>{selNo=$('noBox').value?Number($('noBox').value):null;chk()});
+function chk(){$('goLogin').disabled=!(selGr&&selCls&&selNo)}
+$('goLogin').onclick=()=>login({grade:selGr,cls:selCls,no:selNo,type:'student'});
+$('guestBtn').onclick=()=>login({cls:'訪客',no:0,type:'guest'});
+$('teachBtn').onclick=()=>{user={cls:'老師',no:0,type:'teacher'};show('sAdmin')};
+$('adBack').onclick=()=>show('sLogin');
+$('adLb').onclick=()=>openLb();
+$('adRp').onclick=()=>openRp();
+$('adTest').onclick=()=>login({cls:'老師測試',no:0,type:'teacher'});
+async function login(u){user=u;mySessionId=u.type==='student'?`${u.grade}${u.cls}-${u.no}`:`${u.type}-${Math.floor(1000+Math.random()*9000)}`;
+ window._inTest=u.type==='teacher';if(u.type==='student'){await store.set('lastUser',u);for(let i=0;i<15&&!FB.ok;i++)await new Promise(r=>setTimeout(r,100));await fbRestore();fbRetry()}if(u.type==='guest')guestStats={};showMenu()}
+$('logout').onclick=()=>{leaveMpRoom();window._inTest=false;selGr=selCls=selNo=null;[...$('grBox').children,...$('clsBox').children].forEach(x=>x.classList.remove('sel'));fillNo();chk();$('resume').innerHTML='';show('sLogin')};
+async function initLogin(){
+ const savedAv=await store.get('customAvatars10');
+ if(Array.isArray(savedAv)&&savedAv.length===10){savedAv.forEach((u,i)=>DRIVERS[i].img=u)}
+ if(FIREBASE_SHEET_URL)tryAutoLoadSheet(FIREBASE_SHEET_URL);
+ const pr=await store.get('prefs');
+ if(pr){if([0,1,2].includes(pr.q))setQ(pr.q);AU.mute=!!pr.mute;$('muteBtn').textContent=AU.mute?'🔇':'🔊';
+  if(Array.isArray(pr.tbl)){const v=pr.tbl.filter(n=>n>=2&&n<=9);if(v.length){TBL.clear();v.forEach(n=>TBL.add(n))}}renderTbl()}
+ prefsOK=true;
+ const last=await store.get('lastUser');
+ if(last&&last.grade&&CLASSES.includes(last.cls)){$('resume').innerHTML=`<div class="bg-amber-50 rounded-2xl p-2 flex items-center justify-between gap-2"><span class="font-bold text-lg">上次：${GNAME[last.grade]}年級 ${last.cls}班 ${last.no}號</span><span><button id="rsY" class="btn bg-green-500 text-white">繼續 ▶</button> <button id="rsN" class="btn bg-slate-200">不是我</button></span></div>`;
+  $('rsY').onclick=()=>login(last);$('rsN').onclick=()=>$('resume').innerHTML=''}
+ show('sLogin')}
+
+/* ===== 主選單 ===== */
+async function getWins(){if(user.type==='teacher')return 999;return user.type==='guest'?guestWins:((await store.get('wins_'+uid()))||0)}
+function renderDrivers(w,tw={}){const box=$('drvBox');box.innerHTML='';
+ const isLock=d=>lockOf(d,tw);if(isLock(DRIVERS[driverIdx]))driverIdx=0;
+ DRIVERS.forEach((d,i)=>{const lock=isLock(d),b=document.createElement('button');b.className='btn py-1.5 px-1 text-xs '+(d.crown?'bg-amber-50':'bg-slate-50')+(lock?' text-slate-400':'');
+  b.innerHTML=`<div style="width:52px;height:52px;border-radius:50%;margin:0 auto 2px;background:#${d.color.toString(16).padStart(6,'0')};border:2.5px solid #fff;box-shadow:0 2px 6px #0003;overflow:hidden;position:relative" class="flex items-center justify-center">
+    <img src="${d.img}" style="width:100%;height:100%;object-fit:cover;opacity:${lock?.35:1}">
+    ${lock?'<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:20px;background:#0004">🔒</span>':''}
+  </div><div class="font-black leading-tight">${d.name}</div>`;
+  if(i===driverIdx)b.classList.add('sel');
+  b.onclick=()=>{if(lock){showLock(d,tw);return}driverIdx=i;[...box.children].forEach(x=>x.classList.toggle('sel',x===b))};box.appendChild(b)})}
+Object.keys(DIFF).forEach(k=>{const b=document.createElement('button');b.className='btn bg-gradient-to-b from-white to-slate-200 flex-1 text-xl';b.textContent=k;
+ b.onclick=()=>{diff=k;[...$('dfBox').children].forEach(x=>x.classList.toggle('sel',x===b))};if(k===diff)b.classList.add('sel');$('dfBox').appendChild(b)});
+function renderTbl(){const box=$('tbBox');box.innerHTML='';const all=TBL.size===8;
+ const mk=(t,on,fn)=>{const b=document.createElement('button');b.className='btn bg-slate-100 py-1 px-1 text-lg';b.textContent=t;if(on)b.classList.add('sel');b.onclick=fn;box.appendChild(b)};
+ mk('全部',all,()=>{for(let i=2;i<=9;i++)TBL.add(i);renderTbl();savePrefs()});
+ for(let i=2;i<=9;i++)mk(i,!all&&TBL.has(i),()=>{if(all){TBL.clear();TBL.add(i)}else if(TBL.has(i)){if(TBL.size>1)TBL.delete(i)}else TBL.add(i);renderTbl();savePrefs()})}
+renderTbl();
+$('qLo').onclick=()=>setQ(0);$('qHi').onclick=()=>setQ(1);$('qUl').onclick=()=>setQ(2);
+async function getStats(){return user.type==='guest'?guestStats:(await store.get('stats_'+uid()))||{}}
+function weakList(st,n=6){return Object.entries(st).filter(([k,v])=>v.w>0).sort((a,b)=>b[1].w/b[1].n-a[1].w/a[1].n||b[1].w-a[1].w).slice(0,n).map(([k])=>k)}
+async function showMenu(){leaveMpRoom();$('who').textContent=label();
+ const st=await getStats(), recs=user.type==='guest'?[]:((await store.get('records'))||[]).filter(r=>r.uid===uid());
+ const wk=weakList(st,3);
+ const w=await getWins(),tw=await getTW();renderDrivers(w,tw);
+ $('myProg').innerHTML=`<b>📈 我的進步</b><br>已玩 ${recs.length} 場${recs.length?`，上次答對率 ${recs[recs.length-1].acc}%`:''}<br>較弱的題目：${wk.length?wk.join('、'):'暫時未有'}<br>🏆 ${user.type==='teacher'?'老師：所有車手已解鎖':`勝出 ${w} 場（第 1 名及答對率 ${UNLOCK_ACC}% 或以上）`}`;
+ show('sMenu')}
+$('startBtn').onclick=()=>{mpState.active=false;show('sTrack')};
+
+/* ===== 🌐 連機對戰（MQTT WebSocket 零配額極速同步引擎） ===== */
+const MP_BROKERS=['wss://broker.emqx.io:8084/mqtt','wss://broker.hivemq.com:8884/mqtt'];
+let mqClient=null, mpBrowseRooms={};
+const TOPIC_PREFIX='chuntok_racing_v3_hk/';
+const mpState={active:false,code:'',isHost:false,lastSync:0,lastSteer:0,roomData:null,hbTimer:null};
+
+function ensureMqtt(){
+  if(mqClient&&mqClient.connected)return Promise.resolve(mqClient);
+  return new Promise((resolve,reject)=>{
+    let tried=0;
+    const tryConnect=()=>{
+      const url=MP_BROKERS[tried%MP_BROKERS.length];
+      const cid='ct_'+Math.random().toString(36).slice(2,10);
+      const c=window.mqtt.connect(url,{clientId:cid,clean:true,connectTimeout:4000,reconnectPeriod:2000});
+      const to=setTimeout(()=>{try{c.end(true)}catch(e){}tried++;if(tried<MP_BROKERS.length*2)tryConnect();else reject(new Error('timeout'))},4200);
+      c.on('connect',()=>{clearTimeout(to);mqClient=c;setupMqttHandlers(c);resolve(c)});
+      c.on('error',()=>{});
+    };
+    tryConnect();
+  });
+}
+
+function setupMqttHandlers(c){
+  c.subscribe(TOPIC_PREFIX+'directory/+');
+  c.on('message',(topic,payload)=>{
+    let msg;try{msg=JSON.parse(payload.toString())}catch(e){return}
+    if(topic.startsWith(TOPIC_PREFIX+'directory/')){
+      const code=topic.split('/').pop();
+      if(msg&&msg.state==='waiting'&&Date.now()-msg.ts<45000)mpBrowseRooms[code]=msg;
+      else delete mpBrowseRooms[code];
+      return;
+    }
+    if(!mpState.code||topic!==TOPIC_PREFIX+'room/'+mpState.code)return;
+    handleRoomPacket(msg);
+  });
+}
+
+function pubRoom(obj){
+  if(!mqClient||!mpState.code)return;
+  mqClient.publish(TOPIC_PREFIX+'room/'+mpState.code,JSON.stringify(obj),{qos:0});
+}
+function broadcastRoomState(){
+  if(!mpState.isHost||!mpState.roomData)return;
+  const d=mpState.roomData;d.ts=Date.now();
+  mqClient.publish(TOPIC_PREFIX+'room/'+mpState.code,JSON.stringify({t:'state',room:d}),{qos:0,retain:true});
+  if(d.pub&&d.state==='waiting'){
+    mqClient.publish(TOPIC_PREFIX+'directory/'+mpState.code,JSON.stringify({code:mpState.code,state:d.state,cnt:Object.keys(d.players||{}).length,ts:Date.now()}),{qos:0,retain:true});
+  }
+}
+
+function handleRoomPacket(msg){
+  if(!msg)return;
+  if(msg.t==='join'&&mpState.isHost&&mpState.roomData){
+    const pMap=mpState.roomData.players||{};
+    if(mpState.roomData.state==='waiting'&&(Object.keys(pMap).length<4||pMap[msg.p.id])){
+      pMap[msg.p.id]=msg.p;
+      broadcastRoomState();
+      renderWaitRoom(mpState.roomData);
+    }
+  }else if(msg.t==='leave'&&mpState.isHost&&mpState.roomData){
+    if(mpState.roomData.players&&mpState.roomData.players[msg.id]){
+      delete mpState.roomData.players[msg.id];
+      broadcastRoomState();
+      renderWaitRoom(mpState.roomData);
+    }
+  }else if(msg.t==='state'&&msg.room){
+    mpState.roomData=msg.room;
+    if($('sMpWait').classList.contains('on')){
+      renderWaitRoom(msg.room);
+      if(msg.room.state==='racing'&&(!race||race.state==='done'||race.state==='quit')){
+        startMpRaceFromRoom(msg.room);
+      }
+    }
+  }else if(msg.t==='pos'&&race&&mpState.active){
+    if(msg.id===mySessionId)return;
+    const opp=race.ai.find(a=>a.pid===msg.id);
+    if(opp){
+      const lat=Math.min(0.25,Math.max(0,(Date.now()-(msg.ts||Date.now()))/1000));
+      opp.netS=msg.s+msg.v*lat;opp.netX=msg.x;opp.netV=msg.v;opp.steer=msg.st||0;
+      opp.boost=msg.b||0;opp.shield=msg.sh||0;opp.spin=msg.sp||0;opp.lastSeen=performance.now();
+    }
+  }
+}
+
+$('mpBtn').onclick=()=>{
+  $('mpErr').textContent='';
+  const t=[...TBL].sort();
+  $('mpTblTxt').textContent=t.length===8?'2 至 9 全部':t.join('、')+' 乘數表';
+  show('sMpLobby');
+  ensureMqtt().catch(()=>{$('mpErr').textContent='連線雲端對戰頻道中，請稍候再試'});
+};
+$('mpBack').onclick=()=>showMenu();
+
+function genSeedQuestions(tables,count=45){
+  const out=[],tb=tables&&tables.length?tables:[2,3,4,5,6,7,8,9];
+  for(let i=0;i<count;i++){
+    let a=tb[rnd(tb.length)],b=2+rnd(8);if(Math.random()<.5)[a,b]=[b,a];
+    const ans=a*b,set=new Set([ans]);
+    for(const c of shuffle([a*(b+1),a*(b-1),(a+1)*b,(a-1)*b,ans+10,ans-10,ans+1,ans-1,a+b])){if(set.size>=3)break;if(c>0&&!set.has(c))set.add(c)}
+    out.push({a,b,ans,opts:shuffle([...set])});
+  }
+  return out;
+}
+
+$('btnCreateRoom').onclick=async()=>{
+  const b=$('btnCreateRoom');b.disabled=true;$('mpErr').textContent='正在建立房間…';
+  try{
+    await ensureMqtt();
+    const code=String(Math.floor(1000+Math.random()*9000));
+    const tk=$('mpTrackSel').value, tables=[...TBL].sort(), pub=$('mpPubChk').checked;
+    const pObj={id:mySessionId,name:shortName(),drv:driverIdx,s:-6,x:0,v:0,ts:Date.now()};
+    const room={code,host:mySessionId,state:'waiting',track:tk,tables,pub,qs:genSeedQuestions(tables,TOTALQ+6),players:{[mySessionId]:pObj},ts:Date.now()};
+    mpState.code=code;mpState.isHost=true;mpState.roomData=room;
+    mqClient.subscribe(TOPIC_PREFIX+'room/'+code);
+    broadcastRoomState();
+    clearInterval(mpState.hbTimer);
+    mpState.hbTimer=setInterval(broadcastRoomState,2500);
+    enterWaitRoom(code,true);
+  }catch(e){console.warn(e);$('mpErr').textContent='連線逾時，請檢查網絡後再試'}
+  b.disabled=false;
+};
+
+$('btnJoinRoom').onclick=async()=>{
+  const code=($('inpRoomCode').value||'').trim();
+  if(!/^\d{4}$/.test(code)){$('mpErr').textContent='請輸入 4 位數字房號！';return}
+  await joinRoomByCode(code);
+};
+
+$('quickMpBtn').onclick=async()=>{
+  const b=$('quickMpBtn');b.disabled=true;
+  try{
+    await ensureMqtt();
+    await new Promise(r=>setTimeout(r,350));
+    const codes=Object.keys(mpBrowseRooms).filter(k=>{const r=mpBrowseRooms[k];return r&&r.state==='waiting'&&r.cnt<4&&Date.now()-r.ts<40000});
+    if(codes.length){await joinRoomByCode(codes[0]);b.disabled=false;return}
+  }catch(e){}
+  b.disabled=false;
+  $('mpBtn').click();
+  $('mpErr').textContent='暫時未有公開等候房間，請按左邊「立即開房」做房主！';
+};
+
+async function joinRoomByCode(code){
+  $('mpErr').textContent='正在加入房間 '+code+'…';
+  try{
+    await ensureMqtt();
+    mpState.code=code;mpState.isHost=false;mpState.roomData=null;
+    mqClient.subscribe(TOPIC_PREFIX+'room/'+code);
+    const pObj={id:mySessionId,name:shortName(),drv:driverIdx,s:-6,x:0,v:0,ts:Date.now()};
+    pubRoom({t:'join',p:pObj});
+    let waited=0;
+    while(!mpState.roomData&&waited<3200){await new Promise(r=>setTimeout(r,150));waited+=150;if(waited===900)pubRoom({t:'join',p:pObj})}
+    if(!mpState.roomData){$('mpErr').textContent='找不到此房號，請確認房主已開房！';mqClient.unsubscribe(TOPIC_PREFIX+'room/'+code);mpState.code='';return}
+    if(mpState.roomData.state!=='waiting'&&(!mpState.roomData.players||!mpState.roomData.players[mySessionId])){$('mpErr').textContent='呢間房已經開始咗比賽！';return}
+    pubRoom({t:'join',p:pObj});
+    enterWaitRoom(code,mpState.roomData.host===mySessionId);
+  }catch(e){console.warn(e);$('mpErr').textContent='加入失敗，請稍後再試'}
+}
+
+function enterWaitRoom(code,isHost){
+  $('waitCode').textContent=code;
+  $('hostControls').classList.toggle('hidden',!isHost);
+  $('guestControls').classList.toggle('hidden',isHost);
+  if(mpState.roomData)renderWaitRoom(mpState.roomData);
+  show('sMpWait');
+}
+
+function renderWaitRoom(d){
+  const [sc,ri]=(d.track||'meadow-0').split('-');
+  const rName=ROUTES[sc]&&ROUTES[sc][+ri]?ROUTES[sc][+ri].name:'經典彎道';
+  $('waitTrackBadge').textContent=`${sc==='city'?'🌇 城市':'🌳 綠野'}・${rName}｜乘數表：${(d.tables||[]).length===8?'全部':(d.tables||[]).join(',')}`;
+  const pList=Object.values(d.players||{});
+  const slots=[];
+  for(let i=0;i<4;i++){
+    const p=pList[i];
+    if(p){
+      const drv=DRIVERS[p.drv||0]||DRIVERS[0];
+      slots.push(`<div class="bg-white border-2 border-sky-300 rounded-2xl p-3 flex items-center gap-3 shadow-sm">
+        <div style="width:48px;height:48px;border-radius:50%;background:#${drv.color.toString(16).padStart(6,'0')};overflow:hidden;border:2px solid #fff" class="flex items-center justify-center"><img src="${drv.img}" style="width:100%;height:100%;object-fit:contain"></div>
+        <div class="flex-1"><div class="font-black text-lg text-slate-800">${esc(p.name)} ${p.id===d.host?'<span class="text-xs bg-amber-200 text-amber-900 px-2 py-0.5 rounded-full">房主</span>':''}</div><div class="text-xs text-slate-500">${drv.name}（#${drv.num}）</div></div>
+      </div>`);
+    }else{
+      slots.push(`<div class="bg-slate-100 border-2 border-dashed border-slate-300 rounded-2xl p-3 flex items-center gap-3 text-slate-400">
+        <div class="w-12 h-12 rounded-full bg-slate-200 flex items-center justify-center text-2xl">🤖</div>
+        <div><div class="font-bold">等待同學加入…</div><div class="text-xs">開始時自動由電腦車補上</div></div>
+      </div>`);
+    }
+  }
+  $('waitPlayers').innerHTML=slots.join('');
+}
+
+$('btnLeaveRoom').onclick=()=>{leaveMpRoom();showMenu()};
+function leaveMpRoom(){
+  clearInterval(mpState.hbTimer);mpState.hbTimer=null;
+  if(mqClient&&mpState.code){
+    if(mpState.isHost)mqClient.publish(TOPIC_PREFIX+'directory/'+mpState.code,JSON.stringify({state:'closed',ts:0}),{qos:0,retain:true});
+    else pubRoom({t:'leave',id:mySessionId});
+    try{mqClient.unsubscribe(TOPIC_PREFIX+'room/'+mpState.code)}catch(e){}
+  }
+  mpState.code='';mpState.active=false;mpState.roomData=null;
+}
+
+$('btnHostStart').onclick=()=>{
+  if(!mpState.code||!mpState.roomData)return;
+  mpState.roomData.state='racing';
+  broadcastRoomState();
+  startMpRaceFromRoom(mpState.roomData);
+};
+
+function startMpRaceFromRoom(d){
+  clearInterval(mpState.hbTimer);mpState.hbTimer=null;
+  const [sc,ri]=(d.track||'meadow-0').split('-');
+  selectTrack(sc,+ri||0);
+  mpState.active=true;
+  startRace(d);
+}
+
+function syncMyMpPos(force=false){
+  if(!mpState.active||!mpState.code||!race)return;
+  const now=performance.now(),steerChg=Math.abs(race.p.steer-(mpState.lastSteer||0))>0.22;
+  if(!force&&!steerChg&&now-mpState.lastSync<80)return;
+  mpState.lastSync=now;mpState.lastSteer=race.p.steer;
+  pubRoom({t:'pos',id:mySessionId,s:+race.p.s.toFixed(2),x:+race.p.x.toFixed(2),v:+race.p.v.toFixed(1),st:+race.p.steer.toFixed(2),b:race.p.boost>0?1:0,sh:race.p.shield>0?1:0,sp:race.p.spin>0?1:0,ts:Date.now()});
+}
+
+/* ===== 排行榜及老師報告 ===== */
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ID=(g,c,n)=>`${GNAME[g]}${c}${n}`;
+async function fbRaces(max=3000){if(!FB.ok)return null;try{const s=await getDocs(query(collection(FB.db,'races'),orderBy('ts','desc'),limit(max)));return s.docs.map(d=>{const x=d.data();x.ms=x.ts?x.ts.toMillis():0;return x})}catch(e){return null}}
+async function fbPlayers(){if(!FB.ok)return null;try{const s=await getDocs(query(collection(FB.db,'players'),limit(2000)));return s.docs.map(d=>d.data())}catch(e){return null}}
+let lbMode='acc',lbGr=0;
+function grBtns(box,cur,fn){box.innerHTML='';[['全部',0],...GRADES.map(g=>[GNAME[g]+'年級',g])].forEach(([t,v])=>{const b=document.createElement('button');b.className='btn bg-slate-100 text-sm py-1 px-3'+(v===cur?' sel':'');b.textContent=t;b.onclick=()=>fn(v);box.appendChild(b)})}
+async function openLb(){show('sLb');$('lbBox').textContent='載入中…';await drawLb()}
+async function drawLb(){grBtns($('lbGr'),lbGr,v=>{lbGr=v;drawLb()});$('lbA').classList.toggle('sel',lbMode==='acc');$('lbW').classList.toggle('sel',lbMode==='win');
+ const me=user.type==='student'?ID(user.grade,user.cls,user.no):null;let rows=[];
+ if(lbMode==='acc'){$('lbNote').textContent='本月玩滿 3 場或以上才上榜；以平均答對率排名，相同則比較作答速度。';const rs=await fbRaces();if(!rs){$('lbBox').textContent='暫時未能連線，請稍後再試。';return}
+  const m0=new Date();m0.setDate(1);m0.setHours(0,0,0,0);const by={};rs.filter(r=>r.ms>=m0.getTime()&&(!lbGr||r.grade===lbGr)).forEach(r=>{const k=ID(r.grade,r.cls,r.no);(by[k]=by[k]||{k,n:0,a:0,t:0}).n++;by[k].a+=r.acc;by[k].t+=r.avgT});
+  rows=Object.values(by).filter(x=>x.n>=3).map(x=>({k:x.k,v:Math.round(x.a/x.n),sub:`${x.n} 場・${(x.t/x.n).toFixed(1)} 秒/題`,t:x.t/x.n})).sort((a,b)=>b.v-a.v||a.t-b.t)}
+ else{$('lbNote').textContent='累積勝出場數（第 1 名及答對率達標）。';const ps=await fbPlayers();if(!ps){$('lbBox').textContent='暫時未能連線，請稍後再試。';return}
+  rows=ps.filter(p=>(p.wins||0)>0&&(!lbGr||p.grade===lbGr)).map(p=>({k:ID(p.grade,p.cls,p.no),v:p.wins,sub:''})).sort((a,b)=>b.v-a.v)}
+ if(!rows.length){$('lbBox').textContent='暫時未有資料，快去比賽吧！';return}
+ const top=rows.slice(0,10),mi=me?rows.findIndex(r=>r.k===me):-1,md=['🥇','🥈','🥉'],unit=lbMode==='acc'?'%':' 場';
+ $('lbBox').innerHTML=top.map((r,i)=>`<div class="flex items-center gap-3 rounded-xl px-3 py-1 mb-1 ${r.k===me?'bg-amber-100 font-black':'bg-slate-50'}"><span class="text-2xl w-10 text-center">${md[i]||i+1}</span><span class="text-xl font-bold flex-1">${esc(r.k)}</span><span class="text-xs text-slate-500">${esc(r.sub)}</span><span class="text-2xl font-black text-blue-700 w-20 text-right">${r.v}${unit}</span></div>`).join('')+(mi>=10?`<div class="mt-2 rounded-xl bg-amber-100 px-3 py-1 font-black">你排第 ${mi+1} 名：${esc(rows[mi].k)}　${rows[mi].v}${unit}</div>`:'')}
+$('lbBtn').onclick=openLb;$('lbBack').onclick=()=>{user&&user.type==='teacher'&&!window._inTest?show('sAdmin'):showMenu()};$('lbA').onclick=()=>{lbMode='acc';drawLb()};$('lbW').onclick=()=>{lbMode='win';drawLb()};
+let rpGr=0,rpData=null;
+async function openRp(){show('sRp');$('rpBox').textContent='載入中…';const rs=await fbRaces();if(!rs){$('rpBox').textContent='暫時未能連線，請稍後再試。';return}rpData=rs;drawRp()}
+function rpStats(rs){const by={};rs.forEach(r=>{const k=ID(r.grade,r.cls,r.no);const o=by[k]=by[k]||{k,g:r.grade,c:r.cls,no:r.no,rs:[]};o.rs.push(r)});
+ Object.values(by).forEach(o=>{o.rs.sort((a,b)=>a.ms-b.ms);o.n=o.rs.length;const qs=o.rs.flatMap(r=>r.qs||[]);o.q=qs.length;o.ok=qs.filter(x=>x.ok).length;o.acc=o.q?Math.round(o.ok/o.q*100):0;o.t=o.q?qs.reduce((s,x)=>s+x.t,0)/o.q:0;
+  const h=Math.max(1,Math.floor(o.n/2));const f=o.rs.slice(0,h),l=o.rs.slice(-h);const av=a=>a.reduce((s,r)=>s+r.acc,0)/a.length;o.imp=o.n>=2?Math.round(av(l)-av(f)):null});return Object.values(by)}
+function rpAll(){const rs=rpData.filter(r=>!rpGr||r.grade===rpGr);return{rs,ps:rpStats(rs)}}
+function drawRp(){grBtns($('rpGr'),rpGr,v=>{rpGr=v;drawRp()});const{rs,ps}=rpAll();
+ const grs=rpGr?[rpGr]:GRADES;let played=0,total=0;const absent=[];
+ grs.forEach(g=>CLASSES.forEach(c=>{for(let n=1;n<=MAXNO;n++){total++;if(ps.some(p=>p.g===g&&p.c===c&&p.no===n))played++;else absent.push(ID(g,c,n))}}));
+ const qs=rs.flatMap(r=>r.qs||[]),acc=qs.length?Math.round(qs.filter(x=>x.ok).length/qs.length*100):0,avT=qs.length?(qs.reduce((s,x)=>s+x.t,0)/qs.length).toFixed(1):0;
+ const fq={};qs.forEach(x=>{const k=factKey(x.a,x.b);const o=fq[k]=fq[k]||{n:0,w:0};o.n++;if(!x.ok)o.w++});
+ const hard=Object.entries(fq).filter(([k,o])=>o.n>=3).map(([k,o])=>({k,n:o.n,w:o.w,r:Math.round(o.w/o.n*100)})).sort((a,b)=>b.r-a.r).slice(0,8);
+ const imp=ps.filter(p=>p.imp!==null),impAvg=imp.length?Math.round(imp.reduce((s,p)=>s+p.imp,0)/imp.length):null;
+ const clsRows=grs.flatMap(g=>CLASSES.map(c=>{const sub=ps.filter(p=>p.g===g&&p.c===c),q=sub.reduce((s,p)=>s+p.q,0),ok=sub.reduce((s,p)=>s+p.ok,0);return{k:`${GNAME[g]}年級 ${c}班`,pl:sub.length,races:sub.reduce((s,p)=>s+p.n,0),acc:q?Math.round(ok/q*100):null}}));
+ const card=(t,v,s,c)=>`<div class="rounded-2xl p-2 text-center ${c}"><div class="text-xs text-slate-500">${t}</div><div class="text-3xl font-black">${v}</div><div class="text-xs">${s||''}</div></div>`;
+ $('rpBox').innerHTML=`<div class="grid grid-cols-4 gap-2">${card('玩過人數',played,`共 ${total} 人・${Math.round(played/total*100)}%`,'bg-sky-50')}${card('總場數',rs.length,'','bg-violet-50')}${card('整體答對率',acc+'%',`平均 ${avT} 秒/題`,'bg-green-50')}${card('平均進步',impAvg===null?'—':(impAvg>0?'+':'')+impAvg+'%','玩 2 場或以上的同學','bg-amber-50')}</div>
+ <p class="font-black text-blue-800 mt-3">🏫 各班概況</p><table class="w-full text-sm mt-1"><tr class="text-left text-slate-500"><th>班別</th><th>玩過人數</th><th>場數</th><th>答對率</th></tr>${clsRows.map(r=>`<tr class="border-t"><td>${esc(r.k)}</td><td>${r.pl}/${MAXNO}</td><td>${r.races}</td><td>${r.acc===null?'—':r.acc+'%'}</td></tr>`).join('')}</table>
+ <p class="font-black text-blue-800 mt-3">❌ 最常錯的題目</p><div class="flex flex-wrap gap-2 mt-1">${hard.length?hard.map(h=>`<span class="rounded-xl bg-red-50 px-3 py-1 font-bold">${h.k}　錯 ${h.r}%<span class="text-xs text-slate-500">（${h.w}/${h.n}）</span></span>`).join(''):'<span class="text-slate-500">資料未足（每題需作答 3 次或以上）</span>'}</div>
+ <p class="font-black text-blue-800 mt-3">📈 同學進步及作答時間</p><div style="max-height:200px;overflow:auto"><table class="w-full text-sm"><tr class="text-left text-slate-500"><th>學生</th><th>場數</th><th>答對率</th><th>秒/題</th><th>進步</th></tr>${[...ps].sort((a,b)=>a.k.localeCompare(b.k,'zh')).map(p=>`<tr class="border-t"><td>${esc(p.k)}</td><td>${p.n}</td><td>${p.acc}%</td><td>${p.t.toFixed(1)}</td><td class="${p.imp>0?'text-green-600':p.imp<0?'text-red-500':''}">${p.imp===null?'—':(p.imp>0?'+':'')+p.imp+'%'}</td></tr>`).join('')}</table></div>
+ <p class="text-xs text-slate-400 mt-2">只計算學生登入的成績，訪客及老師不計入。</p>`}
+function xlsEsc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function sheet(name,rows){return `<Worksheet ss:Name="${xlsEsc(name)}"><Table>${rows.map(r=>`<Row>${r.map(v=>typeof v==='number'?`<Cell><Data ss:Type="Number">${v}</Data></Cell>`:`<Cell><Data ss:Type="String">${xlsEsc(v)}</Data></Cell>`).join('')}</Row>`).join('')}</Table></Worksheet>`}
+$('rpXls').onclick=()=>{if(!rpData)return;const{rs,ps}=rpAll(),fq={};rs.flatMap(r=>r.qs||[]).forEach(x=>{const k=factKey(x.a,x.b),o=fq[k]=fq[k]||{n:0,w:0,t:0};o.n++;o.t+=x.t;if(!x.ok)o.w++});
+ const s1=[['學生','年級','班別','學號','場數','題數','答對率%','平均秒/題','進步%']].concat(ps.map(p=>[p.k,p.g,p.c,p.no,p.n,p.q,p.acc,+p.t.toFixed(1),p.imp===null?'':p.imp]));
+ const s2=[['題目','作答次數','答錯次數','錯誤率%','平均秒']].concat(Object.entries(fq).map(([k,o])=>[k,o.n,o.w,Math.round(o.w/o.n*100),+(o.t/o.n).toFixed(1)]).sort((a,b)=>b[3]-a[3]));
+ const s3=[['日期','學生','模式','賽道','難度','名次','答對率%','平均秒/題']].concat(rs.map(r=>[r.ms?new Date(r.ms).toLocaleString('zh-HK'):'',ID(r.grade,r.cls,r.no),r.mode||'single',r.track||'',r.diff||'',r.rank,r.acc,r.avgT]));
+ const xml=`<?xml version="1.0"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">${sheet('學生成績',s1)}${sheet('題目分析',s2)}${sheet('比賽記錄',s3)}</Workbook>`;
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([xml],{type:'application/vnd.ms-excel'}));a.download='九因歌大賽車報告.xls';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)};
+$('rpBack').onclick=()=>show('sAdmin');
+document.querySelectorAll('.tk').forEach(b=>b.onclick=()=>openRoutes(b.dataset.t));
+$('tkBack').onclick=()=>show('sMenu');
+$('rtBack').onclick=()=>show('sTrack');
+function drawThumb(cv,P,sc){const pts=mkCurve(P).getPoints(120),g=cv.getContext('2d'),xs=pts.map(p=>p.x),zs=pts.map(p=>p.z),x0=Math.min(...xs),z0=Math.min(...zs),dx=Math.max(...xs)-x0,dz=Math.max(...zs)-z0,s=130/Math.max(dx,dz),ox=(160-dx*s)/2,oz=(160-dz*s)/2;
+ g.fillStyle=sc==='city'?'#5b5560':'#5fae3e';g.fillRect(0,0,160,160);g.lineJoin='round';
+ const path=()=>{g.beginPath();pts.forEach((p,i)=>g[i?'lineTo':'moveTo'](ox+(p.x-x0)*s,oz+(p.z-z0)*s));g.closePath()};
+ path();g.strokeStyle='#fff';g.lineWidth=12;g.stroke();path();g.strokeStyle='#334155';g.lineWidth=7;g.stroke()}
+function openRoutes(sc){$('rtTitle').textContent=(sc==='city'?'🌇 城市街景':'🌳 綠野山谷')+'・選擇路線';const box=$('rtBox');box.innerHTML='';
+ ROUTES[sc].forEach((r,i)=>{const b=document.createElement('button');b.className='btn bg-gradient-to-b from-white to-slate-100 py-2';
+  const cv=document.createElement('canvas');cv.width=cv.height=160;cv.style.cssText='width:100%;max-width:140px;margin:0 auto 4px;display:block;border-radius:12px';drawThumb(cv,r.pts,sc);
+  const t=document.createElement('div');t.className='text-lg font-black text-slate-800';t.textContent=r.name;
+  const d=document.createElement('div');d.className='text-xs text-slate-500';d.textContent=r.desc;b.append(cv,t,d);
+  b.onclick=()=>{b.disabled=true;t.textContent='載入中…';setTimeout(()=>{selectTrack(sc,i);startRace()},30)};box.appendChild(b)});
+ show('sRoute')}
+
+/* ===== 3D 場景 ===== */
+const renderer=new THREE.WebGLRenderer({canvas:$('c'),antialias:true});
+renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;renderer.outputColorSpace=THREE.SRGBColorSpace;
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x8fd3ff);scene.fog=new THREE.Fog(0x8fd3ff,140,460);
+const cam=new THREE.PerspectiveCamera(65,1,.5,900);
+const hemi=new THREE.HemisphereLight(0xe6f6ff,0x4a7a2a,1.15);scene.add(hemi);
+const sun=new THREE.DirectionalLight(0xfff0d0,2.4);sun.castShadow=true;
+Object.assign(sun.shadow.camera,{left:-45,right:45,top:45,bottom:-45,near:1,far:220});sun.shadow.bias=-.0005;
+scene.add(sun,sun.target);
+const envTex=new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(),.04).texture;
+let qLv=0;
+function setQ(h){qLv=h===true?1:h===false?0:h;hiQ=qLv>0;['qLo','qHi','qUl'].forEach((id,i)=>$(id).classList.toggle('sel',i===qLv));
+ renderer.setPixelRatio(Math.min(devicePixelRatio,[1.25,2,2.5][qLv]));const ms=[1024,2048,4096][qLv];sun.shadow.mapSize.set(ms,ms);
+ if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null}
+ scene.environment=qLv?envTex:null;renderer.toneMappingExposure=qLv===2?1.25:1.15;
+ Object.assign(sun.shadow.camera,qLv===2?{left:-60,right:60,top:60,bottom:-60}:{left:-45,right:45,top:45,bottom:-45});sun.shadow.camera.updateProjectionMatrix();
+ resize();scene.traverse(o=>{if(o.material&&!Array.isArray(o.material))o.material.needsUpdate=true});savePrefs()}
+function resize(){renderer.setSize(innerWidth,innerHeight,false);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix()}
+addEventListener('resize',resize);
+
+function cvTex(draw){const c=document.createElement('canvas');c.width=c.height=128;draw(c.getContext('2d'));const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t}
+function noiseTex(base,cols,rep){const t=cvTex(g=>{g.fillStyle=base;g.fillRect(0,0,128,128);for(let i=0;i<1400;i++){g.fillStyle=cols[i%cols.length];g.globalAlpha=.25+Math.random()*.4;g.fillRect(Math.random()*128,Math.random()*128,1+Math.random()*2,2+Math.random()*3)}});t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(rep,rep);t.anisotropy=8;return t}
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(1400,1400),new THREE.MeshStandardMaterial({color:0xffffff,map:noiseTex('#5fae3e',['#7fcf55','#3f8a2a','#9be06a','#4c9a33'],120),roughness:1}));
+ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;
+
+let curve, L=1;const W=16, LANES=[-W/3,0,W/3];
+function frame(s){const u=((s%L)+L)%L/L,p=curve.getPointAt(u),t=curve.getTangentAt(u);return{p,t,r:new THREE.Vector3(-t.z,0,t.x)}}
+function ribbon(a,b,y,cf,N=700){const pos=[],col=[],c=new THREE.Color();
+ for(let i=0;i<N;i++){const f0=frame(i/N*L),f1=frame((i+1)/N*L);cf(i,c);
+  const q=[f0.p.clone().addScaledVector(f0.r,a),f0.p.clone().addScaledVector(f0.r,b),f1.p.clone().addScaledVector(f1.r,a),f1.p.clone().addScaledVector(f1.r,b)];
+  [0,1,2,1,3,2].forEach(k=>{pos.push(q[k].x,y,q[k].z);col.push(c.r,c.g,c.b)})}
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('color',new THREE.Float32BufferAttribute(col,3));g.computeVertexNormals();
+ const m=new THREE.Mesh(g,new THREE.MeshStandardMaterial({vertexColors:true,roughness:.85}));m.receiveShadow=true;scene.add(m)}
+
+function makeStartBannerTex(){
+ const bcv=document.createElement('canvas');bcv.width=512;bcv.height=96;const bx=bcv.getContext('2d');
+ const grd=bx.createLinearGradient(0,0,512,0);grd.addColorStop(0,'#1e3a8a');grd.addColorStop(.5,'#dc2626');grd.addColorStop(1,'#1e3a8a');
+ bx.fillStyle=grd;bx.fillRect(0,0,512,96);bx.strokeStyle='#fde047';bx.lineWidth=8;bx.strokeRect(4,4,504,88);
+ bx.fillStyle='#fde047';bx.font='900 40px "PingFang HK","Microsoft JhengHei",sans-serif';bx.textAlign='center';bx.textBaseline='middle';
+ if(schoolBadgeImg){
+   drawImageProp(bx,schoolBadgeImg,16,12,84,72);
+   drawImageProp(bx,schoolBadgeImg,412,12,84,72);
+   bx.fillText('真鐸極速方程式',256,50);
+ }else{
+   bx.fillText('🏁 真鐸極速方程式 🏁',256,50);
+ }
+ const btx=new THREE.CanvasTexture(bcv);btx.colorSpace=THREE.SRGBColorSpace;return btx;
+}
+function mkStart(){const f=frame(0),g=new THREE.Group();g.position.copy(f.p);g.rotation.y=Math.atan2(f.t.x,f.t.z);scene.add(g);
+ const cv=document.createElement('canvas');cv.width=256;cv.height=32;const x=cv.getContext('2d');for(let i=0;i<16;i++)for(let j=0;j<2;j++){x.fillStyle=(i+j)%2?'#111':'#fff';x.fillRect(i*16,j*16,16,16)}
+ const tx=new THREE.CanvasTexture(cv);tx.colorSpace=THREE.SRGBColorSpace;
+ const pl=new THREE.Mesh(new THREE.PlaneGeometry(W,2),new THREE.MeshStandardMaterial({map:tx}));pl.rotation.x=-Math.PI/2;pl.position.y=.06;g.add(pl);
+ const pm=new THREE.MeshStandardMaterial({color:0xf8fafc,metalness:.4,roughness:.3});[-W/2-1,W/2+1].forEach(px=>{const p=new THREE.Mesh(new THREE.CylinderGeometry(.45,.45,8.5),pm);p.position.set(px,4.2,0);p.castShadow=true;g.add(p)});
+ const btx=makeStartBannerTex();
+ const bn=new THREE.Mesh(new THREE.BoxGeometry(W+3,2.2,.6),new THREE.MeshStandardMaterial({map:btx,roughness:.3}));bn.position.y=8.2;g.add(bn);
+ (window._startBanners=window._startBanners||[]).push(bn)}
+
+function meadowDeco(){const samp=[];for(let i=0;i<240;i++)samp.push(frame(i/240*L).p);
+ const nearTrack=(x,z,d)=>samp.some(p=>(p.x-x)**2+(p.z-z)**2<d*d);
+ const cone=new THREE.ConeGeometry(2.6,7,7),trunk=new THREE.CylinderGeometry(.4,.5,2,6);
+ const im=new THREE.InstancedMesh(cone,new THREE.MeshStandardMaterial({color:0x2f8f3a,flatShading:true}),170),it=new THREE.InstancedMesh(trunk,new THREE.MeshStandardMaterial({color:0x7c4a22}),170);
+ const m=new THREE.Matrix4(),q=new THREE.Quaternion(),sc=new THREE.Vector3();let n=0;
+ while(n<170){const x=(Math.random()-.5)*560,z=(Math.random()-.5)*420;if(nearTrack(x,z,15))continue;const s=.7+Math.random()*.8;sc.set(s,s,s);
+  m.compose(new THREE.Vector3(x,1+3.5*s+1,z),q,sc);im.setMatrixAt(n,m);m.compose(new THREE.Vector3(x,1,z),q,sc);it.setMatrixAt(n,m);n++}
+ scene.add(im,it);
+ const mm=new THREE.MeshStandardMaterial({color:0x5b8c6a,flatShading:true});
+ for(let i=0;i<22;i++){const a=i/22*Math.PI*2,h=40+Math.random()*50,mt=new THREE.Mesh(new THREE.ConeGeometry(30+Math.random()*25,h,6),mm);mt.position.set(Math.cos(a)*400,h/2-2,Math.sin(a)*330);scene.add(mt)}
+ const cm=new THREE.MeshStandardMaterial({color:0xffffff,flatShading:true});
+ for(let i=0;i<14;i++){const cl=new THREE.Mesh(new THREE.IcosahedronGeometry(10,0),cm);cl.scale.set(2,.6,1.2);cl.position.set((Math.random()-.5)*700,70+Math.random()*30,(Math.random()-.5)*600);scene.add(cl)}
+ const bCols=[0xef4444,0xf59e0b,0xec4899,0x8b5cf6,0x06b6d4];
+ for(let i=0;i<6;i++){const a=i/6*Math.PI*2+.3,bg=new THREE.Group(),ball=new THREE.Mesh(new THREE.SphereGeometry(9,16,12),new THREE.MeshStandardMaterial({color:bCols[i%bCols.length],roughness:.4})),bsk=new THREE.Mesh(new THREE.BoxGeometry(3.5,3,3.5),new THREE.MeshStandardMaterial({color:0x92400e}));
+  bsk.position.y=-12;bg.add(ball,bsk);bg.position.set(Math.cos(a)*240,48+(i%3)*14,Math.sin(a)*180);scene.add(bg)}}
+
+function makeNameSprite(txt,col='#fde047'){
+  const cv=document.createElement('canvas');cv.width=256;cv.height=64;const x=cv.getContext('2d');
+  x.fillStyle='rgba(15,23,42,0.82)';x.beginPath();x.roundRect(8,8,240,48,24);x.fill();
+  x.strokeStyle=col;x.lineWidth=4;x.stroke();
+  x.fillStyle='#fff';x.font='bold 28px system-ui,sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(txt,128,33);
+  const t=new THREE.CanvasTexture(cv);t.colorSpace=THREE.SRGBColorSpace;
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:t,depthTest:false}));sp.scale.set(4.5,1.12,1);sp.position.set(0,3.5,0);return sp;
+}
+
+function hoodTex(d){
+  const cv=document.createElement('canvas');cv.width=256;cv.height=256;const x=cv.getContext('2d');
+  const hex='#'+d.color.toString(16).padStart(6,'0');
+  x.fillStyle=hex;x.fillRect(0,0,256,256);
+  x.fillStyle=d.crown?'#fde047':'#ffffff';x.fillRect(92,0,72,256);
+  x.fillStyle=d.crown?'#78350f':'#0f172a';x.fillRect(102,0,8,256);x.fillRect(146,0,8,256);
+  if(schoolBadgeImg)drawImageProp(x,schoolBadgeImg,88,10,80,68);
+  x.beginPath();x.arc(128,148,62,0,Math.PI*2);x.fillStyle=d.crown?'#1e293b':'#ffffff';x.fill();
+  x.lineWidth=10;x.strokeStyle=d.crown?'#facc15':'#0f172a';x.stroke();
+  x.fillStyle=d.crown?'#fde047':'#0f172a';
+  x.font=(d.num&&d.num.length>2)?'900 42px system-ui,sans-serif':'900 70px system-ui,sans-serif';
+  x.textAlign='center';x.textBaseline='middle';x.fillText(d.num||'01',128,152);
+  const t=new THREE.CanvasTexture(cv);t.colorSpace=THREE.SRGBColorSpace;return t;
+}
+function wingTex(d){
+  const cv=document.createElement('canvas');cv.width=512;cv.height=128;const x=cv.getContext('2d');
+  x.translate(512,128);x.scale(-1,-1);
+  x.fillStyle=d.crown?'#78350f':'#0f172a';x.fillRect(0,0,512,128);
+  x.strokeStyle='#facc15';x.lineWidth=10;x.strokeRect(5,5,502,118);
+  x.fillStyle='#fde047';x.font='900 50px "PingFang HK","Microsoft JhengHei",sans-serif';
+  x.textAlign='center';x.textBaseline='middle';
+  if(schoolBadgeImg){
+    drawImageProp(x,schoolBadgeImg,18,16,110,96);
+    x.fillText('真鐸 CHUN TOK',300,66);
+  }else{
+    x.fillText('🏫 真鐸 CHUN TOK',256,66);
+  }
+  const t=new THREE.CanvasTexture(cv);t.colorSpace=THREE.SRGBColorSpace;return t;
+}
+
+// 為每位車手建立真正立體 3D 駕駛員模型（從車尾望過去立體自然，絕不用紙片人！）
+function build3DPilot(d,M,cGold){
+  const drv=new THREE.Group();drv.position.set(0,.88,-.22);
+  const dm=(geo,mat,x,y,z,rx=0,ry=0,rz=0)=>{const o=new THREE.Mesh(geo,mat);o.position.set(x,y,z);o.rotation.set(rx,ry,rz);o.castShadow=true;drv.add(o);return o};
+  const suitCol=d.kind==='chan'?0x1e293b:d.kind==='tam'?0x1f2937:0xffffff;
+  const trimCol=d.color;
+  // 3D 身體與肩膀賽車服條紋
+  dm(new THREE.CylinderGeometry(.42,.52,.85,14),M(suitCol),0,.42,0);
+  dm(new THREE.CylinderGeometry(.44,.46,.22,14),M(trimCol),0,.55,0);
+  // 雙手握方向盤姿勢
+  [-.38,.38].forEach(x=>dm(new THREE.CylinderGeometry(.11,.11,.55,10),M(suitCol),x,.58,.25,Math.PI/3,0,0));
+  dm(new THREE.TorusGeometry(.24,.045,8,16),M(0x111827),0,.72,.52,-.5,0,0);
+  // 3D 頭部
+  dm(new THREE.SphereGeometry(.52,20,16),M(0xffd7b5),0,1.18,0);
+  const hairMat=M(0x2b1810);
+  if(d.kind==='helmetB'||d.kind==='helmetP'){
+    // 全罩式 3D 賽車頭盔 + 護目鏡
+    const hCol=d.kind==='helmetB'?0x2563eb:0x9333ea;
+    dm(new THREE.SphereGeometry(.58,20,16),M(hCol),0,1.2,0);
+    dm(new THREE.CylinderGeometry(.59,.59,.16,16,1,false,-Math.PI*.35,Math.PI*.7),M(0x0f172a),0,1.2,.04);
+    dm(new THREE.BoxGeometry(.18,.5,1.18),M(0xffffff),0,1.25,0);
+  }else{
+    // 立體頭髮後腦與髮型（由車尾望過去有立體層次）
+    dm(new THREE.SphereGeometry(.55,18,14,0,Math.PI*2,0,Math.PI*.62),hairMat,0,1.22,-.04,.22,0,0);
+    if(d.kind==='chan'){
+      // 陳校長：立體 3D 金皇冠
+      dm(new THREE.CylinderGeometry(.44,.36,.32,12),cGold,0,1.82,0);
+      for(let k=0;k<6;k++){const a=k/6*Math.PI*2;dm(new THREE.ConeGeometry(.09,.28,6),cGold,Math.cos(a)*.38,2.05,Math.sin(a)*.38)}
+    }else if(d.kind==='tam'){
+      // 譚主任：型格立體黑超鏡框（延伸至兩側太陽穴）
+      dm(new THREE.BoxGeometry(1.08,.16,.55),M(0x111827),0,1.22,.22);
+    }else if(d.kind==='headband'){
+      // 閃電號：藍白運動頭帶 + 飄逸頭帶尾
+      dm(new THREE.CylinderGeometry(.565,.565,.16,18),M(0x1d4ed8),0,1.32,0);
+      dm(new THREE.BoxGeometry(.14,.35,.08),M(0xffffff),.15,1.22,-.56,.3,0,.25);
+    }else if(d.kind==='bow'){
+      // 火箭號：馬尾 + 紫色立體蝴蝶結
+      dm(new THREE.SphereGeometry(.24,12,10),hairMat,.28,1.35,-.52);
+      dm(new THREE.BoxGeometry(.42,.2,.14),M(0x7c3aed),.28,1.52,-.48,0,0,-.2);
+    }else if(d.kind==='cap'){
+      // 旋風號：藍白立體鴨嘴帽
+      dm(new THREE.SphereGeometry(.57,18,12,0,Math.PI*2,0,Math.PI*.5),M(0x1e40af),0,1.28,0);
+      dm(new THREE.BoxGeometry(.75,.06,.5),M(0xffffff),0,1.32,.42);
+    }else if(d.kind==='glasses'){
+      // 流星號：低馬尾髮髻 + 眼鏡框邊
+      dm(new THREE.SphereGeometry(.22,12,10),hairMat,0,1.02,-.56);
+      dm(new THREE.BoxGeometry(1.08,.08,.5),M(0x1f2937),0,1.2,.2);
+    }else if(d.kind==='headphone'){
+      // 彩虹號：立體電競耳機
+      [-.55,.55].forEach(x=>dm(new THREE.CylinderGeometry(.2,.2,.16,14),M(0x1d4ed8),x,1.2,0,0,0,Math.PI/2));
+      dm(new THREE.TorusGeometry(.56,.055,8,18,Math.PI),M(0x1e293b),0,1.22,0);
+    }
+  }
+  return drv;
+}
+
+// 打造賽車 + 立體 3D 駕駛員
+function makeKart(d,labelTxt=''){
+  const g=new THREE.Group(), bodyGrp=new THREE.Group();g.add(bodyGrp);
+  const M=c=>new THREE.MeshPhysicalMaterial({color:c,roughness:.22,metalness:.35,clearcoat:1,clearcoatRoughness:.06});
+  const add=(geo,mat,x,y,z,rx=0,ry=0,rz=0)=>{const o=new THREE.Mesh(geo,mat);o.position.set(x,y,z);o.rotation.set(rx,ry,rz);o.castShadow=true;bodyGrp.add(o);return o};
+  const cMain=M(d.color),cWhite=M(d.crown?0xfde047:0xf8fafc),cDark=M(0x0f172a),cGold=new THREE.MeshStandardMaterial({color:0xfbbf24,metalness:.88,roughness:.18});
+  const mHood=new THREE.MeshPhysicalMaterial({map:hoodTex(d),roughness:.2,metalness:.2,clearcoat:1});
+  const mWing=new THREE.MeshStandardMaterial({map:wingTex(d),roughness:.25,metalness:.3});
+  add(new THREE.BoxGeometry(1.75,.48,3.2),cMain,0,.55,0);
+  add(new THREE.BoxGeometry(.95,.51,2.2),mHood,0,.57,.35);
+  add(new THREE.BoxGeometry(1.35,.32,1.25),mHood,0,.45,2.0,.18,0,0);
+  add(new THREE.BoxGeometry(2.65,.14,.55),cDark,0,.32,2.72);
+  add(new THREE.BoxGeometry(2.68,.06,.22),cWhite,0,.38,2.82);
+  [-1.08,1.08].forEach(x=>add(new THREE.BoxGeometry(.48,.42,1.85),d.crown?cGold:cMain,x,.54,-.1));
+  add(new THREE.BoxGeometry(2.55,.14,.78),mWing,0,1.62,-1.75,-.12,0,0);
+  add(new THREE.BoxGeometry(2.55,.1,.5),cWhite,0,1.35,-1.7,-.08,0,0);
+  [-.85,.85].forEach(x=>add(new THREE.BoxGeometry(.12,.85,.35),cDark,x,1.15,-1.68));
+  const wg=new THREE.CylinderGeometry(.58,.58,.62,18);wg.rotateZ(Math.PI/2);
+  const rg=new THREE.CylinderGeometry(.34,.34,.64,14);rg.rotateZ(Math.PI/2);
+  const wm=new THREE.MeshStandardMaterial({color:0x18181b,roughness:.75});
+  [[1.32,1.25],[-1.32,1.25],[1.38,-1.22],[-1.38,-1.22]].forEach(([x,z])=>{add(wg,wm,x,.58,z);add(rg,cGold,x,.58,z)});
+  // 車尾雙氮氣噴火管
+  const flMat=new THREE.MeshBasicMaterial({color:0x38bdf8,transparent:true,opacity:.9});
+  const flInMat=new THREE.MeshBasicMaterial({color:0xfef08a});
+  const flames=[];
+  [-.45,.45].forEach(x=>{
+    const p=new THREE.Mesh(new THREE.CylinderGeometry(.16,.18,.5,10),cGold);p.rotation.x=Math.PI/2;p.position.set(x,.65,-1.85);g.add(p);
+    const fl=new THREE.Group();fl.position.set(x,.65,-2.1);
+    const c1=new THREE.Mesh(new THREE.ConeGeometry(.24,1.6,10),flMat);c1.rotation.x=-Math.PI/2;c1.position.z=-.7;
+    const c2=new THREE.Mesh(new THREE.ConeGeometry(.13,1.0,8),flInMat);c2.rotation.x=-Math.PI/2;c2.position.z=-.45;
+    fl.add(c1,c2);fl.visible=false;g.add(fl);flames.push(fl);
+  });
+  g.userData.flames=flames;
+  // 加入真正立體 3D 車手模型（唔再用怪異嘅平面紙牌！）
+  const pilot=build3DPilot(d,M,cGold);
+  g.add(pilot);g.userData.pilot=pilot;
+  if(useExternalGLB&&d.glb){
+    const applyGlb=gltf=>{
+      const model=gltf.scene.clone(true);
+      const box=new THREE.Box3().setFromObject(model),sz=new THREE.Vector3(),ctr=new THREE.Vector3();
+      box.getSize(sz);box.getCenter(ctr);
+      const scale=3.8/Math.max(sz.x,sz.y,sz.z,.01);
+      model.scale.setScalar(scale);
+      model.position.set(-ctr.x*scale,-box.min.y*scale,-ctr.z*scale);
+      const tint=new THREE.Color(d.color);
+      model.traverse(n=>{if(n.isMesh){n.castShadow=n.receiveShadow=true;if(n.material&&n.material.color&&n.name&&/body|paint|hull|car/i.test(n.name)){n.material=n.material.clone();n.material.color.lerp(tint,.65)}}});
+      bodyGrp.clear();bodyGrp.add(model);
+      const wPlate=new THREE.Mesh(new THREE.BoxGeometry(2.2,.12,.6),mWing);wPlate.position.set(0,1.45,-1.65);bodyGrp.add(wPlate);
+    };
+    if(glbCache[d.glb])applyGlb(glbCache[d.glb]);
+    else gltfLoader.load(d.glb,gltf=>{glbCache[d.glb]=gltf;applyGlb(gltf)},undefined,()=>{});
+  }
+  if(labelTxt){g.add(makeNameSprite(labelTxt,'#'+d.color.toString(16).padStart(6,'0')))}
+  g.userData.col='#'+d.color.toString(16).padStart(6,'0');scene.add(g);return g;
+}
+
+const LCOL=['#2563eb','#db2777','#16a34a'];
+function textTex(txt,bg){const cv=document.createElement('canvas');cv.width=256;cv.height=160;const x=cv.getContext('2d');
+ x.fillStyle=bg;x.fillRect(0,0,256,160);x.strokeStyle='#fff';x.lineWidth=10;x.strokeRect(5,5,246,150);
+ x.fillStyle='#fff';x.font='bold 104px sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(txt,128,88);
+ const t=new THREE.CanvasTexture(cv);t.colorSpace=THREE.SRGBColorSpace;return t}
+let gateOff=[];
+function mkGates(){return gateOff.map(s=>{const f=frame(s),g=new THREE.Group();g.position.copy(f.p);g.rotation.y=Math.atan2(f.t.x,f.t.z);scene.add(g);
+ const pm=new THREE.MeshStandardMaterial({color:0xfbbf24});
+ [-W/2,-W/6,W/6,W/2].forEach(x=>{const p=new THREE.Mesh(new THREE.CylinderGeometry(.25,.25,6.4),pm);p.position.set(x,3.2,0);p.castShadow=true;g.add(p)});
+ const beam=new THREE.Mesh(new THREE.BoxGeometry(W+.6,.5,.5),pm);beam.position.y=6.3;g.add(beam);
+ const panels=LANES.map((x,k)=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(4.6,2.9),new THREE.MeshBasicMaterial({map:textTex('?',LCOL[k]),side:THREE.DoubleSide}));
+  m.position.set(-x,4.4,0);m.rotation.y=Math.PI;g.add(m);return m});
+ return{s,g,panels,q:null}})}let gates=[];
+function setGate(gt,q){gt.q=q;gt.g.visible=!!q;if(!q)return;gt.panels.forEach((m,k)=>{m.material.map.dispose();m.material.map=textTex(String(q.opts[k]),LCOL[k]);m.material.needsUpdate=true})}
+
+/* ===== 多條賽道 ===== */
+const TR={};let trackKey='meadow',routeIdx=0,curTrack=null;let cityWin=[];
+const ring=(n,fr)=>[...Array(n)].map((_,i)=>{const a=i/n*Math.PI*2,[rx,rz]=fr(a);return[Math.cos(a)*rx,Math.sin(a)*rz]});
+const ROUTES={
+ meadow:[{name:'經典彎道',desc:'彎位與直路平均，適合初學',pts:ring(14,a=>{const r=120+28*Math.sin(a*3);return[r*1.25,r*.85]})},
+  {name:'山谷長直路',desc:'長直路多，可以盡情加速',pts:ring(12,()=>[210,75])},
+  {name:'蛇形彎道',desc:'彎位多，考驗轉向',pts:ring(20,a=>{const r=125+30*Math.sin(a*5);return[r*1.3,r*.9]})}],
+ city:[{name:'環城大道',desc:'四邊長直路，容易上手',pts:[[-160,-100],[-60,-105],[60,-105],[160,-100],[185,-30],[185,30],[160,100],[60,105],[-60,105],[-160,100],[-185,30],[-185,-30]]},
+  {name:'L 字街',desc:'有急彎，入彎要小心',pts:[[-180,-110],[0,-110],[180,-110],[185,0],[70,15],[45,110],[-60,110],[-180,105],[-190,0]]},
+  {name:'海旁彎道',desc:'連續彎位，節奏明快',pts:ring(16,a=>{const r=140+22*Math.sin(a*4);return[r*1.3,r*.85]})}]};
+function mkCurve(P){return new THREE.CatmullRomCurve3(P.map(([x,z])=>new THREE.Vector3(x,0,z)),true,'centripetal')}
+function setCurve(P){curve=mkCurve(P);L=curve.getLength();gateOff=[...Array(GPL)].map((_,i)=>L*(i+.6)/GPL)}
+function buildMeadow(){scene.add(ground.clone());
+ ribbon(-W/2,W/2,.02,(i,c)=>c.set(0x4b4f58));
+ ribbon(-W/2-1.4,-W/2,.04,(i,c)=>c.set(Math.floor(i/3)%2?0xffffff:0xe11d48));
+ ribbon(W/2,W/2+1.4,.04,(i,c)=>c.set(Math.floor(i/3)%2?0xffffff:0xe11d48));
+ [-W/6,W/6].forEach(o=>ribbon(o-.15,o+.15,.05,(i,c)=>c.set(i%4<2?0xffffff:0x4b4f58)));
+ mkStart();meadowDeco();gates=mkGates()}
+const SCN={meadow:{bg:0x8fd3ff,fog:[140,460],sun:0xfff0d0,build:()=>buildMeadow()},city:{bg:0xf4b07a,fog:[80,380],sun:0xffc58a,build:()=>buildCity()}};
+function getTrack(sc,ri){const k=sc+ri;if(TR[k])return TR[k];const before=new Set(scene.children);cityWin=[];setCurve(ROUTES[sc][ri].pts);SCN[sc].build();
+ const g=new THREE.Group();scene.children.filter(o=>!before.has(o)).forEach(o=>g.add(o));scene.add(g);
+ return TR[k]={curve,L,gateOff,gates,group:g,win:cityWin,bg:SCN[sc].bg,fog:SCN[sc].fog,sun:SCN[sc].sun}}
+function buildCity(){
+ const gd=new THREE.Mesh(new THREE.PlaneGeometry(1400,1400),new THREE.MeshStandardMaterial({color:0xffffff,map:noiseTex('#5b5560',['#6d6772','#4a4550','#7a7480'],160),roughness:.95}));gd.rotation.x=-Math.PI/2;gd.position.y=-.01;gd.receiveShadow=true;scene.add(gd);
+ ribbon(-W/2,W/2,.02,(i,c)=>c.set(0x2b2d33));
+ [-1,1].forEach(sd=>{ribbon(sd<0?-W/2-6:W/2,sd<0?-W/2:W/2+6,.06,(i,c)=>c.set(0x9a8f86));ribbon(sd<0?-W/2+.3:W/2-.6,sd<0?-W/2+.6:W/2-.3,.05,(i,c)=>c.set(0xf5f5f5))});
+ [-W/6,W/6].forEach(o=>ribbon(o-.15,o+.15,.05,(i,c)=>c.set(i%4<2?0xffffff:0x2b2d33)));
+ mkStart();gates=mkGates();
+ const samp2=[];for(let i=0;i<300;i++)samp2.push(frame(i/300*L).p);
+ const near2=(x,z,d)=>samp2.some(p=>(p.x-x)**2+(p.z-z)**2<d*d);
+ const winT=cvTex(g=>{g.fillStyle='#000';g.fillRect(0,0,128,128);for(let y=4;y<128;y+=12)for(let x=4;x<128;x+=12)if(Math.random()<.45){g.fillStyle=Math.random()<.5?'#ffd27a':'#ffe9b8';g.fillRect(x,y,7,8)}});
+ winT.wrapS=winT.wrapT=THREE.RepeatWrapping;winT.repeat.set(2,4);
+ const bG=new THREE.BoxGeometry(1,1,1),bM=[0x8a94a6,0xb59b86,0x6d7891,0xc9b8a8,0x7f8c8d,0x9c7f73].map(c=>new THREE.MeshStandardMaterial({color:c,roughness:.7,metalness:.15,emissive:0xffffff,emissiveMap:winT,emissiveIntensity:.55}));cityWin=bM;const bx=bM.map(()=>[]),bmt=new THREE.Matrix4(),bq=new THREE.Quaternion(),bup=new THREE.Vector3(0,1,0);
+ for(let s=0;s<L;s+=24)for(const sd of[-1,1]){const f=frame(s),w=10+Math.random()*6,h=14+Math.random()*40,off=W/2+8+w/2,pos=f.p.clone().addScaledVector(f.r,sd*off);
+  if(near2(pos.x,pos.z,off-1))continue;bq.setFromAxisAngle(bup,Math.atan2(f.t.x,f.t.z));bmt.compose(new THREE.Vector3(pos.x,h/2,pos.z),bq,new THREE.Vector3(w,h,w));bx[Math.floor(Math.random()*6)].push(bmt.clone())}
+ bx.forEach((arr,i)=>{if(!arr.length)return;const im=new THREE.InstancedMesh(bG,bM[i],arr.length);arr.forEach((m,j)=>im.setMatrixAt(j,m));im.castShadow=im.receiveShadow=true;scene.add(im)});
+}
+function selectTrack(sc,ri=0){if(!ROUTES[sc])sc='meadow';ri=Math.max(0,Math.min(ri,ROUTES[sc].length-1));const t=getTrack(sc,ri);
+ trackKey=sc;routeIdx=ri;curTrack=t;curve=t.curve;L=t.L;gateOff=t.gateOff;gates=t.gates;cityWin=t.win;
+ Object.values(TR).forEach(x=>x.group.visible=x===t);scene.background.set(t.bg);scene.fog.color.set(t.bg);scene.fog.near=t.fog[0];scene.fog.far=t.fog[1];sun.color.set(t.sun);mmBuild()}
+
+var mm=$('mini'),mx=mm.getContext('2d'),mmBg=null,mmT=null;
+function toMM(p){return[mmT.ox+(p.x-mmT.x0)*mmT.sc,mmT.oz+(p.z-mmT.z0)*mmT.sc]}
+function mmBuild(){const P=[];for(let i=0;i<=240;i++)P.push(frame(i/240*L).p);const xs=P.map(p=>p.x),zs=P.map(p=>p.z),x0=Math.min(...xs),x1=Math.max(...xs),z0=Math.min(...zs),z1=Math.max(...zs),sc=Math.min(126/(x1-x0),126/(z1-z0));
+ mmT={x0,z0,sc,ox:(150-(x1-x0)*sc)/2,oz:(150-(z1-z0)*sc)/2};const c=document.createElement('canvas');c.width=c.height=300;const g=c.getContext('2d');g.scale(2,2);g.lineJoin=g.lineCap='round';
+ const path=()=>{g.beginPath();P.forEach((p,i)=>{const[x,y]=toMM(p);i?g.lineTo(x,y):g.moveTo(x,y)})};
+ path();g.strokeStyle='#ffffffdd';g.lineWidth=9;g.stroke();path();g.strokeStyle='#334155';g.lineWidth=5;g.stroke();
+ const[sx,sy]=toMM(frame(0).p);g.fillStyle='#ef4444';g.fillRect(sx-3,sy-3,6,6);mmBg=c}
+function mmDraw(){if(!race||!mmT)return;mx.setTransform(1,0,0,1,0,0);mx.clearRect(0,0,300,300);mx.drawImage(mmBg,0,0);mx.setTransform(2,0,0,2,0,0);
+ const dot=(o,r,c,sc,lw)=>{const[x,y]=toMM(o.position);mx.beginPath();mx.arc(x,y,r,0,7);mx.fillStyle=c;mx.fill();mx.lineWidth=lw;mx.strokeStyle=sc;mx.stroke()};
+ race.ai.forEach(a=>dot(a.mesh,4,a.mesh.userData.col,'#fff',1.5));dot(race.p.mesh,6,race.p.mesh.userData.col,'#facc15',3)}
+selectTrack('meadow');
+
+const fxCv=$('fxLines'),fxCtx=fxCv.getContext('2d');
+function drawSpeedLines(){
+  fxCtx.clearRect(0,0,800,450);fxCtx.strokeStyle='rgba(255,255,255,0.55)';fxCtx.lineWidth=2.5;
+  for(let i=0;i<26;i++){const a=Math.random()*Math.PI*2,r0=170+Math.random()*70,r1=380+Math.random()*110;
+    fxCtx.beginPath();fxCtx.moveTo(400+Math.cos(a)*r0,225+Math.sin(a)*r0*.7);fxCtx.lineTo(400+Math.cos(a)*r1,225+Math.sin(a)*r1*.7);fxCtx.stroke()}
+}
+
+function mkSky(top,bot,sunC,dir){return new THREE.Mesh(new THREE.SphereGeometry(800,32,16),new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,
+ uniforms:{a:{value:new THREE.Color(top)},b:{value:new THREE.Color(bot)},c:{value:new THREE.Color(sunC)},d:{value:new THREE.Vector3(...dir).normalize()}},
+ vertexShader:'varying vec3 p;void main(){p=normalize(position);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+ fragmentShader:'uniform vec3 a,b,c,d;varying vec3 p;void main(){vec3 col=mix(b,a,smoothstep(-.02,.5,p.y));col+=c*pow(max(dot(p,d),0.),24.)*1.2+c*pow(max(dot(p,d),0.),4.)*.25;gl_FragColor=vec4(col,1.);}'}))}
+const skies=[mkSky(0x3b82f6,0xbfe6ff,0xfff4d6,[.4,.35,-1]),mkSky(0x40508f,0xf4b07a,0xffc070,[.3,.08,-1])];
+scene.add(skies[0]);skies.forEach(s=>{s.renderOrder=-1;s.frustumCulled=false});
+const stars=(()=>{const n=600,a=new Float32Array(n*3);for(let i=0;i<n;i++){const th=Math.random()*Math.PI*2,y=.08+Math.random()*.92,r=Math.sqrt(1-y*y);a.set([Math.cos(th)*r*700,y*700,Math.sin(th)*r*700],i*3)}
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(a,3));
+ const s=new THREE.Points(g,new THREE.PointsMaterial({color:0xffffff,size:2,sizeAttenuation:false,fog:false,transparent:true,opacity:.9}));s.visible=false;s.frustumCulled=false;scene.add(s);return s})();
+const TOD={
+ day:{name:'☀️ 白天',top:0x3b82f6,bot:0xbfe6ff,sc:0xfff4d6,dir:[.4,.35,-1],bg:0xbfe6ff,sun:0xfff0d0,si:2.4,h:[0xe6f6ff,0x4a7a2a,1.15],fog:1,win:.3},
+ dusk:{name:'🌇 黃昏',top:0x40508f,bot:0xf4b07a,sc:0xffc070,dir:[.3,.08,-1],bg:0xf4b07a,sun:0xffb070,si:1.8,h:[0xffd9b0,0x3a3550,.9],fog:.9,win:.6},
+ night:{name:'🌙 夜晚',top:0x050a1f,bot:0x1a2550,sc:0xdfe8ff,dir:[-.3,.4,-1],bg:0x141c3a,sun:0x9fb4ff,si:.7,h:[0x6a7ab0,0x151528,.6],fog:.75,win:1.3}};
+const TODK=Object.keys(TOD);let curTod='day';
+function applyTOD(k){const t=TOD[k];skies.forEach(s=>{const u=s.material.uniforms;u.a.value.set(t.top);u.b.value.set(t.bot);u.c.value.set(t.sc);u.d.value.set(...t.dir).normalize()});
+ scene.background.set(t.bg);scene.fog.color.set(t.bg);const tf=curTrack.fog;scene.fog.near=tf[0]*t.fog;scene.fog.far=tf[1]*t.fog;
+ sun.color.set(t.sun);sun.intensity=t.si;hemi.color.set(t.h[0]);hemi.groundColor.set(t.h[1]);hemi.intensity=t.h[2];
+ cityWin.forEach(m=>m.emissiveIntensity=t.win);curTod=k;stars.visible=k==='night';$('hTod').textContent=t.name}
+
+/* ===== 音樂及聲效 ===== */
+const AU={ctx:null,mute:false,timer:null};const hz=m=>440*Math.pow(2,(m-69)/12);
+function aInit(){if(!AU.ctx){const C=new(window.AudioContext||window.webkitAudioContext)();AU.ctx=C;
+  AU.master=C.createGain();AU.master.gain.value=AU.mute?0:.8;AU.master.connect(C.destination);
+  AU.mus=C.createGain();AU.mus.gain.value=.35;AU.mus.connect(AU.master);AU.sfx=C.createGain();AU.sfx.gain.value=.7;AU.sfx.connect(AU.master);
+  const b=C.createBuffer(1,C.sampleRate,C.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;AU.noise=b;
+  AU.eo=C.createOscillator();AU.eo.type='sawtooth';AU.eo.frequency.value=60;AU.ef=C.createBiquadFilter();AU.ef.type='lowpass';AU.ef.frequency.value=700;
+  AU.eg=C.createGain();AU.eg.gain.value=0;AU.eo.connect(AU.ef).connect(AU.eg).connect(AU.sfx);AU.eo.start()}
+ if(AU.ctx.state==='suspended')AU.ctx.resume()}
+function tone(f,t0,dur,type='square',vol=.2,dest=AU.sfx,f2){const C=AU.ctx,o=C.createOscillator(),g=C.createGain();o.type=type;o.frequency.setValueAtTime(f,t0);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t0+dur);
+ g.gain.setValueAtTime(vol,t0);g.gain.exponentialRampToValueAtTime(.001,t0+dur);o.connect(g).connect(dest);o.start(t0);o.stop(t0+dur+.02)}
+function nz(t0,dur,vol,fq,dest=AU.sfx,type='bandpass'){const C=AU.ctx,s=C.createBufferSource(),f=C.createBiquadFilter(),g=C.createGain();s.buffer=AU.noise;f.type=type;f.frequency.value=fq;
+ g.gain.setValueAtTime(vol,t0);g.gain.exponentialRampToValueAtTime(.001,t0+dur);s.connect(f).connect(g).connect(dest);s.start(t0);s.stop(t0+dur)}
+function sfx(k){if(!AU.ctx)return;const t=AU.ctx.currentTime;
+ if(k==='beep')tone(660,t,.15,'square',.25);else if(k==='go')tone(1320,t,.45,'square',.25);
+ else if(k==='ok')[523,659,784,1047].forEach((f,i)=>tone(f,t+i*.06,.15,'square',.18));
+ else if(k==='bad')tone(220,t,.4,'sawtooth',.25,AU.sfx,80);
+ else if(k==='boost'){nz(t,.7,.5,1200);tone(300,t,.6,'sawtooth',.15,AU.sfx,1200)}
+ else if(k==='shield')[880,1320,1760].forEach((f,i)=>tone(f,t+i*.05,.4,'sine',.2));
+ else if(k==='bomb'){nz(t,1.1,.9,500,AU.sfx,'lowpass');tone(120,t,.7,'sine',.6,AU.sfx,30)}
+ else if(k==='banana')tone(700,t,.5,'triangle',.25,AU.sfx,150);
+ else if(k==='crash'){nz(t,.5,1,1500,AU.sfx,'lowpass');tone(90,t,.4,'sine',.6,AU.sfx,40);tone(1800,t,.25,'triangle',.15,AU.sfx,900)}
+ else if(k==='scrape')nz(t,.25,.4,3000);
+ else if(k==='finish')[523,659,784,1047,784,1047].forEach((f,i)=>tone(f,t+i*.13,.28,'square',.2))}
+const SONGS=[
+ {name:'極速歐陸',bpm:155,roots:[45,41,43,40],lead:[0,7,12,15,12,7,3,7]},
+ {name:'山道狂飆',bpm:165,roots:[50,46,48,45],lead:[0,3,7,10,12,10,7,3]},
+ {name:'夜之甩尾',bpm:148,roots:[40,36,38,43],lead:[12,10,7,5,7,10,12,15]},
+ {name:'最後衝刺',bpm:172,roots:[47,43,45,42],lead:[0,12,7,12,3,12,7,15]}];
+AU.song=Math.floor(Math.random()*SONGS.length);
+function beat(s,t){const S=SONGS[AU.song],m=AU.mus,i=s%16,bar=Math.floor(s/16),root=S.roots[bar%4],fill=bar%8===7;
+ if(i%4===0)tone(150,t,.2,'sine',.9,m,40);if(i===4||i===12||(fill&&i>=12))nz(t,.16,.5,1800,m);nz(t,.03,i%2?.1:.2,8000,m,'highpass');
+ tone(hz(root+(i%2?12:0)),t,.09,'sawtooth',.22,m);
+ if(i%2===0)tone(hz(root+24+S.lead[i/2]),t,.12,'square',.08,m);
+ if(i===0)[0,3,7].forEach(k=>tone(hz(root+12+k),t,.6,'sawtooth',.035,m))}
+function musStart(){aInit();if(AU.timer)return;AU.step=0;AU.next=AU.ctx.currentTime+.05;
+ AU.timer=setInterval(()=>{const d=60/SONGS[AU.song].bpm/4;while(AU.next<AU.ctx.currentTime+.15){beat(AU.step++,AU.next);AU.next+=d}},40)}
+$('songBtn').onclick=()=>{AU.song=(AU.song+1)%SONGS.length;AU.step=0;if(race)msg('🎵 '+SONGS[AU.song].name,'#fff',1.2)};
+const SP=90,spPos=new Float32Array(SP*3).fill(-999),spVel=new Float32Array(SP*3),spLife=new Float32Array(SP);
+const spGeo=new THREE.BufferGeometry();spGeo.setAttribute('position',new THREE.BufferAttribute(spPos,3));
+const sparks=new THREE.Points(spGeo,new THREE.PointsMaterial({color:0xffb030,size:.4,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}));sparks.frustumCulled=false;scene.add(sparks);
+function burst(pos,n=30){for(let i=0,k=0;i<SP&&k<n;i++)if(spLife[i]<=0){spLife[i]=.4+Math.random()*.4;spPos.set([pos.x,pos.y+.8,pos.z],i*3);spVel.set([(Math.random()-.5)*14,Math.random()*8+2,(Math.random()-.5)*14],i*3);k++}}
+function updSparks(dt){for(let i=0;i<SP;i++)if(spLife[i]>0){spLife[i]-=dt;spVel[i*3+1]-=25*dt;for(let j=0;j<3;j++)spPos[i*3+j]+=spVel[i*3+j]*dt;if(spLife[i]<=0)spPos[i*3+1]=-999}spGeo.attributes.position.needsUpdate=true}
+function musStop(){clearInterval(AU.timer);AU.timer=null;if(AU.eg)AU.eg.gain.setTargetAtTime(0,AU.ctx.currentTime,.05)}
+$('muteBtn').onclick=()=>{AU.mute=!AU.mute;$('muteBtn').textContent=AU.mute?'🔇':'🔊';if(AU.master)AU.master.gain.value=AU.mute?0:.8;savePrefs()};
+
+/* ===== 道具 ===== */
+const boxTex=(e,c)=>cvTex(g=>{g.fillStyle=c;g.fillRect(0,0,128,128);g.strokeStyle='#fff';g.lineWidth=10;g.strokeRect(5,5,118,118);g.font='80px system-ui';g.textAlign='center';g.textBaseline='middle';g.fillText(e,64,70)});
+const emoTex=e=>cvTex(g=>{g.font='100px system-ui';g.textAlign='center';g.textBaseline='middle';g.fillText(e,64,72)});
+const IT={boost:boxTex('⚡','#f59e0b'),shield:boxTex('🛡️','#0ea5e9')},HZ={bomb:emoTex('💣'),banana:emoTex('🍌')},itemGeo=new THREE.BoxGeometry(2,2,2);
+function attachShield(pm){const sh=new THREE.Mesh(new THREE.SphereGeometry(2.8,20,14),new THREE.MeshBasicMaterial({color:0x38bdf8,transparent:true,opacity:.25,depthWrite:false}));sh.position.y=1.2;sh.visible=false;pm.add(sh);pm.userData.shield=sh}
+function mkItems(pm){const out=[];attachShield(pm);
+ for(let lap=0;lap<LAPS;lap++)for(let i=0;i<GPL;i++){const s0=lap*L+gateOff[i]+L/GPL*.4,l=shuffle([0,1,2]);
+  if(Math.random()<.45){const t=Math.random()<.6?'boost':'shield',m=new THREE.Mesh(itemGeo,new THREE.MeshBasicMaterial({map:IT[t]}));scene.add(m);cars.push(m);out.push({s:s0,x:LANES[l[0]],t,m,on:true,item:true})}
+  if(Math.random()<.35){const t=Math.random()<.5?'bomb':'banana',m=new THREE.Sprite(new THREE.SpriteMaterial({map:HZ[t]}));m.scale.set(3,3,1);scene.add(m);cars.push(m);out.push({s:s0+25,x:LANES[l[1]],t,m,on:true,item:false})}}
+ return out}
+function updKartFX(mesh,boostOn){
+  const fl=mesh.userData.flames;if(!fl)return;
+  const s=.8+Math.random()*.55;
+  fl.forEach(f=>{f.visible=boostOn;if(boostOn)f.scale.set(1,1,s)});
+}
+function updItems(dt){const R=race,p=R.p,tm=performance.now()/300;p.shield=(p.shield||0)-dt;p.spin=Math.max(0,(p.spin||0)-dt);
+ R.items.forEach(it=>{const ds=it.s-p.s;it.m.visible=it.on&&ds>-8&&ds<260;if(!it.m.visible)return;
+  place(it.m,it.s,it.x);it.m.position.y=it.item?1.6+Math.sin(tm)*.3:1.5;if(it.item)it.m.rotation.y+=tm%(Math.PI*2);
+  if(R.state==='race'&&Math.abs(ds)<1.8&&Math.abs(p.x-it.x)<2.3){it.on=false;it.m.visible=false;
+   if(it.t==='boost'){p.boost=3;msg('⚡ 加速！','#fde047');sfx('boost')}
+   else if(it.t==='shield'){p.shield=8;msg('🛡️ 護盾 8 秒','#7dd3fc');sfx('shield')}
+   else if(p.shield>0){msg('🛡️ 護盾擋住了！','#7dd3fc');sfx('shield')}
+   else if(it.t==='bomb'){p.v*=.3;p.slow=1.5;R.shake=.9;msg('💣 爆炸！','#f87171');sfx('bomb')}
+   else{p.spin=1;p.v*=.5;msg('🍌 打滑！','#fde047');sfx('banana')}
+   syncMyMpPos(true)}});
+ if(p.mesh.userData.shield)p.mesh.userData.shield.visible=p.shield>0;
+ updKartFX(p.mesh,p.boost>0)}
+
+/* ===== 題目 ===== */
+const rnd=n=>Math.floor(Math.random()*n), shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=rnd(i+1);[a[i],a[j]]=[a[j],a[i]]}return a};
+const factKey=(a,b)=>`${Math.min(a,b)}×${Math.max(a,b)}`;
+let weak=[], mpQPool=[], mpQIdx=0;
+function mkQ(){
+ if(mpState.active&&mpQPool.length){const q=mpQPool[mpQIdx%mpQPool.length];mpQIdx++;return{a:q.a,b:q.b,ans:q.ans,opts:[...q.opts]}}
+ let a,b;if(weak.length&&Math.random()<.4){[a,b]=weak[rnd(weak.length)].split('×').map(Number)}else{const tb=[...TBL];a=tb[rnd(tb.length)];b=2+rnd(8)}
+ if(Math.random()<.5)[a,b]=[b,a];const ans=a*b,set=new Set([ans]);
+ for(const c of shuffle([a*(b+1),a*(b-1),(a+1)*b,(a-1)*b,ans+10,ans-10,ans+1,ans-1,a+b])){if(set.size>=3)break;if(c>0&&!set.has(c))set.add(c)}
+ return{a,b,ans,opts:shuffle([...set])}}
+
+/* ===== 控制 ===== */
+const keys={l:false,r:false};
+const bind=(el,k)=>{const on=e=>{e.preventDefault();keys[k]=true;el.classList.add('on')},off=()=>{keys[k]=false;el.classList.remove('on')};
+ el.addEventListener('pointerdown',on);['pointerup','pointerleave','pointercancel'].forEach(ev=>el.addEventListener(ev,off))};
+bind($('bL'),'l');bind($('bR'),'r');
+addEventListener('keydown',e=>{if(['ArrowLeft','a','A'].includes(e.key))keys.l=true;if(['ArrowRight','d','D'].includes(e.key))keys.r=true});
+addEventListener('keyup',e=>{if(['ArrowLeft','a','A'].includes(e.key))keys.l=false;if(['ArrowRight','d','D'].includes(e.key))keys.r=false});
+let paused=false;
+$('pauseBtn').onclick=()=>{if(!race||!['race','count'].includes(race.state))return;paused=true;keys.l=keys.r=false;musStop();$('pauseOv').style.display='flex'};
+$('resumeBtn').onclick=()=>{paused=false;$('pauseOv').style.display='none';clock.getDelta();musStart()};
+$('quitBtn').onclick=()=>{paused=false;$('pauseOv').style.display='none';musStop();if(race){race.state='quit';clearRace()}showMenu()};
+const CN=['零','一','二','三','四','五','六','七','八','九'],sAudio=new Audio();
+$('readBtn').onclick=async()=>{const b=$('readBtn');if(!race||race.gi>=TOTALQ)return;const q=gates[race.gi%GPL].q;if(!q)return;
+ if(!window.sayoSpeak){msg('讀題功能暫時未能使用','#fca5a5');return}
+ b.disabled=true;let r;try{r=await window.sayoSpeak(`${CN[q.a]}乘${CN[q.b]}`)}catch(e){r={error:'x'}}b.disabled=false;
+ if(!r||r.error){msg('聲音未準備好，請稍後再試','#fca5a5',2);return}
+ sAudio.src=r.url;sAudio.play().catch(()=>{})};
+
+/* ===== 比賽 ===== */
+const VMAX=30;let race=null,cars=[];
+function clearRace(){cars.forEach(c=>scene.remove(c));cars=[];race=null}
+async function startRace(roomDoc=null){
+ aInit();AU.song=(AU.song+1)%SONGS.length;applyTOD(TODK[Math.floor(Math.random()*TODK.length)]);musStart();clearRace();
+ const st=await getStats();weak=weakList(st,30).filter(k=>k.split('×').some(n=>TBL.has(+n))).slice(0,6);
+ const rc=user.type==='guest'?[]:((await store.get('records'))||[]).filter(r=>r.uid===uid()).slice(-3),ra=rc.length?rc.reduce((s,r)=>s+r.acc,0)/rc.length:100,adapt=ra<50?.85:ra<70?.93:1;
+ const pm=makeKart(DRIVERS[driverIdx],mpState.active?shortName():'');cars.push(pm);
+ if(curTod==='night'){const hl=new THREE.SpotLight(0xfff2cc,180,80,.55,.5,1.2);hl.position.set(0,1.3,2.6);hl.target.position.set(0,0,24);pm.add(hl,hl.target);
+  [-.6,.6].forEach(x=>{const lb=new THREE.Mesh(new THREE.BoxGeometry(.4,.2,.1),new THREE.MeshBasicMaterial({color:0xfff6dd}));lb.position.set(x,.7,2.66);pm.add(lb)})}
+ const grid=[[-6,LANES[0]],[-6,LANES[2]],[-15,0]];
+ let ai=[];
+ if(mpState.active&&roomDoc){
+   mpQPool=roomDoc.qs||[];mpQIdx=0;
+   $('hRoomTag').textContent=`🌐 連機房號：${mpState.code}`;
+   const remotePlayers=Object.values(roomDoc.players||{}).filter(p=>p.id!==mySessionId).slice(0,3);
+   const others=DRIVERS.map((d,i)=>i).filter(i=>i!==driverIdx&&!DRIVERS[i].crown);shuffle(others);
+   for(let k=0;k<3;k++){
+     const rp=remotePlayers[k];
+     if(rp){
+       const m=makeKart(DRIVERS[rp.drv||0]||DRIVERS[0],rp.name);attachShield(m);cars.push(m);
+       ai.push({s:grid[k][0],x:grid[k][1],v:0,mesh:m,gi:0,lane:1,boost:0,slow:0,ph:Math.random()*6,isRemote:true,pid:rp.id,name:rp.name,netS:grid[k][0],netX:grid[k][1],netV:0,steer:0,shield:0,spin:0,lastSeen:performance.now()});
+     }else{
+       const di=others[k%others.length];const m=makeKart(DRIVERS[di],'🤖 '+DRIVERS[di].name);attachShield(m);cars.push(m);
+       ai.push({s:grid[k][0],x:grid[k][1],v:0,mesh:m,gi:0,lane:1,boost:0,slow:0,ph:Math.random()*6,isRemote:false,name:'電腦 '+DRIVERS[di].name});
+     }
+   }
+ }else{
+   mpQPool=[];$('hRoomTag').textContent='';
+   const others=DRIVERS.map((d,i)=>i).filter(i=>i!==driverIdx&&!DRIVERS[i].crown);shuffle(others);others.length=3;
+   ai=others.map((di,k)=>{const m=makeKart(DRIVERS[di]);attachShield(m);cars.push(m);return{s:grid[k][0],x:grid[k][1],v:0,mesh:m,gi:0,lane:1,boost:0,slow:0,ph:Math.random()*6,isRemote:false,name:DRIVERS[di].name}});
+ }
+ gates.forEach((g,i)=>setGate(g,mkQ()));
+ race={t:0,state:'count',cd:3.5,p:{s:-6,x:0,v:0,mesh:pm,boost:0,slow:0,steer:0,shield:0,spin:0},ai,gi:0,log:[],shownAt:0,laneAt:0,lane:1,finishT:0,rank:1,shake:0,adapt};race.items=mkItems(pm);
+ $('hMsg').textContent='';showQ();show(null)}
+function showQ(){const q=race.gi<TOTALQ?gates[race.gi%GPL].q:null;
+ $('hQ').textContent=q?`${q.a} × ${q.b} = ?`:'衝線！';
+ $('hOpts').innerHTML=q?q.opts.map((o,k)=>`<span class="chip" style="background:${LCOL[k]}">${o}</span>`).join(''):''}
+let msgT=0;function msg(t,c='#fff',d=1.3){$('hMsg').textContent=t;$('hMsg').style.color=c;msgT=d}
+const laneOf=x=>x<-W/6?0:x>W/6?2:1;
+function place(o,s,x,yaw=0){const f=frame(s);o.position.copy(f.p).addScaledVector(f.r,x);o.rotation.y=Math.atan2(f.t.x,f.t.z)+yaw;return f}
+
+function update(dt){const R=race;R.t+=dt;const p=R.p;R.hitCD=(R.hitCD||0)-dt;R.wallCD=(R.wallCD||0)-dt;updSparks(dt);
+ if(R.state==='count'){R.cd-=dt;const n=Math.ceil(R.cd);$('hMsg').style.color='#fde047';$('hMsg').textContent=R.cd>.5?(n>3?3:n):'開始！';const bk=R.cd>.5?Math.min(3,n):0;if(bk!==R.lastN){R.lastN=bk;sfx(bk?'beep':'go')}
+  if(R.cd<=0){R.state='race';R.shownAt=R.laneAt=R.t;$('hMsg').textContent='';syncMyMpPos(true)}}
+ const racing=R.state==='race'||R.state==='finish';
+ const inp=(keys.r?1:0)-(keys.l?1:0);p.steer+=(inp-p.steer)*Math.min(1,dt*10);
+ if(racing){const tv=(VMAX+(p.boost>0?12:0))*(p.slow>0?.5:1)*(R.state==='finish'?.6:1);p.v+=(tv-p.v)*Math.min(1,dt*1.3);
+  p.boost-=dt;p.slow-=dt;p.x=Math.max(-W/2+1.3,Math.min(W/2-1.3,p.x+p.steer*14*dt));p.s+=p.v*dt;
+  if(Math.abs(p.x)>=W/2-1.31&&Math.abs(p.steer)>.3&&R.wallCD<=0){R.wallCD=.35;p.v*=.85;R.shake=Math.max(R.shake,.25);burst(p.mesh.position,12);sfx('scrape')}
+  syncMyMpPos(false)}
+ const ln=laneOf(p.x);if(ln!==R.lane){R.lane=ln;R.laneAt=R.t}
+ if(R.state==='race'&&R.gi<TOTALQ){const gs=Math.floor(R.gi/GPL)*L+gateOff[R.gi%GPL];
+  if(p.s>=gs){const gt=gates[R.gi%GPL],q=gt.q,ch=q.opts[ln],ok=ch===q.ans,tm=Math.max(.5,Math.max(R.laneAt,R.shownAt)-R.shownAt);
+   R.log.push({q:`${q.a}×${q.b}`,a:q.a,b:q.b,ans:q.ans,choice:ch,correct:ok,time:+tm.toFixed(1)});
+   if(ok){p.boost=1.6;msg('✅ 答對！加速！','#4ade80');sfx('ok')}else{p.slow=2.5;p.v*=.6;R.shake=.35;msg(`❌ ${q.a} × ${q.b} = ${q.ans}`,'#fca5a5',2);sfx('bad')}
+   setGate(gt,R.gi+GPL<TOTALQ?mkQ():null);R.gi++;R.shownAt=R.t;showQ();syncMyMpPos(true)}}
+ const D=DIFF[diff];
+ R.ai.forEach(a=>{if(!racing){place(a.mesh,a.s,a.x);return}
+  let dx=0;
+  if(a.isRemote&&performance.now()-a.lastSeen<6500){
+   a.netS+=a.netV*dt;
+   a.netX=Math.max(-W/2+1.3,Math.min(W/2-1.3,a.netX+(a.steer||0)*7*dt));
+   const errS=a.netS-a.s;
+   a.s+=Math.abs(errS)>35?errS:(a.netV*dt+errS*Math.min(1,dt*10));
+   const prevX=a.x;a.x+=(a.netX-a.x)*Math.min(1,dt*14);dx=a.x-prevX;a.v=a.netV;
+   if(a.mesh.userData.shield)a.mesh.userData.shield.visible=a.shield>0;
+   updKartFX(a.mesh,a.boost>0);
+  }else{
+   let tv=VMAX*D.sp*R.adapt*(1+.05*Math.sin(R.t*.7+a.ph));const gap=a.s-p.s;if(gap>120)tv*=.85;if(gap<-120)tv*=1.12;
+   if(a.boost>0)tv+=10;if(a.slow>0)tv*=.55;a.boost-=dt;a.slow-=dt;a.v+=(tv-a.v)*Math.min(1,dt*1.2);a.s+=a.v*dt;
+   if(a.gi<TOTALQ){const gs=Math.floor(a.gi/GPL)*L+gateOff[a.gi%GPL],q=gates[a.gi%GPL].q;
+    if(gs-a.s<60&&a.dec!==a.gi){a.dec=a.gi;const good=Math.random()<D.acc;a.lane=q?(good?q.opts.indexOf(q.ans):[0,1,2].filter(k=>q.opts[k]!==q.ans)[rnd(2)]):1;a.good=good}
+    if(a.s>=gs){if(a.good)a.boost=1.4;else a.slow=1.1;a.gi++}}
+   const tx=LANES[a.lane]+Math.sin(R.t+a.ph)*.6;dx=Math.max(-8*dt,Math.min(8*dt,tx-a.x));a.x+=dx;
+   updKartFX(a.mesh,a.boost>0);
+  }
+  if(R.state==='race'&&R.hitCD<=0&&Math.abs(a.s-p.s)<3.6&&Math.abs(a.x-p.x)<2.3){R.hitCD=.8;const sd=p.x>=a.x?1:-1;
+   p.x=Math.max(-W/2+1.3,Math.min(W/2-1.3,p.x+sd*1.6));a.x-=sd*1.2;
+   if(p.shield>0){a.v*=.5;msg('🛡️ 撞飛對手！','#7dd3fc')}else{p.v*=.6;a.v*=.8;p.spin=.15;R.shake=.6;msg('💥 撞車！','#fb923c')}
+   burst(p.mesh.position.clone().lerp(a.mesh.position,.5));sfx('crash');syncMyMpPos(true)}
+  const yaw=a.isRemote?-(a.steer||0)*.28+(a.spin?R.t*10:0):-dx*2;
+  place(a.mesh,a.s,a.x,yaw)});
+ if(R.state==='race'){R.rank=1+R.ai.filter(a=>a.s>p.s).length;if(p.s>=LAPS*L){R.state='finish';R.finishT=R.t;syncMyMpPos(true);msg(`🏁 完成！第 ${R.rank} 名`,'#fde047',3);musStop();sfx('finish')}}
+ if(AU.ctx&&AU.timer){const at=AU.ctx.currentTime;AU.eo.frequency.setTargetAtTime(45+p.v*3.2+(p.boost>0?35:0),at,.1);AU.eg.gain.setTargetAtTime(racing?.07:.03,at,.1)}
+ if(R.state==='finish'&&R.t-R.finishT>2.6){R.state='done';finishRace()}
+ updItems(dt);
+ if(p.boost>0&&R.state==='race'){fxCv.style.opacity='1';drawSpeedLines()}else{fxCv.style.opacity='0'}
+ const f=place(p.mesh,p.s,p.x,-p.steer*.3+p.spin*Math.PI*2);
+ const want=p.mesh.position.clone().addScaledVector(f.t,-11).add(new THREE.Vector3(0,5.2,0));
+ cam.position.lerp(want,1-Math.exp(-dt*6));if(R.shake>0){R.shake-=dt;cam.position.x+=(Math.random()-.5)*R.shake*2;cam.position.y+=(Math.random()-.5)*R.shake}cam.lookAt(p.mesh.position.clone().addScaledVector(f.t,9).add(new THREE.Vector3(0,1.6,0)));
+ cam.fov+=((65+(p.boost>0?8:0))-cam.fov)*Math.min(1,dt*4);cam.updateProjectionMatrix();
+ sun.position.copy(p.mesh.position).add(new THREE.Vector3(40,80,30));sun.target.position.copy(p.mesh.position);
+ $('hLap').textContent=`${Math.min(LAPS,Math.floor(Math.max(0,p.s)/L)+1)}/${LAPS}`;$('hPos').textContent=R.rank;
+ const kmh=Math.round(p.v*3.6);$('hSpd').textContent=kmh;$('hRpm').style.width=Math.min(100,Math.round(kmh/150*100))+'%';
+ $('hScore').textContent=`${R.log.filter(l=>l.correct).length}/${R.log.length}`;
+ mmDraw();
+ if(msgT>0){msgT-=dt;if(msgT<=0&&R.state==='race')$('hMsg').textContent=''}}
+
+/* ===== 結果 ===== */
+async function finishRace(){musStop();fxCv.style.opacity='0';const R=race,log=R.log,n=log.length,c=log.filter(l=>l.correct).length;
+ const acc=n?Math.round(c/n*100):0,avgT=n?+(log.reduce((s,l)=>s+l.time,0)/n).toFixed(1):0;
+ const st=await getStats();log.forEach(l=>{const k=factKey(l.a,l.b);st[k]=st[k]||{n:0,w:0};st[k].n++;if(!l.correct)st[k].w++});
+ let prev=null;const modeStr=mpState.active?'multi-'+mpState.code:'single';
+ if(user.type!=='guest'){const recs=(await store.get('records'))||[];prev=[...recs].reverse().find(r=>r.uid===uid())||null;
+  recs.push({uid:uid(),grade:user.grade||0,cls:user.cls,no:user.no,type:user.type,mode:modeStr,track:trackKey+'-'+(routeIdx+1),diff,date:new Date().toISOString(),rank:R.rank,acc,avgT,qs:log});
+  await store.set('records',recs.slice(-300));await store.set('stats_'+uid(),st);
+  if(user.type==='student')fbUp({k:'race',d:{grade:user.grade,cls:user.cls,no:user.no,uid:uid(),mode:modeStr,track:trackKey+'-'+(routeIdx+1),diff,tables:[...TBL].sort(),rank:R.rank,acc,avgT,correct:c,total:n,qs:log.map(l=>({a:l.a,b:l.b,ok:l.correct?1:0,t:l.time}))}})}else guestStats=st;
+ let unlockMsg='';
+ if(user.type!=='teacher'&&R.rank===1&&acc>=UNLOCK_ACC){const w1=(await getWins())+1;if(user.type==='guest')guestWins=w1;else await store.set('wins_'+uid(),w1);
+  const tw=await getTW(),before=DRIVERS.map(d=>lockOf(d,tw)),key=TBL.size===1?[...TBL][0]:TBL.size===8?'all':null;let tm='';
+  if(key!==null){tw[key]=(tw[key]||0)+1;await setTW(tw);const nu=DRIVERS.filter((d,i)=>before[i]&&!lockOf(d,tw));
+   const td=DRIVERS.find(d=>d.tbl===key);
+   if(nu.length)tm=`<br>🎉 解鎖新車手：${nu.map(d=>'🏎️ '+d.name).join('、')}！`;
+   else{const nx=key==='all'?DRIVERS.filter(d=>d.boss&&tw.all<d.need)[0]:td;if(nx&&winsOf(nx,tw)<nx.need)tm=`<br>再勝 ${nx.need-winsOf(nx,tw)} 場解鎖${nx.name}`}}
+  else tm='<br><span class="text-sm font-bold">💡 只揀一個乘數表練習，可以解鎖新車手</span>';
+  if(user.type==='student')fbUp({k:'player',id:uid(),d:{grade:user.grade,cls:user.cls,no:user.no,wins:w1,tw,stats:st}});
+  unlockMsg=`<div class="bg-amber-100 rounded-2xl p-2 mt-2 font-black text-amber-800 text-center text-lg">🏆 勝出 ${w1} 場！${tm}</div>`}
+ else if(user.type!=='teacher'&&R.rank===1)unlockMsg=`<div class="bg-slate-100 rounded-2xl p-2 mt-2 text-slate-600 text-center">第 1 名！但答對率要達 ${UNLOCK_ACC}% 或以上才計算勝出場數，加油！</div>`;
+ const wk=weakList(st,3),diffAcc=prev?acc-prev.acc:null;
+ const wrong=log.filter(l=>!l.correct);
+ $('resBox').innerHTML=`<div class="flex justify-between items-center"><h2 class="text-3xl font-black text-blue-800">🏁 第 ${R.rank} 名！${mpState.active?`<span class="text-base bg-sky-100 text-sky-800 px-3 py-1 rounded-full ml-2">🌐 連機房 ${mpState.code}</span>`:''}</h2><span class="font-bold text-slate-500">${label()}</span></div>
+ <div class="grid grid-cols-3 gap-3 my-3 text-center">
+  <div class="bg-green-50 rounded-2xl p-2"><div class="text-sm text-slate-500">答對率</div><div class="text-3xl font-black text-green-600">${acc}%</div><div class="text-sm">${c}/${n} 題</div></div>
+  <div class="bg-sky-50 rounded-2xl p-2"><div class="text-sm text-slate-500">平均作答時間</div><div class="text-3xl font-black text-sky-600">${avgT} 秒</div>${prev?`<div class="text-sm">上次 ${prev.avgT} 秒</div>`:''}</div>
+  <div class="bg-amber-50 rounded-2xl p-2"><div class="text-sm text-slate-500">與上次比較</div><div class="text-3xl font-black ${diffAcc>0?'text-green-600':diffAcc<0?'text-red-500':'text-slate-600'}">${diffAcc===null?'第一場':(diffAcc>0?'⬆️ ':diffAcc<0?'⬇️ ':'')+(diffAcc>0?'+':'')+diffAcc+'%'}</div>${prev?`<div class="text-sm">上次 ${prev.acc}%</div>`:''}</div></div>
+ ${unlockMsg}
+ <div class="text-slate-700"><b>💪 我最弱的題目：</b>${wk.length?wk.join('、')+'（下次會多出這些題目）':'全部答對，非常好！'}</div>
+ ${wrong.length?`<div class="mt-1 text-slate-700"><b>今次答錯：</b>${wrong.map(l=>`${l.a} × ${l.b} = <b class="text-green-600">${l.ans}</b>（你選了 ${l.choice}）`).join('；')}</div>`:''}
+ <div class="flex gap-2 mt-3 flex-wrap">
+  <button id="again" class="btn bg-green-500 text-white text-xl flex-1">🔁 再玩一次</button>
+  <button id="toMenu" class="btn bg-slate-200 text-xl flex-1">🏠 主選單</button>
+ </div>`;
+ $('again').onclick=()=>{if(mpState.active){leaveMpRoom();$('mpBtn').click()}else startRace()};
+ $('toMenu').onclick=()=>{clearRace();showMenu()};
+ show('sResult')}
+
+/* ===== 主迴圈 ===== */
+const clock=new THREE.Clock();let idle=0;
+function loop(){requestAnimationFrame(loop);const dt=Math.min(.05,clock.getDelta());
+ if(race&&race.state!=='done'&&race.state!=='quit'){if(!paused)update(dt)}
+ else{idle+=dt*.05;const f=frame(idle*L*.3);cam.position.copy(f.p).add(new THREE.Vector3(0,30,0)).addScaledVector(f.r,60);cam.lookAt(f.p);sun.position.set(f.p.x+40,80,f.p.z+30);sun.target.position.copy(f.p)}
+ skies.forEach(s=>s.position.copy(cam.position));stars.position.copy(cam.position);renderer.render(scene,cam)}
+setQ(false);loop();initLogin();
+</script></body></html>
