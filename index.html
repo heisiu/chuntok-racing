@@ -39,6 +39,44 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0b1b33;font-family:sy
 #hud .btn{backdrop-filter:blur(4px);border:2px solid #fff6}
 #mini{box-shadow:0 6px 18px #0007}
 #rot{position:fixed;inset:0;z-index:99;display:none;background:#0b1b33;color:#fff;flex-direction:column;align-items:center;justify-content:center;font-size:22px}
+@media (max-height:520px){
+ .card{padding:6px 12px;border-radius:18px;max-height:98vh}
+ .card h1.gameTitle{font-size:26px!important}.card h2.gameTitle{font-size:20px!important}
+ .schoolBadge{font-size:13px;padding:2px 12px 2px 6px;border-width:2px}.schoolBadge img{height:18px!important}
+ .subTitle{font-size:10px;padding:0 10px;margin-top:2px}.speedLine{height:3px;margin:3px auto 0}
+ .btn{padding:3px 8px;border-radius:12px;font-size:13px}
+ #sLogin .card{max-width:640px}
+ #sLogin .text-2xl,#sLogin .btn.text-2xl{font-size:16px!important}
+ #goLogin{font-size:17px!important;margin-top:2px}
+ #sLogin p,#sLogin label{font-size:12px}
+ #grBox .btn,#clsBox .btn{padding:2px 4px}
+ #noBox{padding:2px;font-size:15px}
+ #sMenu .grid{gap:6px!important;margin-top:2px!important}
+ #drvBox{gap:3px!important}
+ #drvBox .btn{padding:2px!important;font-size:10px!important}
+ #drvBox .btn>div:first-child{width:34px!important;height:34px!important}
+ #sMenu .text-xs,#sMenu .text-sm{font-size:10px!important}
+ #sMenu .font-black{font-size:12px}
+ #startBtn{font-size:18px!important;padding:4px!important;margin-top:4px!important}
+ #sMenu .grid-cols-3 .btn{font-size:11px!important}
+ #myProg{padding:3px!important;font-size:10px!important}
+ #tbBox .btn{font-size:13px!important}
+ #dfBox .btn{font-size:14px!important}
+ .ctl{width:min(24vh,84px);height:min(24vh,84px);font-size:28px;bottom:8px}
+ #hud .text-lg{font-size:12px}#hud #hPos{font-size:20px}#hud .text-sm{font-size:10px}
+ #hQ{font-size:20px!important;padding:0 12px!important;border-width:2px}
+ .chip{font-size:16px;padding:0 8px;min-width:44px;border-width:2px;border-radius:9px}
+ #hOpts{gap:6px!important;margin-top:2px!important}
+ #hSpd{font-size:20px!important}
+ #hud .btn{font-size:11px;padding:1px 6px}
+ #hMsg{font-size:30px}
+ #mini{width:min(26vh,86px)!important;height:min(26vh,86px)!important;right:8px!important;bottom:calc(min(24vh,84px) + 10px)!important}
+ #hud .w-28{width:64px}
+ #statBox svg{width:104px;height:104px}
+}
+#hMsg{text-shadow:0 2px 6px #000a;top:58%}
+.radarWrap{display:flex;justify-content:center}
+.rdTbl{width:100%;font-size:12px;color:#334155}
 @media (orientation:portrait){#rot{display:flex}}
 </style></head><body>
 <canvas id="c"></canvas>
@@ -60,7 +98,8 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0b1b33;font-family:sy
   </div>
   <button id="goLogin" class="btn text-white text-2xl w-full mt-1" disabled>開始比賽 ▶</button>
   <div class="flex gap-2 mt-2">
-    <button id="guestBtn" class="btn bg-amber-100 text-amber-800 flex-1">🙋 訪客模式（不記錄成績）</button>
+    <button id="guestBtn" class="btn bg-amber-100 text-amber-800 flex-1">🙋 訪客模式</button>
+    <button id="lbBtn0" class="btn bg-gradient-to-b from-amber-100 to-amber-300 text-amber-900 flex-1">🏆 排行榜</button>
     <button id="teachBtn" class="btn bg-slate-200 text-slate-700 flex-1">👩‍🏫 老師後台</button>
   </div>
 </div></div>
@@ -75,7 +114,8 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0b1b33;font-family:sy
     <div>
       <p class="font-black text-blue-800 mb-1">🏎️ 選擇真鐸專屬戰車</p>
       <div id="drvBox" class="grid grid-cols-5 gap-2"></div>
-      <p class="text-xs text-slate-400 mt-1">撳 🔒 車手可查看解鎖方法（每架車均有專屬編號與「真鐸 CHUN TOK」車尾翼塗裝！）</p>
+      <div id="statBox" class="bg-white rounded-xl mt-1"></div>
+      <p class="text-xs text-slate-400 mt-1">撳 🔒 車手可查看解鎖方法及能力圖</p>
       <label class="flex items-center gap-2 mt-1.5 bg-sky-50 border border-sky-200 rounded-xl px-3 py-1 text-xs font-bold text-blue-900 cursor-pointer">
         <input id="glbToggle" type="checkbox" checked class="w-3.5 h-3.5 accent-blue-600">
         <span>🏎️ 啟用 Kenney 3D 跑車模型庫（不勾選則使用真鐸 F1 戰車）</span>
@@ -159,7 +199,9 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0b1b33;font-family:sy
   <div class="grid gap-2.5 mt-3">
     <button id="adLb" class="btn bg-gradient-to-b from-amber-100 to-amber-300 text-amber-900 text-xl py-3">🏆 排行榜</button>
     <button id="adRp" class="btn bg-gradient-to-b from-sky-100 to-sky-300 text-sky-900 text-xl py-3">📊 老師報告</button>
-    <button id="adTest" class="btn bg-gradient-to-b from-slate-100 to-slate-300 text-slate-800 text-xl py-3">🧪 老師測試（全部車手已解鎖）</button>
+    <button id="adTest" class="btn bg-gradient-to-b from-slate-100 to-slate-300 text-slate-800 text-xl py-3">🧪 老師測試（需密碼）</button>
+    <button id="adReset" class="btn bg-gradient-to-b from-rose-100 to-rose-300 text-rose-900 text-xl py-3">🔄 新學年重設（需密碼）</button>
+    <div id="yrTag" class="text-xs text-slate-500"></div>
     <div class="bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-3 text-left text-xs text-slate-700">
       <div class="font-black text-emerald-900 text-sm mb-1">🐙 GitHub Pages 靜態資源直讀狀態</div>
       <div>① 10合1車手圖 (<code>./drivers_sheet.png</code>)：<b id="stDrivers" class="text-amber-600">偵測中…</b></div>
@@ -211,6 +253,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0b1b33;font-family:sy
   </div>
   <canvas id="mini" width="300" height="300" style="position:fixed;right:16px;bottom:calc(min(22vh,130px) + 28px);width:min(30vh,150px);height:min(30vh,150px);border-radius:16px;background:#0f172a88;border:3px solid #fff8"></canvas>
   <div class="fixed top-2 right-3 text-right font-black">
+    <button id="readBtn" style="pointer-events:auto" class="btn bg-white/30 text-white text-sm py-1 mb-1">🔇 讀題:關</button>
     <button id="songBtn" style="pointer-events:auto" class="btn bg-white/30 text-white text-sm py-1 mb-1">🎵 換歌</button>
     <button id="muteBtn" style="pointer-events:auto" class="btn bg-white/30 text-white text-sm py-1 mb-1">🔊</button>
     <button id="pauseBtn" style="pointer-events:auto" class="btn bg-white/30 text-white text-sm py-1 mb-1">⏸ 暫停</button>
@@ -222,7 +265,6 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0b1b33;font-family:sy
   <div class="fixed left-1/2 -translate-x-1/2 top-2 text-center">
     <div id="hQ" class="bg-black/55 rounded-2xl px-6 py-1 text-4xl font-black">準備</div>
     <div id="hOpts" class="flex gap-3 justify-center mt-1"></div>
-    <button id="readBtn" style="pointer-events:auto" class="btn bg-white/30 text-white text-sm py-1 mt-1">🔈 讀題</button>
   </div>
   <div id="hMsg" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-6xl font-black text-center whitespace-nowrap"></div>
   <div id="bL" class="ctl" style="left:16px">◀</div>
@@ -233,7 +275,8 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0b1b33;font-family:sy
 <div id="lockOv" style="position:fixed;inset:0;z-index:40;display:none;background:#0009;align-items:center;justify-content:center"><div class="card text-center" style="max-width:380px">
 <div id="lkIcon" style="width:80px;height:80px;border-radius:50%;margin:0 auto" class="flex items-center justify-center text-4xl overflow-hidden border-3 border-white shadow">🔒</div>
 <h2 id="lkName" class="text-2xl font-black text-blue-800 mt-2"></h2>
-<p id="lkHow" class="text-xl font-bold text-slate-700 mt-2"></p>
+<div id="lkRadar" class="radarWrap"></div>
+<p id="lkHow" class="text-xl font-bold text-slate-700 mt-1"></p>
 <div class="bg-slate-200 rounded-full h-4 mt-3 overflow-hidden"><div id="lkBar" class="bg-green-500 h-4"></div></div>
 <p id="lkProg" class="text-lg font-black text-green-700 mt-1"></p>
 <button id="lkOk" class="btn bg-blue-600 text-white text-xl w-full mt-3">知道了</button></div></div>
@@ -386,18 +429,25 @@ function makeChunTokAvatarDataURI(kind){
 
 /* ===== 設定與 10 位真鐸車手 ===== */
 const GRADES=[1,2,3,4,5,6], GNAME=['','一','二','三','四','五','六'], CLASSES=['信','望','愛'], MAXNO=35, LAPS=3, GPL=5, TOTALQ=LAPS*GPL;
-const KENNEY_CDN='https://cdn.jsdelivr.net/gh/anasron/threejs-kenney-car-kit@master/public/gltf/';
+const KENNEY_CDN='./models/';
+/* 五角形能力:[極速,加速,操控,耐力,衝刺] */
+const STAT_N=['極速','加速','操控','耐力','衝刺'];
+function radarSVG(st,color,size=210){const c=size/2,R=size*.34,pt=(i,v)=>{const a=-Math.PI/2+i*2*Math.PI/5;return[c+Math.cos(a)*R*v/5,c+Math.sin(a)*R*v/5]};
+ const ring=v=>[0,1,2,3,4].map(i=>pt(i,v).join(',')).join(' ');
+ const poly=st.map((v,i)=>pt(i,v).join(',')).join(' ');
+ const lab=STAT_N.map((n,i)=>{const[x,y]=pt(i,6.3);return `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="800" fill="#1e293b">${n} ${st[i]}</text>`}).join('');
+ return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${[1,2,3,4,5].map(v=>`<polygon points="${ring(v)}" fill="none" stroke="#cbd5e1" stroke-width="1"/>`).join('')}${[0,1,2,3,4].map(i=>`<line x1="${c}" y1="${c}" x2="${pt(i,5)[0]}" y2="${pt(i,5)[1]}" stroke="#e2e8f0"/>`).join('')}<polygon points="${poly}" fill="${color}66" stroke="${color}" stroke-width="3"/>${lab}</svg>`}
 const DRIVERS=[
- {name:'閃電號',color:0xef4444,num:'02',row:1,col:0,kind:'headband',glb:KENNEY_CDN+'race.glb'},
- {name:'火箭號',color:0x3b82f6,num:'03',row:1,col:1,kind:'bow',tbl:3,need:5,glb:KENNEY_CDN+'race-future.glb'},
- {name:'旋風號',color:0x22c55e,num:'04',row:2,col:0,kind:'cap',tbl:4,need:5,glb:KENNEY_CDN+'sedan-sports.glb'},
- {name:'流星號',color:0xfacc15,num:'05',row:2,col:1,kind:'glasses',tbl:5,need:5,glb:KENNEY_CDN+'hatchback-sports.glb'},
- {name:'彩虹號',color:0xa855f7,num:'06',row:3,col:0,kind:'headphone',tbl:6,need:5,glb:KENNEY_CDN+'suv-luxury.glb'},
- {name:'雷霆號',color:0xf97316,num:'07',row:3,col:1,kind:'helmetB',tbl:7,need:5,glb:KENNEY_CDN+'police.glb'},
- {name:'極光號',color:0x06b6d4,num:'08',row:4,col:0,kind:'helmetP',tbl:8,need:5,glb:KENNEY_CDN+'kart.glb'},
- {name:'疾風號',color:0x84cc16,num:'09',row:4,col:1,kind:'boy',tbl:9,need:5,glb:KENNEY_CDN+'Convertible.glb'},
- {name:'譚主任',color:0x0f766e,num:'TAM',row:0,col:1,kind:'tam',boss:'tam',need:5,crown:true,glb:KENNEY_CDN+'race-future.glb'},
- {name:'陳校長',color:0xd4a017,num:'CHAN',row:0,col:0,kind:'chan',boss:'chan',need:10,crown:true,glb:KENNEY_CDN+'race.glb'}
+ {name:'閃電號',color:0xef4444,num:'02',row:1,col:0,kind:'headband',st:[3,3,3,3,3],tag:'標準賽車,均衡入門',glb:KENNEY_CDN+'race.glb'},
+ {name:'火箭號',color:0x3b82f6,num:'03',row:1,col:1,kind:'bow',tbl:3,need:5,st:[4,3,2,2,4],tag:'未來賽車,直路飛快',glb:KENNEY_CDN+'race-future.glb'},
+ {name:'旋風號',color:0x22c55e,num:'04',row:2,col:0,kind:'cap',tbl:4,need:5,st:[3,3,4,3,3],tag:'運動房車,過彎穩陣',glb:KENNEY_CDN+'sedan-sports.glb'},
+ {name:'流星號',color:0xfacc15,num:'05',row:2,col:1,kind:'glasses',tbl:5,need:5,st:[2,4,5,2,3],tag:'小鋼炮,最易操控',glb:KENNEY_CDN+'hatchback-sports.glb'},
+ {name:'彩虹號',color:0xa855f7,num:'06',row:3,col:0,kind:'headphone',tbl:6,need:5,st:[2,2,3,5,3],tag:'豪華SUV,耐力一流',glb:KENNEY_CDN+'suv-luxury.glb'},
+ {name:'雷霆號',color:0xf97316,num:'07',row:3,col:1,kind:'helmetB',tbl:7,need:5,st:[3,2,3,4,5],tag:'警車,終點衝刺王',glb:KENNEY_CDN+'police.glb'},
+ {name:'極光號',color:0x06b6d4,num:'08',row:4,col:0,kind:'helmetP',tbl:8,need:5,st:[2,5,3,2,3],tag:'起步最快',glb:KENNEY_CDN+'kart-oobi.glb'},
+ {name:'疾風號',color:0x84cc16,num:'09',row:4,col:1,kind:'boy',tbl:9,need:5,st:[4,3,3,2,3],tag:'的士,靈活穿梭',glb:KENNEY_CDN+'taxi.glb'},
+ {name:'譚主任',color:0x0f766e,num:'TAM',row:0,col:1,kind:'tam',boss:'tam',need:5,crown:true,st:[4,4,4,4,4],tag:'主任專屬未來戰車',glb:KENNEY_CDN+'race-future.glb'},
+ {name:'陳校長',color:0xd4a017,num:'CHAN',row:0,col:0,kind:'chan',boss:'chan',need:10,crown:true,st:[4.5,4.5,4.5,4.5,4.5],tag:'校長金色傳說',glb:KENNEY_CDN+'race.glb'}
 ];
 DRIVERS.forEach(d=>{d.img=makeChunTokAvatarDataURI(d.kind)});
 
@@ -519,7 +569,7 @@ function lockOf(d,tw){if(user.type==='teacher'||!d.need)return false;return wins
 function showLock(d,tw){const w=Math.min(winsOf(d,tw),d.need);
  $('lkIcon').style.background='#'+d.color.toString(16).padStart(6,'0');
  $('lkIcon').innerHTML=`<img src="${d.img}" style="width:100%;height:100%;object-fit:cover;opacity:.5">`;
- $('lkName').textContent='🔒 '+d.name;
+ $('lkName').textContent='🔒 '+d.name;$('lkRadar').innerHTML=radarSVG(d.st,'#'+d.color.toString(16).padStart(6,'0'));
  $('lkHow').textContent=d.tbl?`揀「${d.tbl}」乘數表，勝出 ${d.need} 場`:`揀「全部」乘數表，勝出 ${d.need} 場`;
  $('lkBar').style.width=(w/d.need*100)+'%';$('lkProg').textContent=`已勝 ${w} / ${d.need} 場`;$('lockOv').style.display='flex'}
 $('lkOk').onclick=()=>$('lockOv').style.display='none';
@@ -558,11 +608,21 @@ $('noBox').addEventListener('change',()=>{selNo=$('noBox').value?Number($('noBox
 function chk(){$('goLogin').disabled=!(selGr&&selCls&&selNo)}
 $('goLogin').onclick=()=>login({grade:selGr,cls:selCls,no:selNo,type:'student'});
 $('guestBtn').onclick=()=>login({cls:'訪客',no:0,type:'guest'});
-$('teachBtn').onclick=()=>{user={cls:'老師',no:0,type:'teacher'};show('sAdmin')};
+$('teachBtn').onclick=async()=>{user={cls:'老師',no:0,type:'teacher'};const y=await fbYear();$('yrTag').textContent=y?'學年起始:'+new Date(y).toLocaleDateString('zh-HK'):'';show('sAdmin')};
 $('adBack').onclick=()=>show('sLogin');
 $('adLb').onclick=()=>openLb();
 $('adRp').onclick=()=>openRp();
-$('adTest').onclick=()=>login({cls:'老師測試',no:0,type:'teacher'});
+const TPW='23265111';
+async function getYear(){const y=await store.get('yearStart');return y||0}
+let _yr=null;
+async function fbYear(force){if(_yr!==null&&!force)return _yr;try{if(FB.ok){const s=await getDoc(doc(FB.db,'config','year'));_yr=s.exists()?(s.data().start||0):0;return _yr}}catch(e){console.warn('讀取學年設定失敗',e)}return getYear()}
+$('adTest').onclick=()=>{if(prompt('請輸入老師密碼')===TPW)login({cls:'老師測試',no:0,type:'teacher'});else alert('密碼錯誤')};
+$('adReset').onclick=async()=>{if(prompt('請輸入老師密碼')!==TPW){alert('密碼錯誤');return}
+ if(!confirm('確定開始新學年?排行榜、報告及學生勝場將由今日起重新計算(舊資料仍保留)。'))return;
+ const now=Date.now();await store.set('yearStart',now);_yr=now;_rc={t:0,d:null};
+ try{await setDoc(doc(FB.db,'config','year'),{start:now,ts:serverTimestamp()})}catch(e){alert('雲端寫入失敗,請檢查 Firestore 規則(config 集合需可寫入)')}
+ $('yrTag').textContent='學年起始:'+new Date(now).toLocaleDateString('zh-HK');alert('已重設新學年')};
+$('lbBtn0').onclick=()=>{window._lbFromLogin=!user;user=user||{cls:'訪客',no:0,type:'guest'};openLb()};
 async function login(u){user=u;mySessionId=u.type==='student'?`${u.grade}${u.cls}-${u.no}`:`${u.type}-${Math.floor(1000+Math.random()*9000)}`;
  window._inTest=u.type==='teacher';if(u.type==='student'){await store.set('lastUser',u);for(let i=0;i<15&&!FB.ok;i++)await new Promise(r=>setTimeout(r,100));await fbRestore();fbRetry()}if(u.type==='guest')guestStats={};showMenu()}
 $('logout').onclick=()=>{leaveMpRoom();window._inTest=false;selGr=selCls=selNo=null;[...$('grBox').children,...$('clsBox').children].forEach(x=>x.classList.remove('sel'));fillNo();chk();$('resume').innerHTML='';show('sLogin')};
@@ -586,7 +646,9 @@ function renderDrivers(w,tw={}){const box=$('drvBox');box.innerHTML='';
     ${lock?'<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:20px;background:#0004">🔒</span>':''}
   </div><div class="font-black leading-tight">${d.name}</div>`;
   if(i===driverIdx)b.classList.add('sel');
-  b.onclick=()=>{if(lock){showLock(d,tw);return}driverIdx=i;[...box.children].forEach(x=>x.classList.toggle('sel',x===b))};box.appendChild(b)})}
+  b.onclick=()=>{if(lock){showLock(d,tw);return}driverIdx=i;[...box.children].forEach(x=>x.classList.toggle('sel',x===b));showStat(d)};box.appendChild(b)});
+ const sd=$('statBox');if(sd)showStat(DRIVERS[driverIdx])}
+function showStat(d){const e=$('statBox');if(!e)return;e.innerHTML=`<div class="flex items-center gap-2"><div>${radarSVG(d.st,'#'+d.color.toString(16).padStart(6,'0'),150)}</div><div><div class="font-black text-blue-900">${d.name}</div><div class="text-xs text-slate-500">${d.tag}</div></div></div>`}
 Object.keys(DIFF).forEach(k=>{const b=document.createElement('button');b.className='btn bg-gradient-to-b from-white to-slate-200 flex-1 text-xl';b.textContent=k;
  b.onclick=()=>{diff=k;[...$('dfBox').children].forEach(x=>x.classList.toggle('sel',x===b))};if(k===diff)b.classList.add('sel');$('dfBox').appendChild(b)});
 function renderTbl(){const box=$('tbBox');box.innerHTML='';const all=TBL.size===8;
@@ -610,6 +672,8 @@ const MP_BROKERS=['wss://broker.emqx.io:8084/mqtt','wss://broker.hivemq.com:8884
 let mqClient=null, mpBrowseRooms={};
 const TOPIC_PREFIX='chuntok_racing_v3_hk/';
 const mpState={active:false,code:'',isHost:false,lastSync:0,lastSteer:0,roomData:null,hbTimer:null};
+/* 畫質改變後,清除已建賽道快取,下次入賽道按新畫質重建裝飾 */
+window._rebuildTracks=()=>{Object.keys(TR).forEach(k=>{scene.remove(TR[k].group);delete TR[k]})};
 
 function ensureMqtt(){
   if(mqClient&&mqClient.connected)return Promise.resolve(mqClient);
@@ -832,8 +896,9 @@ function syncMyMpPos(force=false){
 /* ===== 排行榜及老師報告 ===== */
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ID=(g,c,n)=>`${GNAME[g]}${c}${n}`;
-async function fbRaces(max=3000){if(!FB.ok)return null;try{const s=await getDocs(query(collection(FB.db,'races'),orderBy('ts','desc'),limit(max)));return s.docs.map(d=>{const x=d.data();x.ms=x.ts?x.ts.toMillis():0;return x})}catch(e){return null}}
-async function fbPlayers(){if(!FB.ok)return null;try{const s=await getDocs(query(collection(FB.db,'players'),limit(2000)));return s.docs.map(d=>d.data())}catch(e){return null}}
+let _rc={t:0,d:null};
+async function fbRaces(max=1500){for(let i=0;i<20&&!FB.ok;i++)await new Promise(r=>setTimeout(r,150));if(!FB.ok)return null;if(_rc.d&&Date.now()-_rc.t<300000)return _rc.d;try{const y=await fbYear();const s=await getDocs(query(collection(FB.db,'races'),orderBy('ts','desc'),limit(max)));const d=s.docs.map(d=>{const x=d.data();x.ms=x.ts?x.ts.toMillis():0;return x}).filter(x=>x.ms>=y);_rc={t:Date.now(),d};return d}catch(e){console.warn('讀取 races 失敗',e);return null}}
+async function fbPlayers(){for(let i=0;i<20&&!FB.ok;i++)await new Promise(r=>setTimeout(r,150));if(!FB.ok)return null;try{const y=await fbYear();const s=await getDocs(query(collection(FB.db,'players'),limit(2000)));return s.docs.map(d=>d.data()).filter(p=>!p.ts||p.ts.toMillis()>=y)}catch(e){console.warn('讀取 players 失敗',e);return null}}
 let lbMode='acc',lbGr=0;
 function grBtns(box,cur,fn){box.innerHTML='';[['全部',0],...GRADES.map(g=>[GNAME[g]+'年級',g])].forEach(([t,v])=>{const b=document.createElement('button');b.className='btn bg-slate-100 text-sm py-1 px-3'+(v===cur?' sel':'');b.textContent=t;b.onclick=()=>fn(v);box.appendChild(b)})}
 async function openLb(){show('sLb');$('lbBox').textContent='載入中…';await drawLb()}
@@ -847,7 +912,7 @@ async function drawLb(){grBtns($('lbGr'),lbGr,v=>{lbGr=v;drawLb()});$('lbA').cla
  if(!rows.length){$('lbBox').textContent='暫時未有資料，快去比賽吧！';return}
  const top=rows.slice(0,10),mi=me?rows.findIndex(r=>r.k===me):-1,md=['🥇','🥈','🥉'],unit=lbMode==='acc'?'%':' 場';
  $('lbBox').innerHTML=top.map((r,i)=>`<div class="flex items-center gap-3 rounded-xl px-3 py-1 mb-1 ${r.k===me?'bg-amber-100 font-black':'bg-slate-50'}"><span class="text-2xl w-10 text-center">${md[i]||i+1}</span><span class="text-xl font-bold flex-1">${esc(r.k)}</span><span class="text-xs text-slate-500">${esc(r.sub)}</span><span class="text-2xl font-black text-blue-700 w-20 text-right">${r.v}${unit}</span></div>`).join('')+(mi>=10?`<div class="mt-2 rounded-xl bg-amber-100 px-3 py-1 font-black">你排第 ${mi+1} 名：${esc(rows[mi].k)}　${rows[mi].v}${unit}</div>`:'')}
-$('lbBtn').onclick=openLb;$('lbBack').onclick=()=>{user&&user.type==='teacher'&&!window._inTest?show('sAdmin'):showMenu()};$('lbA').onclick=()=>{lbMode='acc';drawLb()};$('lbW').onclick=()=>{lbMode='win';drawLb()};
+$('lbBtn').onclick=()=>{window._lbFromLogin=false;openLb()};$('lbBack').onclick=()=>{if(window._lbFromLogin){window._lbFromLogin=false;user=null;show('sLogin');return}user&&user.type==='teacher'&&!window._inTest?show('sAdmin'):showMenu()};$('lbA').onclick=()=>{lbMode='acc';drawLb()};$('lbW').onclick=()=>{lbMode='win';drawLb()};
 let rpGr=0,rpData=null;
 async function openRp(){show('sRp');$('rpBox').textContent='載入中…';const rs=await fbRaces();if(!rs){$('rpBox').textContent='暫時未能連線，請稍後再試。';return}rpData=rs;drawRp()}
 function rpStats(rs){const by={};rs.forEach(r=>{const k=ID(r.grade,r.cls,r.no);const o=by[k]=by[k]||{k,g:r.grade,c:r.cls,no:r.no,rs:[]};o.rs.push(r)});
@@ -904,7 +969,7 @@ Object.assign(sun.shadow.camera,{left:-45,right:45,top:45,bottom:-45,near:1,far:
 scene.add(sun,sun.target);
 const envTex=new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(),.04).texture;
 let qLv=0;
-function setQ(h){qLv=h===true?1:h===false?0:h;hiQ=qLv>0;['qLo','qHi','qUl'].forEach((id,i)=>$(id).classList.toggle('sel',i===qLv));
+function setQ(h){const _old=qLv;qLv=h===true?1:h===false?0:h;if(_old!==qLv&&window._rebuildTracks&&curTrack){window._rebuildTracks();setTimeout(()=>{try{selectTrack(trackKey,routeIdx)}catch(e){}},0)}hiQ=qLv>0;['qLo','qHi','qUl'].forEach((id,i)=>$(id).classList.toggle('sel',i===qLv));
  renderer.setPixelRatio(Math.min(devicePixelRatio,[1.25,2,2.5][qLv]));const ms=[1024,2048,4096][qLv];sun.shadow.mapSize.set(ms,ms);
  if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null}
  scene.environment=qLv?envTex:null;renderer.toneMappingExposure=qLv===2?1.25:1.15;
@@ -951,7 +1016,42 @@ function mkStart(){const f=frame(0),g=new THREE.Group();g.position.copy(f.p);g.r
  const bn=new THREE.Mesh(new THREE.BoxGeometry(W+3,2.2,.6),new THREE.MeshStandardMaterial({map:makeStartBannerTex(),roughness:.3}));bn.position.y=8.2;g.add(bn);
  window._startBanners=window._startBanners||[];window._startBanners.push(bn)}
 
-function meadowDeco(){const samp=[];for(let i=0;i<240;i++)samp.push(frame(i/240*L).p);
+/* ===== Kenney Racing Kit 賽道裝飾(按畫質分級,檔案缺失自動略過) ===== */
+const RK='./models/';
+const rkCache={};
+function rkLoad(n){if(!rkCache[n])rkCache[n]=new Promise(res=>gltfLoader.load(RK+n+'.glb',g=>res(g.scene),undefined,()=>res(null)));return rkCache[n]}
+function rkNorm(obj,size){const b=new THREE.Box3().setFromObject(obj),s=new THREE.Vector3(),c=new THREE.Vector3();b.getSize(s);b.getCenter(c);const k=size/Math.max(s.x,s.z,.01);const w=new THREE.Group();obj.scale.setScalar(k);obj.position.set(-c.x*k,-b.min.y*k,-c.z*k);w.add(obj);return w}
+async function rkPlace(names,size,list,parent){/* list:[{s,x,yaw}] */
+ const pick=names[Math.floor(Math.random()*names.length)];
+ for(const n of names){const m=await rkLoad(n);if(!m)continue;
+  const base=rkNorm(m.clone(true),size);base.traverse(o=>{if(o.isMesh){o.castShadow=o.receiveShadow=true}});
+  list.forEach((it,i)=>{const o=base.clone(true),f=frame(it.s);o.position.copy(f.p).addScaledVector(f.r,it.x);o.rotation.y=Math.atan2(f.t.x,f.t.z)+(it.yaw||0);(parent||scene).add(o)});
+  return true}
+ return false}
+function rkDeco(){const lv=qLv,grp=new THREE.Group();scene.add(grp);
+ const step=[0,44,26][lv]||44,bar=[],tire=[],lamp=[],flag=[],tree=[];
+ if(lv===0){/* 省電:只放起跑區 */}
+ else{
+  for(let s=10;s<L;s+=step){bar.push({s,x:-W/2-2.4},{s,x:W/2+2.4})}
+  for(let s=20;s<L;s+=step*2){lamp.push({s:s,x:-W/2-5},{s:s+step,x:W/2+5})}
+  if(lv===2){for(let s=30;s<L;s+=step*1.5){tire.push({s,x:-W/2-4.2,yaw:Math.PI/2},{s:s+step*.7,x:W/2+4.2})}
+   for(let s=5;s<L;s+=70){flag.push({s,x:s%140<70?-W/2-7:W/2+7})}
+   for(let s=0;s<L;s+=34){tree.push({s,x:(s%68<34?-1:1)*(W/2+14+Math.random()*10)})}}}
+ rkPlace(['barrierWall','barrierRed','barrierWhite'],6,bar,grp);
+ rkPlace(['lightPostLarge','lightPostModern','lightRed'],9,lamp,grp);
+ rkPlace(['tires','tireRed','tireWhite'],3.2,tire,grp);
+ rkPlace(['flagCheckers','flagRed','flagGreen'],7,flag,grp);
+ rkPlace(['treeLarge','treeSmall'],9,tree,grp);
+ /* 起跑區:看台、維修站、橫幅塔 */
+ const st=[{s:6,x:-W/2-16,yaw:Math.PI/2}],gs=[{s:6,x:W/2+16,yaw:-Math.PI/2}];
+ rkPlace(['grandStandCovered','grandStand','grandStandAwning'],lv?30:18,st,grp);
+ rkPlace(['pitsGarage','pitsGarageClosed','pitsOffice'],lv?22:14,gs,grp);
+ if(lv>=1){rkPlace(['bannerTowerRed','bannerTowerGreen','overhead'],12,[{s:-2,x:-W/2-3},{s:-2,x:W/2+3}],grp);
+  rkPlace(['grandStand','grandStandCovered'],26,[{s:40,x:-W/2-16,yaw:Math.PI/2},{s:74,x:-W/2-16,yaw:Math.PI/2}],grp)}
+ if(lv===2){rkPlace(['pitsOffice','pitsGarage'],18,[{s:30,x:W/2+16,yaw:-Math.PI/2},{s:54,x:W/2+16,yaw:-Math.PI/2}],grp);
+  rkPlace(['billboard','billboardLow'],9,[{s:100,x:-W/2-8},{s:L*.5,x:W/2+8},{s:L*.75,x:-W/2-8}],grp)}
+}
+function meadowDeco(){rkDeco();const samp=[];for(let i=0;i<240;i++)samp.push(frame(i/240*L).p);
  const nearTrack=(x,z,d)=>samp.some(p=>(p.x-x)**2+(p.z-z)**2<d*d);
  const cone=new THREE.ConeGeometry(2.6,7,7),trunk=new THREE.CylinderGeometry(.4,.5,2,6);
  const im=new THREE.InstancedMesh(cone,new THREE.MeshStandardMaterial({color:0x2f8f3a,flatShading:true}),170),it=new THREE.InstancedMesh(trunk,new THREE.MeshStandardMaterial({color:0x7c4a22}),170);
@@ -1085,6 +1185,7 @@ function makeKart(d,labelTxt=''){
       const tint=new THREE.Color(d.color);
       model.traverse(n=>{if(n.isMesh){n.castShadow=n.receiveShadow=true;if(n.material&&n.material.color&&n.name&&/body|paint|hull|car/i.test(n.name)){n.material=n.material.clone();n.material.color.lerp(tint,.65)}}});
       bodyGrp.clear();bodyGrp.add(model);
+      if(!/race|kart/i.test(d.glb))drv.visible=false;
       const wPlate=new THREE.Mesh(new THREE.BoxGeometry(2.2,.14,.65),mWing);wPlate.position.set(0,1.45,-1.65);bodyGrp.add(wPlate);
     };
     if(glbCache[d.glb])applyGlb(glbCache[d.glb]);
@@ -1136,7 +1237,7 @@ function buildCity(){
  ribbon(-W/2,W/2,.02,(i,c)=>c.set(0x2b2d33));
  [-1,1].forEach(sd=>{ribbon(sd<0?-W/2-6:W/2,sd<0?-W/2:W/2+6,.06,(i,c)=>c.set(0x9a8f86));ribbon(sd<0?-W/2+.3:W/2-.6,sd<0?-W/2+.6:W/2-.3,.05,(i,c)=>c.set(0xf5f5f5))});
  [-W/6,W/6].forEach(o=>ribbon(o-.15,o+.15,.05,(i,c)=>c.set(i%4<2?0xffffff:0x2b2d33)));
- mkStart();gates=mkGates();
+ mkStart();gates=mkGates();rkDeco();
  const samp2=[];for(let i=0;i<300;i++)samp2.push(frame(i/300*L).p);
  const near2=(x,z,d)=>samp2.some(p=>(p.x-x)**2+(p.z-z)**2<d*d);
  const winT=cvTex(g=>{g.fillStyle='#000';g.fillRect(0,0,128,128);for(let y=4;y<128;y+=12)for(let x=4;x<128;x+=12)if(Math.random()<.45){g.fillStyle=Math.random()<.5?'#ffd27a':'#ffe9b8';g.fillRect(x,y,7,8)}});
@@ -1284,12 +1385,9 @@ let paused=false;
 $('pauseBtn').onclick=()=>{if(!race||!['race','count'].includes(race.state))return;paused=true;keys.l=keys.r=false;musStop();$('pauseOv').style.display='flex'};
 $('resumeBtn').onclick=()=>{paused=false;$('pauseOv').style.display='none';clock.getDelta();musStart()};
 $('quitBtn').onclick=()=>{paused=false;$('pauseOv').style.display='none';musStop();if(race){race.state='quit';clearRace()}showMenu()};
-const CN=['零','一','二','三','四','五','六','七','八','九'],sAudio=new Audio();
-$('readBtn').onclick=async()=>{const b=$('readBtn');if(!race||race.gi>=TOTALQ)return;const q=gates[race.gi%GPL].q;if(!q)return;
- if(!window.sayoSpeak){msg('讀題功能暫時未能使用','#fca5a5');return}
- b.disabled=true;let r;try{r=await window.sayoSpeak(`${CN[q.a]}乘${CN[q.b]}`)}catch(e){r={error:'x'}}b.disabled=false;
- if(!r||r.error){msg('聲音未準備好，請稍後再試','#fca5a5',2);return}
- sAudio.src=r.url;sAudio.play().catch(()=>{})};
+let readMode=2;const READ_T=['🔈 讀題:開','','🔇 讀題:關'];
+function speakQ(q){if(readMode===2||!q||!window.speechSynthesis)return;try{speechSynthesis.cancel();const t=`${q.a}乘${q.b}`;const u=new SpeechSynthesisUtterance(t);u.lang='zh-HK';u.rate=.95;const v=speechSynthesis.getVoices().find(x=>/zh[-_]HK|yue/i.test(x.lang));if(v)u.voice=v;speechSynthesis.speak(u)}catch(e){}}
+$('readBtn').onclick=()=>{readMode=readMode===2?0:2;$('readBtn').textContent=READ_T[readMode];if(readMode<2&&race&&race.gi<TOTALQ)speakQ(gates[race.gi%GPL].q);else if(window.speechSynthesis)speechSynthesis.cancel()};
 
 /* ===== 比賽 ===== */
 const VMAX=30;let race=null,cars=[];
@@ -1328,14 +1426,14 @@ async function startRace(roomDoc=null){
  $('hMsg').textContent='';showQ();show(null)}
 function showQ(){const q=race.gi<TOTALQ?gates[race.gi%GPL].q:null;
  $('hQ').textContent=q?`${q.a} × ${q.b} = ?`:'衝線！';
- $('hOpts').innerHTML=q?q.opts.map((o,k)=>`<span class="chip" style="background:${LCOL[k]}">${o}</span>`).join(''):''}
-let msgT=0;function msg(t,c='#fff',d=1.3){$('hMsg').textContent=t;$('hMsg').style.color=c;msgT=d}
+ $('hOpts').innerHTML=q?q.opts.map((o,k)=>`<span class="chip" style="background:${LCOL[k]}">${o}</span>`).join(''):'';if(q&&race.state!=='count')speakQ(q)}
+let msgT=0;function msg(t,c='#fff',d=1.3){if(!/^(🏁|❌|🎵)/.test(t))return;$('hMsg').textContent=t;$('hMsg').style.color=c;msgT=d}
 const laneOf=x=>x<-W/6?0:x>W/6?2:1;
 function place(o,s,x,yaw=0){const f=frame(s);o.position.copy(f.p).addScaledVector(f.r,x);o.rotation.y=Math.atan2(f.t.x,f.t.z)+yaw;return f}
 
 function update(dt){const R=race;R.t+=dt;const p=R.p;R.hitCD=(R.hitCD||0)-dt;R.wallCD=(R.wallCD||0)-dt;updSparks(dt);
  if(R.state==='count'){R.cd-=dt;const n=Math.ceil(R.cd);$('hMsg').style.color='#fde047';$('hMsg').textContent=R.cd>.5?(n>3?3:n):'開始！';const bk=R.cd>.5?Math.min(3,n):0;if(bk!==R.lastN){R.lastN=bk;sfx(bk?'beep':'go')}
-  if(R.cd<=0){R.state='race';R.shownAt=R.laneAt=R.t;$('hMsg').textContent='';syncMyMpPos(true)}}
+  if(R.cd<=0){R.state='race';R.shownAt=R.laneAt=R.t;$('hMsg').textContent='';syncMyMpPos(true);speakQ(gates[0].q)}}
  const racing=R.state==='race'||R.state==='finish';
  const inp=(keys.r?1:0)-(keys.l?1:0);p.steer+=(inp-p.steer)*Math.min(1,dt*10);
  if(racing){const tv=(VMAX+(p.boost>0?12:0))*(p.slow>0?.5:1)*(R.state==='finish'?.6:1);p.v+=(tv-p.v)*Math.min(1,dt*1.3);
