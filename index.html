@@ -160,21 +160,11 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0b1b33;font-family:sy
     <button id="adLb" class="btn bg-gradient-to-b from-amber-100 to-amber-300 text-amber-900 text-xl py-3">🏆 排行榜</button>
     <button id="adRp" class="btn bg-gradient-to-b from-sky-100 to-sky-300 text-sky-900 text-xl py-3">📊 老師報告</button>
     <button id="adTest" class="btn bg-gradient-to-b from-slate-100 to-slate-300 text-slate-800 text-xl py-3">🧪 老師測試（全部車手已解鎖）</button>
-    <div class="bg-sky-50 border-2 border-sky-200 rounded-2xl p-3 text-left">
-      <div class="font-black text-sky-900 text-base">☁️ Firebase Storage 雲端圖檔管理（全校一開 Game 自動讀取）</div>
-      <p class="text-xs text-slate-600 mt-1">在此上傳圖片去你嘅 Firebase Storage (<code>chuntok-racing.firebasestorage.app</code>)，或貼上已上傳嘅 Firebase 公開 Download URL：</p>
-      <input id="inpUpDrivers" type="file" accept="image/*" class="hidden">
-      <input id="inpUpBadge" type="file" accept="image/*" class="hidden">
-      <div class="grid grid-cols-2 gap-2 mt-2">
-        <button id="btnUpDrivers" class="btn bg-blue-600 text-white text-xs py-2">📤 上傳 10 合 1 車手圖上 Firebase</button>
-        <button id="btnUpBadge" class="btn bg-amber-600 text-white text-xs py-2">📤 上傳真鐸校牌圖上 Firebase</button>
-      </div>
-      <div class="mt-2 grid gap-1.5 text-xs">
-        <input id="inpUrlDrivers" type="text" placeholder="或直接貼上 Firebase Storage 車手圖 Download URL…" class="border rounded-lg px-2 py-1.5 w-full">
-        <input id="inpUrlBadge" type="text" placeholder="或直接貼上 Firebase Storage 真鐸校牌 Download URL…" class="border rounded-lg px-2 py-1.5 w-full">
-        <button id="btnSaveUrls" class="btn bg-emerald-600 text-white text-xs py-1.5">💾 儲存網址並立即套用</button>
-      </div>
-      <p id="upStatus" class="text-xs font-bold text-blue-700 mt-1.5"></p>
+    <div class="bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-3 text-left text-xs text-slate-700">
+      <div class="font-black text-emerald-900 text-sm mb-1">🐙 GitHub Pages 靜態資源直讀狀態</div>
+      <div>① 10合1車手圖 (<code>./drivers_sheet.png</code>)：<b id="stDrivers" class="text-amber-600">偵測中…</b></div>
+      <div class="mt-0.5">② 真鐸校牌圖 (<code>./school_badge.png</code>)：<b id="stBadge" class="text-amber-600">偵測中…</b></div>
+      <p class="text-slate-500 mt-1.5">提示：將此 HTML 改名為 <code>index.html</code>，連同 <code>drivers_sheet.png</code> 及 <code>school_badge.png</code> 上傳至 GitHub 同一資料夾即可全校自動讀取！</p>
     </div>
   </div>
   <button id="adBack" class="btn bg-slate-200 mt-3">⬅ 返回登入頁</button>
@@ -261,231 +251,17 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import {getAuth,signInAnonymously} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import {getFirestore,doc,setDoc,getDoc,addDoc,collection,getDocs,query,orderBy,limit,serverTimestamp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import {getStorage,ref as sRef,uploadBytes,getDownloadURL} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
 const $=id=>document.getElementById(id);
 
-/* ===== Firebase Storage 固定網址設定（上傳後或貼入公開 Download URL 即可全校自動載入） ===== */
-// 1. 10合1車手圖 Firebase Storage 網址（若留空，開機會自動去 Firebase Storage 讀取 assets/drivers_sheet.png）
-let FIREBASE_SHEET_URL = '';
-// 2. 真鐸校牌 Firebase Storage 網址（若留空，開機會自動去 Firebase Storage 讀取 assets/school_badge.png）
-let FIREBASE_BADGE_URL = '';
+/* ===== GitHub Pages 同目錄靜態圖片路徑（放上 GitHub 同一資料夾即極速直讀） ===== */
+const GITHUB_SHEET_PATH = './drivers_sheet.png';
+const GITHUB_BADGE_PATH = './school_badge.png';
 let schoolBadgeImg = null;
 
-// 1:1 還原《真鐸車手頭像十款.png》水彩插畫細節（作為雲端圖片載入完成前嘅 0 秒預覽）
-function makeChunTokAvatarDataURI(kind){
-  const cv=document.createElement('canvas');cv.width=200;cv.height=200;
-  const g=cv.getContext('2d');
-  const rr=(x,y,w,h,r)=>{g.beginPath();g.roundRect(x,y,w,h,r);g.fill()};
-  // 繪畫真鐸心口盾牌校徽
-  const drawBadge=(bx,by)=>{
-    g.save();g.translate(bx,by);
-    g.fillStyle='#5b21b6';g.strokeStyle='#fde047';g.lineWidth=2;
-    g.beginPath();g.moveTo(0,-9);g.lineTo(8,-5);g.lineTo(7,5);g.lineTo(0,10);g.lineTo(-7,5);g.lineTo(-8,-5);g.closePath();g.fill();g.stroke();
-    g.fillStyle='#fff';g.beginPath();g.arc(0,-1,3.2,0,7);g.fill();
-    g.restore();
-  };
-  // 繪畫帶黑色賽車手套嘅拳頭 / 手掌
-  const drawGlove=(gx,gy,pose='fist')=>{
-    g.save();g.translate(gx,gy);
-    g.fillStyle='#1f2937';g.strokeStyle='#0f172a';g.lineWidth=2;
-    if(pose==='v'){
-      g.lineCap='round';g.lineWidth=7;g.strokeStyle='#1f2937';
-      g.beginPath();g.moveTo(-4,6);g.lineTo(-9,-14);g.moveTo(4,6);g.lineTo(9,-14);g.stroke();
-    }else if(pose==='open'){
-      g.lineCap='round';g.lineWidth=5.5;g.strokeStyle='#1f2937';
-      [-10,-4,3,10].forEach((dx,i)=>{g.beginPath();g.moveTo(dx*.4,4);g.lineTo(dx,-12-(i===1||i===2?3:0));g.stroke()});
-    }
-    g.beginPath();g.arc(0,4,12,0,7);g.fill();g.stroke();
-    g.fillStyle='#374151';g.beginPath();g.arc(-3,1,5,0,7);g.fill();
-    g.restore();
-  };
-
-  // 1. 後層馬尾（如火箭號、流星號）
-  if(kind==='bow'){
-    g.fillStyle='#432312';g.beginPath();g.moveTo(132,74);g.quadraticCurveTo(176,65,172,126);g.quadraticCurveTo(150,126,136,96);g.fill();
-  }else if(kind==='glasses'){
-    g.fillStyle='#1e1612';g.beginPath();g.arc(146,128,16,0,7);g.fill();
-    g.fillStyle='#f8fafc';g.beginPath();g.arc(136,118,5,0,7);g.arc(143,115,5,0,7);g.fill();
-  }
-
-  // 2. 身體與賽車服 / 西裝
-  g.save();
-  if(kind==='chan'){
-    // 陳校長：揮手手勢 + 黑色西裝 + 白恤衫 + 深藍領呔
-    g.strokeStyle='#fed7aa';g.lineWidth=14;g.lineCap='round';
-    g.beginPath();g.moveTo(46,162);g.quadraticCurveTo(22,140,30,115);g.stroke();
-    g.fillStyle='#fed7aa';g.beginPath();g.arc(30,110,12,0,7);g.fill();
-    [-9,-3,3,9].forEach(dx=>{g.lineWidth=5;g.beginPath();g.moveTo(30+dx*.5,108);g.lineTo(30+dx*1.2,91);g.stroke()});
-    g.fillStyle='#1e293b';g.beginPath();g.moveTo(42,196);g.lineTo(56,142);g.lineTo(144,142);g.lineTo(158,196);g.closePath();g.fill();
-    g.fillStyle='#ffffff';g.beginPath();g.moveTo(82,142);g.lineTo(100,182);g.lineTo(118,142);g.closePath();g.fill();
-    g.fillStyle='#1e3a8a';g.beginPath();g.moveTo(96,146);g.lineTo(104,146);g.lineTo(106,184);g.lineTo(100,192);g.lineTo(94,184);g.closePath();g.fill();
-    drawBadge(126,172);
-  }else if(kind==='tam'){
-    // 譚主任：黑銀賽車服 + 右手托黑超
-    g.fillStyle='#1f2937';g.beginPath();g.moveTo(44,196);g.lineTo(56,142);g.lineTo(144,142);g.lineTo(156,196);g.closePath();g.fill();
-    g.strokeStyle='#9ca3af';g.lineWidth=7;g.beginPath();g.moveTo(64,144);g.lineTo(100,170);g.lineTo(136,144);g.stroke();
-    drawBadge(124,172);
-    g.strokeStyle='#1f2937';g.lineWidth=15;g.lineCap='round';
-    g.beginPath();g.moveTo(54,164);g.quadraticCurveTo(32,142,46,98);g.stroke();
-    g.fillStyle='#fed7aa';g.beginPath();g.arc(49,92,9,0,7);g.fill();
-  }else{
-    // 學生車手：白底藍/紫條紋真鐸賽車服
-    const stripeCol=(kind==='bow'||kind==='helmetP'||kind==='glasses')?'#6d28d9':'#1d4ed8';
-    g.fillStyle='#ffffff';g.strokeStyle=stripeCol;g.lineWidth=5;
-    g.beginPath();g.moveTo(46,196);g.lineTo(58,142);g.lineTo(142,142);g.lineTo(154,196);g.closePath();g.fill();g.stroke();
-    g.fillStyle=stripeCol;g.fillRect(54,154,92,12);
-    g.fillStyle='#1e293b';rr(84,136,32,12,5);
-    drawBadge(122,174);
-    if(kind==='headband'||kind==='helmetB'||kind==='boy'){
-      g.strokeStyle='#1d4ed8';g.lineWidth=14;g.lineCap='round';
-      g.beginPath();g.moveTo(56,162);g.quadraticCurveTo(32,148,38,118);g.stroke();
-      drawGlove(38,112,'fist');
-    }else if(kind==='bow'){
-      drawGlove(144,124,'v');
-    }else if(kind==='cap'){
-      g.strokeStyle='#1d4ed8';g.lineWidth=13;g.lineCap='round';
-      g.beginPath();g.moveTo(56,160);g.quadraticCurveTo(30,130,44,86);g.stroke();
-      drawGlove(46,82,'fist');
-    }else if(kind==='headphone'){
-      drawGlove(44,108,'fist');drawGlove(154,130,'v');
-    }else if(kind==='helmetP'){
-      drawGlove(32,120,'open');drawGlove(168,120,'open');
-    }
-  }
-  g.restore();
-
-  // 3. 頸部與耳仔
-  g.fillStyle='#f5c299';rr(88,124,24,24,8);
-  g.fillStyle='#fed7aa';
-  g.beginPath();g.arc(52,96,11,0,7);g.arc(148,96,11,0,7);g.fill();
-
-  // 4. 頭盔後殼（雷霆號 / 極光號）
-  if(kind==='helmetB'||kind==='helmetP'){
-    const hc=kind==='helmetB'?'#2563eb':'#f3e8ff', sc=kind==='helmetB'?'#e2e8f0':'#7c3aed';
-    g.fillStyle=hc;g.strokeStyle=sc;g.lineWidth=6;
-    g.beginPath();g.arc(100,84,60,Math.PI*.88,Math.PI*.12,false);
-    g.lineTo(148,124);g.quadraticCurveTo(100,138,52,124);g.closePath();g.fill();g.stroke();
-    if(kind==='helmetP'){g.fillStyle='#7c3aed';g.fillRect(88,24,24,36)}
-    else{g.fillStyle='#f8fafc';g.beginPath();g.arc(100,82,58,-Math.PI*.75,-Math.PI*.25);g.lineWidth=8;g.stroke()}
-  }
-
-  // 5. 面部圓形（帶水彩柔和漸變陰影）
-  const fg=g.createRadialGradient(92,80,10,100,90,52);
-  fg.addColorStop(0,'#ffe4c4');fg.addColorStop(0.82,'#fed7aa');fg.addColorStop(1,'#f3be8a');
-  g.fillStyle=fg;g.beginPath();g.arc(100,90,48,0,7);g.fill();
-  // 水彩胭脂
-  g.fillStyle='rgba(251,113,133,0.42)';
-  g.beginPath();g.ellipse(68,102,9,5.5,0,0,7);g.ellipse(132,102,9,5.5,0,0,7);g.fill();
-
-  // 6. 髮型與頭飾（皇冠 / 頭帶 / 鴨嘴帽 / 蝴蝶結 / 耳機）
-  if(kind!=='helmetB'&&kind!=='helmetP'){
-    g.fillStyle=(kind==='bow'||kind==='headphone')?'#4a2511':'#2d1a10';
-    g.beginPath();
-    g.arc(100,82,51,Math.PI*1.05,Math.PI*1.95);
-    g.quadraticCurveTo(148,54,146,84);
-    g.quadraticCurveTo(130,58,108,62);
-    g.quadraticCurveTo(92,52,76,62);
-    g.quadraticCurveTo(58,58,54,84);
-    g.closePath();g.fill();
-    // 頭頂呆毛/髮束細節
-    g.beginPath();g.moveTo(86,34);g.quadraticCurveTo(102,16,122,32);g.quadraticCurveTo(110,38,96,36);g.fill();
-    // 頭髮水彩高光弧線
-    g.strokeStyle='rgba(255,255,255,0.22)';g.lineWidth=4;g.lineCap='round';
-    g.beginPath();g.arc(100,76,40,Math.PI*1.2,Math.PI*1.75);g.stroke();
-  }
-
-  if(kind==='chan'){
-    // 陳校長皇冠
-    g.save();g.translate(88,24) || g.rotate(-0.12);
-    g.fillStyle='#facc15';g.strokeStyle='#ca8a04';g.lineWidth=2.5;
-    g.beginPath();g.moveTo(-32,18);g.lineTo(-26,-10);g.lineTo(-10,6);g.lineTo(0,-16);g.lineTo(12,6);g.lineTo(28,-10);g.lineTo(32,18);g.closePath();g.fill();g.stroke();
-    g.fillStyle='#a855f7';g.beginPath();g.arc(0,5,4.2,0,7);g.fill();
-    g.fillStyle='#ec4899';g.beginPath();g.arc(-16,8,3,0,7);g.arc(16,8,3,0,7);g.fill();
-    g.restore();
-  }else if(kind==='headband'){
-    // 閃電號藍白運動頭帶
-    g.fillStyle='#1e40af';g.strokeStyle='#ffffff';g.lineWidth=2.5;
-    rr(50,52,100,17,6);g.strokeRect(52,55,96,11);
-    g.beginPath();g.moveTo(52,60.5);g.lineTo(148,60.5);g.stroke();
-  }else if(kind==='bow'){
-    // 火箭號紫色蝴蝶結
-    g.save();g.translate(132,42);g.rotate(0.25);
-    g.fillStyle='#7c3aed';g.strokeStyle='#4c1d95';g.lineWidth=2;
-    g.beginPath();g.moveTo(0,0);g.lineTo(-18,-12);g.lineTo(-14,10);g.closePath();g.fill();g.stroke();
-    g.beginPath();g.moveTo(0,0);g.lineTo(18,-10);g.lineTo(14,12);g.closePath();g.fill();g.stroke();
-    g.fillStyle='#a78bfa';g.beginPath();g.arc(0,0,5,0,7);g.fill();
-    g.restore();
-  }else if(kind==='cap'){
-    // 旋風號藍白鴨嘴帽
-    g.fillStyle='#1e40af';g.beginPath();g.arc(100,72,52,Math.PI*1.02,Math.PI*1.98);g.closePath();g.fill();
-    g.fillStyle='#ffffff';g.beginPath();g.ellipse(100,48,26,24,0,Math.PI,0,true);g.fill();
-    g.fillStyle='#1e3a8a';g.strokeStyle='#ffffff';g.lineWidth=2.5;
-    g.beginPath();g.moveTo(36,72);g.quadraticCurveTo(96,50,152,70);g.quadraticCurveTo(100,64,36,72);g.fill();g.stroke();
-  }else if(kind==='headphone'){
-    // 彩虹號耳機
-    g.strokeStyle='#1e293b';g.lineWidth=8;g.beginPath();g.arc(100,86,56,Math.PI*1.05,Math.PI*1.95);g.stroke();
-    g.fillStyle='#1e3a8a';g.strokeStyle='#0f172a';g.lineWidth=2.5;
-    g.beginPath();g.ellipse(44,92,11,20,0,0,7);g.fill();g.stroke();
-    g.beginPath();g.ellipse(156,92,11,20,0,0,7);g.fill();g.stroke();
-  }
-
-  // 7. 眉毛、眼睛與眼鏡
-  g.strokeStyle='#3b2314';g.lineWidth=3.2;g.lineCap='round';
-  g.beginPath();g.arc(78,76,10,Math.PI*1.15,Math.PI*1.85);g.stroke();
-  g.beginPath();g.arc(122,76,10,Math.PI*1.15,Math.PI*1.85);g.stroke();
-
-  const drawEye=(ex,ey)=>{
-    g.fillStyle='#ffffff';g.beginPath();g.ellipse(ex,ey,10,11,0,0,7);g.fill();
-    g.fillStyle='#3b2314';g.beginPath();g.arc(ex,ey,7.8,0,7);g.fill();
-    g.fillStyle='#111827';g.beginPath();g.arc(ex,ey,4.5,0,7);g.fill();
-    g.fillStyle='#ffffff';g.beginPath();g.arc(ex-2.5,ey-3,2.6,0,7);g.arc(ex+2.5,ey+2.5,1.2,0,7);g.fill();
-  };
-
-  if(kind==='headphone'){
-    g.strokeStyle='#291811';g.lineWidth=4.2;
-    g.beginPath();g.arc(78,92,9,Math.PI*1.1,Math.PI*1.9);g.stroke();
-    g.beginPath();g.arc(122,92,9,Math.PI*1.1,Math.PI*1.9);g.stroke();
-  }else if(kind==='bow'){
-    drawEye(78,90);
-    g.strokeStyle='#291811';g.lineWidth=4.2;
-    g.beginPath();g.arc(122,92,9,Math.PI*1.1,Math.PI*1.9);g.stroke();
-  }else{
-    drawEye(78,90);drawEye(122,90);
-  }
-
-  if(kind==='tam'){
-    // 譚主任黑超太陽眼鏡
-    g.fillStyle='#111827';g.strokeStyle='#374151';g.lineWidth=3;
-    rr(56,78,38,24,9);g.stroke();rr(106,78,38,24,9);g.stroke();
-    g.lineWidth=4;g.beginPath();g.moveTo(94,86);g.lineTo(106,86);g.stroke();
-    g.strokeStyle='rgba(255,255,255,0.45)';g.lineWidth=3;
-    g.beginPath();g.moveTo(64,84);g.lineTo(76,84);g.moveTo(114,84);g.lineTo(126,84);g.stroke();
-  }else if(kind==='glasses'){
-    // 流星號圓框眼鏡
-    g.strokeStyle='#1f2937';g.lineWidth=4;
-    g.beginPath();g.arc(78,90,17,0,7);g.stroke();
-    g.beginPath();g.arc(122,90,17,0,7);g.stroke();
-    g.beginPath();g.moveTo(95,90);g.lineTo(105,90);g.stroke();
-  }
-
-  // 8. 鼻子與笑容嘴巴
-  g.fillStyle='#e5a97c';g.beginPath();g.arc(100,98,2.5,0,7);g.fill();
-  if(kind==='tam'||kind==='glasses'){
-    g.strokeStyle='#9a3412';g.lineWidth=3.5;g.lineCap='round';
-    g.beginPath();g.arc(100,104,11,Math.PI*0.15,Math.PI*0.85);g.stroke();
-  }else{
-    g.fillStyle='#be123c';g.beginPath();g.arc(100,107,13,0,Math.PI,false);g.closePath();g.fill();
-    g.fillStyle='#ffffff';g.fillRect(90,107,20,4);
-    g.fillStyle='#fb7185';g.beginPath();g.ellipse(100,116,7,4,0,0,7);g.fill();
-  }
-
-  return cv.toDataURL('image/png');
-}
-
-/* ===== Firebase（只存班別及學號，不存姓名，並連接 Firebase Storage） ===== */
-const FB={ok:false,db:null,st:null};
+/* ===== Firebase（只存班別及學號成績，不存姓名） ===== */
+const FB={ok:false,db:null};
 try{const app=initializeApp({apiKey:"AIzaSyCCqRocv1fsExjhIo3WVymQwJtOEgUfGYc",authDomain:"chuntok-racing.firebaseapp.com",projectId:"chuntok-racing",storageBucket:"chuntok-racing.firebasestorage.app",messagingSenderId:"583186654240",appId:"1:583186654240:web:65e748cf5074a79a4e0845"});
- FB.db=getFirestore(app);FB.st=getStorage(app);signInAnonymously(getAuth(app)).then(()=>{FB.ok=true;syncTag('☁️ 已連線');autoFetchFirebaseStorageAssets()}).catch(e=>{console.warn('Firebase 登入失敗',e);syncTag('📴 離線模式');autoFetchFirebaseStorageAssets()})}catch(e){console.warn('Firebase 初始化失敗',e)}
+ FB.db=getFirestore(app);signInAnonymously(getAuth(app)).then(()=>{FB.ok=true;syncTag('☁️ 已連線')}).catch(e=>{console.warn('Firebase 登入失敗',e);syncTag('📴 離線模式')})}catch(e){console.warn('Firebase 初始化失敗',e)}
 function syncTag(t){const e=$('syncTag');if(e)e.textContent=t}
 async function fbRetry(){const q=(await store.get('pendingUp'))||[];if(!q.length||!FB.ok)return;const rest=[];
  for(const it of q){try{await fbWrite(it)}catch(e){rest.push(it)}}await store.set('pendingUp',rest);syncTag(rest.length?'📴 '+rest.length+' 筆待上傳':'☁️ 已同步')}
@@ -499,10 +275,118 @@ async function fbRestore(){if(user.type!=='student'||!FB.ok)return;
   if(d.tw){const m={...ltw};for(const k in d.tw)m[k]=Math.max(m[k]||0,d.tw[k]);await store.set('tw_'+uid(),m)}
   if(d.stats){const ls=(await store.get('stats_'+uid()))||{};for(const k in d.stats){const a=d.stats[k],b=ls[k]||{n:0,w:0};if(a.n>b.n)ls[k]=a}await store.set('stats_'+uid(),ls)}}}catch(e){console.warn('還原失敗',e)}}
 
-/* ===== 設定與 10 位真鐸車手（對應 10 合 1 圖片格仔位置及 Kenney 模型） ===== */
+/* ===== 內置水彩立體頭像後備繪圖（未放原圖時自動顯示，0 秒載入） ===== */
+function makeChunTokAvatarDataURI(kind){
+  const cv=document.createElement('canvas');cv.width=cv.height=180;
+  const g=cv.getContext('2d');
+  const skin=g.createRadialGradient(84,78,8,90,88,48);
+  skin.addColorStop(0,'#ffedd5');skin.addColorStop(.7,'#fed7aa');skin.addColorStop(1,'#fdba74');
+  const rr=(x,y,w,h,r)=>{g.beginPath();g.roundRect(x,y,w,h,r)};
+  const drawBadge=(bx,by)=>{
+    g.save();g.translate(bx,by);
+    g.beginPath();g.moveTo(0,-9);g.lineTo(8,-5);g.lineTo(6,6);g.lineTo(0,10);g.lineTo(-6,6);g.lineTo(-8,-5);g.closePath();
+    g.fillStyle='#6d28d9';g.fill();g.lineWidth=1.5;g.strokeStyle='#fde047';g.stroke();
+    g.fillStyle='#fff';g.beginPath();g.arc(0,-1,2.5,0,Math.PI*2);g.fill();
+    g.restore();
+  };
+  g.save();
+  if(kind==='chan'){
+    g.fillStyle='#1e293b';rr(38,128,104,54,22);g.fill();
+    g.fillStyle='#fff';g.beginPath();g.moveTo(74,128);g.lineTo(90,158);g.lineTo(106,128);g.closePath();g.fill();
+    g.fillStyle='#1e3a8a';g.beginPath();g.moveTo(86,132);g.lineTo(94,132);g.lineTo(96,162);g.lineTo(84,162);g.closePath();g.fill();
+    drawBadge(118,152);
+    g.strokeStyle='#fed7aa';g.lineWidth=13;g.lineCap='round';g.beginPath();g.moveTo(42,146);g.quadraticCurveTo(22,130,24,112);g.stroke();
+  }else if(kind==='tam'){
+    g.fillStyle='#1f2937';rr(38,128,104,54,22);g.fill();
+    g.strokeStyle='#9ca3af';g.lineWidth=6;g.beginPath();g.moveTo(58,128);g.lineTo(90,148);g.lineTo(122,128);g.stroke();
+    drawBadge(118,152);
+  }else{
+    const trim=kind==='bow'||kind==='helmetP'?'#6d28d9':kind==='glasses'||kind==='boy'?'#4338ca':'#1d4ed8';
+    g.fillStyle='#ffffff';rr(38,128,104,54,22);g.fill();g.lineWidth=4;g.strokeStyle=trim;g.stroke();
+    if(kind==='headband'){g.fillStyle='#1d4ed8';g.fillRect(42,146,96,10)}
+    drawBadge(118,152);
+    if(kind==='headband'||kind==='helmetP'){
+      g.strokeStyle='#1e293b';g.lineWidth=11;g.lineCap='round';
+      g.beginPath();g.moveTo(42,146);g.lineTo(26,120);g.stroke();
+      g.fillStyle='#1e293b';g.beginPath();g.arc(25,116,9,0,Math.PI*2);g.fill();
+    }
+    if(kind==='helmetP'){
+      g.strokeStyle='#1e293b';g.lineWidth=11;g.beginPath();g.moveTo(138,146);g.lineTo(154,120);g.stroke();
+      g.fillStyle='#1e293b';g.beginPath();g.arc(155,116,9,0,Math.PI*2);g.fill();
+    }
+  }
+  g.fillStyle='#fdba74';rr(78,112,24,22,8);g.fill();
+  g.fillStyle='#fed7aa';g.beginPath();g.arc(46,88,9,0,Math.PI*2);g.arc(134,88,9,0,Math.PI*2);g.fill();
+  g.fillStyle=skin;g.beginPath();g.arc(90,86,44,0,Math.PI*2);g.fill();
+  g.fillStyle='rgba(244,63,94,0.28)';g.beginPath();g.ellipse(60,96,8,5,0,0,Math.PI*2);g.ellipse(120,96,8,5,0,0,Math.PI*2);g.fill();
+
+  const hairGrad=g.createLinearGradient(0,30,0,80);hairGrad.addColorStop(0,'#451a03');hairGrad.addColorStop(1,'#291811');
+  g.fillStyle=hairGrad;
+  if(kind==='helmetB'||kind==='helmetP'){
+    const hc=kind==='helmetB'?'#2563eb':'#f3e8ff', hs=kind==='helmetB'?'#e2e8f0':'#7c3aed';
+    g.fillStyle=hc;g.beginPath();g.arc(90,82,52,Math.PI*.85,Math.PI*2.15);g.lineTo(132,116);g.lineTo(48,116);g.closePath();g.fill();
+    g.lineWidth=4;g.strokeStyle=hs;g.stroke();
+    if(kind==='helmetP'){g.fillStyle='#7c3aed';g.fillRect(80,30,20,32)}
+    g.fillStyle=skin;rr(52,62,76,46,16);g.fill();
+  }else{
+    g.beginPath();g.arc(90,78,46,Math.PI*.95,Math.PI*2.05);
+    g.quadraticCurveTo(118,56,90,60);g.quadraticCurveTo(62,56,44,78);g.fill();
+    if(kind==='bow'){
+      g.beginPath();g.moveTo(132,62);g.quadraticCurveTo(158,64,154,104);g.quadraticCurveTo(138,104,130,82);g.fill();
+      g.fillStyle='#7c3aed';g.beginPath();g.moveTo(122,42);g.lineTo(140,30);g.lineTo(136,48);g.lineTo(152,44);g.lineTo(138,58);g.lineTo(122,50);g.closePath();g.fill();
+    }
+    if(kind==='glasses'){g.beginPath();g.arc(136,104,13,0,Math.PI*2);g.fill()}
+    if(kind==='headband'){
+      g.fillStyle='#1e40af';rr(45,54,90,14,5);g.fill();
+      g.strokeStyle='#fff';g.lineWidth=3;g.beginPath();g.moveTo(47,61);g.lineTo(133,61);g.stroke();
+    }
+    if(kind==='cap'){
+      g.fillStyle='#1e40af';g.beginPath();g.arc(90,66,46,Math.PI,0);g.fill();
+      g.fillStyle='#fff';g.beginPath();g.moveTo(74,22);g.quadraticCurveTo(96,20,108,64);g.lineTo(66,64);g.closePath();g.fill();
+      g.fillStyle='#1e3a8a';g.beginPath();g.ellipse(84,65,50,10,0,Math.PI,0);g.fill();
+    }
+    if(kind==='headphone'){
+      g.strokeStyle='#1e293b';g.lineWidth=7;g.beginPath();g.arc(90,82,49,Math.PI,0);g.stroke();
+      g.fillStyle='#1e3a8a';rr(36,70,13,26,6);g.fill();rr(131,70,13,26,6);g.fill();
+    }
+    if(kind==='chan'){
+      const cg=g.createLinearGradient(50,15,130,45);cg.addColorStop(0,'#fef08a');cg.addColorStop(.5,'#facc15');cg.addColorStop(1,'#ca8a04');
+      g.fillStyle=cg;g.beginPath();g.moveTo(52,46);g.lineTo(58,18);g.lineTo(74,34);g.lineTo(90,12);g.lineTo(106,34);g.lineTo(122,18);g.lineTo(128,46);g.closePath();g.fill();
+      g.lineWidth=2.5;g.strokeStyle='#a16207';g.stroke();
+      g.fillStyle='#a855f7';g.beginPath();g.arc(90,33,4,0,Math.PI*2);g.fill();
+    }
+  }
+
+  if(kind==='tam'){
+    g.fillStyle='#111827';rr(52,72,32,22,8);g.fill();rr(96,72,32,22,8);g.fill();
+    g.strokeStyle='#111827';g.lineWidth=4;g.beginPath();g.moveTo(84,80);g.lineTo(96,80);g.stroke();
+    g.strokeStyle='rgba(255,255,255,0.45)';g.lineWidth=2.5;g.beginPath();g.moveTo(58,77);g.lineTo(70,77);g.moveTo(102,77);g.lineTo(114,77);g.stroke();
+    g.strokeStyle='#9a3412';g.lineWidth=3.5;g.lineCap='round';g.beginPath();g.moveTo(78,108);g.quadraticCurveTo(90,115,102,108);g.stroke();
+  }else{
+    const drawEye=(ex,ey,wink)=>{
+      if(wink){g.strokeStyle='#291811';g.lineWidth=4;g.lineCap='round';g.beginPath();g.moveTo(ex-9,ey);g.quadraticCurveTo(ex,ey-8,ex+9,ey);g.stroke();return}
+      g.fillStyle='#fff';g.beginPath();g.ellipse(ex,ey,9,10,0,0,Math.PI*2);g.fill();
+      g.fillStyle='#291811';g.beginPath();g.arc(ex,ey+1,6.5,0,Math.PI*2);g.fill();
+      g.fillStyle='#fff';g.beginPath();g.arc(ex-2.5,ey-2.5,2.6,0,Math.PI*2);g.fill();
+    };
+    drawEye(71,84,kind==='headphone');
+    drawEye(109,84,kind==='bow'||kind==='headphone');
+    if(kind==='glasses'){
+      g.strokeStyle='#1f2937';g.lineWidth=3.5;
+      g.beginPath();g.arc(71,84,14,0,Math.PI*2);g.stroke();
+      g.beginPath();g.arc(109,84,14,0,Math.PI*2);g.stroke();
+      g.beginPath();g.moveTo(85,84);g.lineTo(95,84);g.stroke();
+    }
+    g.fillStyle='#e11d48';g.beginPath();g.moveTo(76,104);g.quadraticCurveTo(90,120,104,104);g.closePath();g.fill();
+    g.fillStyle='#fff';g.beginPath();g.moveTo(79,105);g.quadraticCurveTo(90,110,101,105);g.closePath();g.fill();
+  }
+  g.restore();
+  return cv.toDataURL('image/png');
+}
+
+/* ===== 設定與 10 位真鐸車手 ===== */
 const GRADES=[1,2,3,4,5,6], GNAME=['','一','二','三','四','五','六'], CLASSES=['信','望','愛'], MAXNO=35, LAPS=3, GPL=5, TOTALQ=LAPS*GPL;
 const KENNEY_CDN='https://cdn.jsdelivr.net/gh/anasron/threejs-kenney-car-kit@master/public/gltf/';
-// row, col 對應你張《真鐸車手頭像十款.png》嘅 5 行 x 2 列格仔位置
 const DRIVERS=[
  {name:'閃電號',color:0xef4444,num:'02',row:1,col:0,kind:'headband',glb:KENNEY_CDN+'race.glb'},
  {name:'火箭號',color:0x3b82f6,num:'03',row:1,col:1,kind:'bow',tbl:3,need:5,glb:KENNEY_CDN+'race-future.glb'},
@@ -515,64 +399,76 @@ const DRIVERS=[
  {name:'譚主任',color:0x0f766e,num:'TAM',row:0,col:1,kind:'tam',boss:'tam',need:5,crown:true,glb:KENNEY_CDN+'race-future.glb'},
  {name:'陳校長',color:0xd4a017,num:'CHAN',row:0,col:0,kind:'chan',boss:'chan',need:10,crown:true,glb:KENNEY_CDN+'race.glb'}
 ];
-// 開機即刻為全部 10 個車手產生水彩立體頭像（唔使等、唔使撳掣載入！）
 DRIVERS.forEach(d=>{d.img=makeChunTokAvatarDataURI(d.kind)});
 
-// 智能 10 合 1 原圖切圖器（供自動載入 FIREBASE_SHEET_URL 或同目錄 drivers_sheet.png 使用）
+// 智能自動切開 10 合 1 原圖並自動去除白底
 function sliceSheetTo10(img){
   const W=img.naturalWidth||img.width, H=img.naturalHeight||img.height;
   const full=document.createElement('canvas');full.width=W;full.height=H;
   const fctx=full.getContext('2d');fctx.drawImage(img,0,0);
   const fdata=fctx.getImageData(0,0,W,H).data;
-  const isBg=(x,y)=>{const p=(y*W+x)*4;return fdata[p+3]<20||(fdata[p]>236&&fdata[p+1]>236&&fdata[p+2]>236)};
-  const rowSplits=[0];
-  for(let r=1;r<5;r++){
-    const guess=Math.round(r*H/5), span=Math.round(H*0.045);
-    let bestY=guess, minInk=1e9;
-    for(let y=Math.max(0,guess-span);y<=Math.min(H-1,guess+span);y++){
-      let ink=0;for(let x=0;x<W;x+=2)if(!isBg(x,y))ink++;
-      if(ink<minInk){minInk=ink;bestY=y}
-    }
-    rowSplits.push(bestY);
+  const rowHasInk=new Uint8Array(H);
+  for(let y=0;y<H;y++){
+    let cnt=0;
+    for(let x=0;x<W;x+=2){const p=(y*W+x)*4;if(fdata[p+3]>40&&(fdata[p]<238||fdata[p+1]<238||fdata[p+2]<238))cnt++}
+    if(cnt>6)rowHasInk[y]=1;
   }
-  rowSplits.push(H);
-  const cw=Math.floor(W/2);
+  const bands=[];let inBand=false,bStart=0;
+  for(let y=0;y<H;y++){
+    if(rowHasInk[y]&&!inBand){inBand=true;bStart=y}
+    else if(!rowHasInk[y]&&inBand){if(y-bStart>H*0.06)bands.push([bStart,y]);inBand=false}
+  }
+  if(inBand&&H-bStart>H*0.06)bands.push([bStart,H]);
+  const useBands=bands.length===5?bands:[0,1,2,3,4].map(r=>[Math.floor(r*H/5),Math.floor((r+1)*H/5)]);
 
   return DRIVERS.map(d=>{
-    const x0=d.col*cw, y0=rowSplits[d.row], rw=cw, rh=rowSplits[d.row+1]-y0;
-    const tmp=document.createElement('canvas');tmp.width=rw;tmp.height=rh;
-    const tctx=tmp.getContext('2d');tctx.drawImage(img,x0,y0,rw,rh,0,0,rw,rh);
-    const id=tctx.getImageData(0,0,rw,rh), dt=id.data;
-    const vis=new Uint8Array(rw*rh), q=[];
-    const push=(x,y)=>{if(x<0||x>=rw||y<0||y>=rh)return;const idx=y*rw+x;if(vis[idx])return;
-      const p=idx*4;if(dt[p+3]<20||(dt[p]>234&&dt[p+1]>234&&dt[p+2]>234)){vis[idx]=1;dt[p+3]=0;q.push(idx)}};
-    for(let x=0;x<rw;x++){push(x,0);push(x,rh-1)}
-    for(let y=0;y<rh;y++){push(0,y);push(rw-1,y)}
-    while(q.length){const cur=q.pop(),cx=cur%rw,cy=(cur/rw)|0;push(cx+1,cy);push(cx-1,cy);push(cx,cy+1);push(cx,cy-1)}
-    let minX=rw,maxX=0,minY=rh,maxY=0;
-    for(let y=0;y<rh;y++){
-      for(let x=0;x<rw;x++){
-        const p=(y*rw+x)*4;
-        if(dt[p+3]>30){
-          if(y<rh*0.02||y>rh*0.98){dt[p+3]=0;continue}
-          if(x<minX)minX=x;if(x>maxX)maxX=x;if(y<minY)minY=y;if(y>maxY)maxY=y;
-        }
-      }
-    }
-    tctx.putImageData(id,0,0);
-    const out=document.createElement('canvas');out.width=160;out.height=160;
+    const [y0,y1]=useBands[d.row];
+    const x0=d.col===0?0:Math.floor(W/2), x1=d.col===0?Math.floor(W/2):W;
+    const sw=x1-x0, sh=y1-y0;
+    const raw=document.createElement('canvas');raw.width=sw;raw.height=sh;
+    const rctx=raw.getContext('2d');rctx.drawImage(img,x0,y0,sw,sh,0,0,sw,sh);
+    const id=rctx.getImageData(0,0,sw,sh), dt=id.data;
+    const vis=new Uint8Array(sw*sh), q=[];
+    const push=(x,y)=>{if(x<0||x>=sw||y<0||y>=sh)return;const idx=y*sw+x;if(vis[idx])return;
+      const p=idx*4;if(dt[p]>232&&dt[p+1]>232&&dt[p+2]>232){vis[idx]=1;dt[p+3]=0;q.push(idx)}};
+    for(let x=0;x<sw;x++){push(x,0);push(x,sh-1)}
+    for(let y=0;y<sh;y++){push(0,y);push(sw-1,y)}
+    while(q.length){const cur=q.pop(),cx=cur%sw,cy=(cur/sw)|0;push(cx+1,cy);push(cx-1,cy);push(cx,cy+1);push(cx,cy-1)}
+    rctx.putImageData(id,0,0);
+    let minX=sw,maxX=0,minY=sh,maxY=0;
+    for(let y=0;y<sh;y++)for(let x=0;x<sw;x++){if(dt[(y*sw+x)*4+3]>40){if(x<minX)minX=x;if(x>maxX)maxX=x;if(y<minY)minY=y;if(y>maxY)maxY=y}}
+    if(maxX<=minX||maxY<=minY){minX=0;maxX=sw;minY=0;maxY=sh}
+    const bw=maxX-minX, bh=maxY-minY, side=Math.max(bw,bh*0.86);
+    const cx=(minX+maxX)/2, cy=minY+side*0.48;
+    const out=document.createElement('canvas');out.width=out.height=240;
     const octx=out.getContext('2d');
-    if(maxX>minX&&maxY>minY){
-      const bw=maxX-minX+1, bh=maxY-minY+1;
-      const side=Math.max(bw,bh)*1.08;
-      const cx=(minX+maxX)/2, cy=minY+bh*0.47;
-      octx.drawImage(tmp,cx-side/2,cy-side/2,side,side,0,0,160,160);
-    }else{
-      const side=Math.min(rw,rh);
-      octx.drawImage(tmp,(rw-side)/2,(rh-side)/2,side,side,0,0,160,160);
-    }
-    return out.toDataURL('image/webp',0.88);
+    octx.drawImage(raw,cx-side/2,cy-side/2,side,side,8,8,224,224);
+    return out.toDataURL('image/png');
   });
+}
+
+function cleanBadgeWhiteBg(img){
+  const W=img.naturalWidth||img.width, H=img.naturalHeight||img.height;
+  const cv=document.createElement('canvas');cv.width=W;cv.height=H;
+  const ctx=cv.getContext('2d');ctx.drawImage(img,0,0);
+  const id=ctx.getImageData(0,0,W,H), dt=id.data;
+  const vis=new Uint8Array(W*H), q=[];
+  const push=(x,y)=>{if(x<0||x>=W||y<0||y>=H)return;const idx=y*W+x;if(vis[idx])return;
+    const p=idx*4;if(dt[p]>235&&dt[p+1]>235&&dt[p+2]>235){vis[idx]=1;dt[p+3]=0;q.push(idx)}};
+  for(let x=0;x<W;x++){push(x,0);push(x,H-1)}
+  for(let y=0;y<H;y++){push(0,y);push(W-1,y)}
+  while(q.length){const cur=q.pop(),cx=cur%W,cy=(cur/W)|0;push(cx+1,cy);push(cx-1,cy);push(cx,cy+1);push(cx,cy-1)}
+  ctx.putImageData(id,0,0);
+  return cv;
+}
+
+function drawImageProp(ctx,img,dx,dy,dw,dh){
+  if(!img)return;
+  const iw=img.naturalWidth||img.width, ih=img.naturalHeight||img.height;
+  if(!iw||!ih)return;
+  const sc=Math.min(dw/iw,dh/ih);
+  const rw=iw*sc, rh=ih*sc;
+  ctx.drawImage(img,dx+(dw-rw)/2,dy+(dh-rh)/2,rw,rh);
 }
 
 function tryAutoLoadSheet(url){
@@ -582,40 +478,14 @@ function tryAutoLoadSheet(url){
     try{
       const arr=sliceSheetTo10(im);
       arr.forEach((u,i)=>DRIVERS[i].img=u);
-      await store.set('customAvatars10',arr);
+      if($('stDrivers')){$('stDrivers').textContent='✅ 已成功直讀原圖';$('stDrivers').className='text-emerald-600'}
       if(user){const w=await getWins(),tw=await getTW();renderDrivers(w,tw)}
-    }catch(e){console.warn('切圖失敗，請檢查 Firebase Storage CORS 設定',e)}
+    }catch(e){console.warn('切圖失敗',e)}
   };
+  im.onerror=()=>{if($('stDrivers')){$('stDrivers').textContent='ℹ️ 未偵測到外部檔案（使用內置高清圖）';$('stDrivers').className='text-slate-500'}};
   im.src=url;
 }
 
-// 智慧型比例縮放繪圖（無論真鐸校牌係正方形、圓形定長方形橫額，都自動置中兼保持原比例唔變形！）
-function drawImageProp(ctx,img,x,y,maxW,maxH){
-  if(!img)return;
-  const iw=img.naturalWidth||img.width||1, ih=img.naturalHeight||img.height||1;
-  const s=Math.min(maxW/iw,maxH/ih);
-  const w=iw*s, h=ih*s;
-  ctx.drawImage(img,x+(maxW-w)/2,y+(maxH-h)/2,w,h);
-}
-
-// 自動幫真鐸校牌去除四角白底（如果原本係 JPG 白底圖都會自動變透明！）
-function cleanBadgeWhiteBg(img){
-  try{
-    const W=Math.min(512,img.naturalWidth||img.width||256), H=Math.round(W*((img.naturalHeight||img.height||256)/(img.naturalWidth||img.width||256)));
-    const cv=document.createElement('canvas');cv.width=W;cv.height=H;
-    const ctx=cv.getContext('2d');ctx.drawImage(img,0,0,W,H);
-    const id=ctx.getImageData(0,0,W,H), dt=id.data, vis=new Uint8Array(W*H), q=[];
-    const push=(x,y)=>{if(x<0||x>=W||y<0||y>=H)return;const idx=y*W+x;if(vis[idx])return;
-      const p=idx*4;if(dt[p+3]<20||(dt[p]>238&&dt[p+1]>238&&dt[p+2]>238)){vis[idx]=1;dt[p+3]=0;q.push(idx)}};
-    for(let x=0;x<W;x++){push(x,0);push(x,H-1)}
-    for(let y=0;y<H;y++){push(0,y);push(W-1,y)}
-    while(q.length){const cur=q.pop(),cx=cur%W,cy=(cur/W)|0;push(cx+1,cy);push(cx-1,cy);push(cx,cy+1);push(cx,cy-1)}
-    ctx.putImageData(id,0,0);
-    return cv;
-  }catch(e){return img}
-}
-
-// 載入真鐸校牌圖片並套用到 UI 校牌、3D 起點龍門架、賽車車鼻及車尾翼
 function tryAutoLoadBadge(url){
   if(!url)return;
   const im=new Image();im.crossOrigin='anonymous';
@@ -624,6 +494,7 @@ function tryAutoLoadBadge(url){
     const cleanUrl=schoolBadgeImg.toDataURL?schoolBadgeImg.toDataURL('image/png'):url;
     document.querySelectorAll('.schoolLogoImg').forEach(el=>{el.src=cleanUrl;el.classList.remove('hidden')});
     document.querySelectorAll('.schoolLogoFallback').forEach(el=>el.classList.add('hidden'));
+    if($('stBadge')){$('stBadge').textContent='✅ 已成功直讀校牌並自動去底';$('stBadge').className='text-emerald-600'}
     if(window._startBanners){
       window._startBanners.forEach(bn=>{
         const btx=makeStartBannerTex();
@@ -631,76 +502,13 @@ function tryAutoLoadBadge(url){
       });
     }
   };
+  im.onerror=()=>{if($('stBadge')){$('stBadge').textContent='ℹ️ 未偵測到外部檔案（使用預設校徽）';$('stBadge').className='text-slate-500'}};
   im.src=url;
 }
 
-// 開機自動從 Firebase Storage (chuntok-racing.firebasestorage.app) 讀取車手圖與真鐸校牌
-async function autoFetchFirebaseStorageAssets(){
-  const savedUrls=await store.get('fbAssetUrls')||{};
-  if(savedUrls.drivers&&!FIREBASE_SHEET_URL)FIREBASE_SHEET_URL=savedUrls.drivers;
-  if(savedUrls.badge&&!FIREBASE_BADGE_URL)FIREBASE_BADGE_URL=savedUrls.badge;
-  if($('inpUrlDrivers'))$('inpUrlDrivers').value=FIREBASE_SHEET_URL||'';
-  if($('inpUrlBadge'))$('inpUrlBadge').value=FIREBASE_BADGE_URL||'';
-
-  if(FIREBASE_SHEET_URL)tryAutoLoadSheet(FIREBASE_SHEET_URL);
-  else if(FB.st){
-    for(const p of ['assets/drivers_sheet.png','drivers_sheet.png','真鐸車手頭像十款.png']){
-      try{const u=await getDownloadURL(sRef(FB.st,p));FIREBASE_SHEET_URL=u;if($('inpUrlDrivers'))$('inpUrlDrivers').value=u;tryAutoLoadSheet(u);break}catch(e){}
-    }
-  }
-  if(FIREBASE_BADGE_URL)tryAutoLoadBadge(FIREBASE_BADGE_URL);
-  else if(FB.st){
-    for(const p of ['assets/school_badge.png','school_badge.png','badge.png','logo.png']){
-      try{const u=await getDownloadURL(sRef(FB.st,p));FIREBASE_BADGE_URL=u;if($('inpUrlBadge'))$('inpUrlBadge').value=u;tryAutoLoadBadge(u);break}catch(e){}
-    }
-  }
-}
-
-// 老師後台：一鍵上傳車手圖 / 真鐸校牌去 Firebase Storage
-if($('btnUpDrivers')){
-  $('btnUpDrivers').onclick=()=>$('inpUpDrivers').click();
-  $('inpUpDrivers').onchange=async e=>{
-    const f=e.target.files&&e.target.files[0];if(!f||!FB.st)return;
-    $('upStatus').textContent='⏳ 正在上傳 10 合 1 車手圖至 Firebase Storage (assets/drivers_sheet.png)…';
-    try{
-      const r=sRef(FB.st,'assets/drivers_sheet.png');
-      await uploadBytes(r,f);
-      const u=await getDownloadURL(r);
-      FIREBASE_SHEET_URL=u;$('inpUrlDrivers').value=u;
-      const cur=(await store.get('fbAssetUrls'))||{};cur.drivers=u;await store.set('fbAssetUrls',cur);
-      tryAutoLoadSheet(u);
-      $('upStatus').textContent='✅ 車手圖已成功上傳至 Firebase Storage 並即時套用！';
-    }catch(err){
-      console.warn(err);
-      $('upStatus').textContent='⚠️ 上傳被拒（請先在 Firebase Console -> Storage -> Rules 開放寫入權限，或手動上傳後貼上 Download URL）';
-    }
-  };
-  $('btnUpBadge').onclick=()=>$('inpUpBadge').click();
-  $('inpUpBadge').onchange=async e=>{
-    const f=e.target.files&&e.target.files[0];if(!f||!FB.st)return;
-    $('upStatus').textContent='⏳ 正在上傳真鐸校牌至 Firebase Storage (assets/school_badge.png)…';
-    try{
-      const r=sRef(FB.st,'assets/school_badge.png');
-      await uploadBytes(r,f);
-      const u=await getDownloadURL(r);
-      FIREBASE_BADGE_URL=u;$('inpUrlBadge').value=u;
-      const cur=(await store.get('fbAssetUrls'))||{};cur.badge=u;await store.set('fbAssetUrls',cur);
-      tryAutoLoadBadge(u);
-      $('upStatus').textContent='✅ 真鐸校牌已成功上傳至 Firebase Storage 並套用到全場橫額與賽車！';
-    }catch(err){
-      console.warn(err);
-      $('upStatus').textContent='⚠️ 上傳被拒（請先在 Firebase Console -> Storage -> Rules 開放寫入權限，或手動上傳後貼上 Download URL）';
-    }
-  };
-  $('btnSaveUrls').onclick=async()=>{
-    const uD=$('inpUrlDrivers').value.trim(), uB=$('inpUrlBadge').value.trim();
-    FIREBASE_SHEET_URL=uD;FIREBASE_BADGE_URL=uB;
-    await store.set('fbAssetUrls',{drivers:uD,badge:uB});
-    if(uD)tryAutoLoadSheet(uD);
-    if(uB)tryAutoLoadBadge(uB);
-    $('upStatus').textContent='✅ 已儲存並套用 Firebase Storage 圖片網址！';
-  };
-}
+// 開機即刻直讀 GitHub 同目錄下的 ./drivers_sheet.png 與 ./school_badge.png
+tryAutoLoadSheet(GITHUB_SHEET_PATH);
+tryAutoLoadBadge(GITHUB_BADGE_PATH);
 
 let useExternalGLB=true;
 $('glbToggle').onchange=e=>{useExternalGLB=e.target.checked};
@@ -710,7 +518,7 @@ const winsOf=(d,tw)=>(d.tbl?tw[d.tbl]:tw.all)||0;
 function lockOf(d,tw){if(user.type==='teacher'||!d.need)return false;return winsOf(d,tw)<d.need}
 function showLock(d,tw){const w=Math.min(winsOf(d,tw),d.need);
  $('lkIcon').style.background='#'+d.color.toString(16).padStart(6,'0');
- $('lkIcon').innerHTML=`<img src="${d.img}" style="width:100%;height:100%;object-fit:contain;opacity:.5">`;
+ $('lkIcon').innerHTML=`<img src="${d.img}" style="width:100%;height:100%;object-fit:cover;opacity:.5">`;
  $('lkName').textContent='🔒 '+d.name;
  $('lkHow').textContent=d.tbl?`揀「${d.tbl}」乘數表，勝出 ${d.need} 場`:`揀「全部」乘數表，勝出 ${d.need} 場`;
  $('lkBar').style.width=(w/d.need*100)+'%';$('lkProg').textContent=`已勝 ${w} / ${d.need} 場`;$('lockOv').style.display='flex'}
@@ -759,9 +567,6 @@ async function login(u){user=u;mySessionId=u.type==='student'?`${u.grade}${u.cls
  window._inTest=u.type==='teacher';if(u.type==='student'){await store.set('lastUser',u);for(let i=0;i<15&&!FB.ok;i++)await new Promise(r=>setTimeout(r,100));await fbRestore();fbRetry()}if(u.type==='guest')guestStats={};showMenu()}
 $('logout').onclick=()=>{leaveMpRoom();window._inTest=false;selGr=selCls=selNo=null;[...$('grBox').children,...$('clsBox').children].forEach(x=>x.classList.remove('sel'));fillNo();chk();$('resume').innerHTML='';show('sLogin')};
 async function initLogin(){
- const savedAv=await store.get('customAvatars10');
- if(Array.isArray(savedAv)&&savedAv.length===10){savedAv.forEach((u,i)=>DRIVERS[i].img=u)}
- if(FIREBASE_SHEET_URL)tryAutoLoadSheet(FIREBASE_SHEET_URL);
  const pr=await store.get('prefs');
  if(pr){if([0,1,2].includes(pr.q))setQ(pr.q);AU.mute=!!pr.mute;$('muteBtn').textContent=AU.mute?'🔇':'🔊';
   if(Array.isArray(pr.tbl)){const v=pr.tbl.filter(n=>n>=2&&n<=9);if(v.length){TBL.clear();v.forEach(n=>TBL.add(n))}}renderTbl()}
@@ -776,7 +581,7 @@ async function getWins(){if(user.type==='teacher')return 999;return user.type===
 function renderDrivers(w,tw={}){const box=$('drvBox');box.innerHTML='';
  const isLock=d=>lockOf(d,tw);if(isLock(DRIVERS[driverIdx]))driverIdx=0;
  DRIVERS.forEach((d,i)=>{const lock=isLock(d),b=document.createElement('button');b.className='btn py-1.5 px-1 text-xs '+(d.crown?'bg-amber-50':'bg-slate-50')+(lock?' text-slate-400':'');
-  b.innerHTML=`<div style="width:52px;height:52px;border-radius:50%;margin:0 auto 2px;background:#${d.color.toString(16).padStart(6,'0')};border:2.5px solid #fff;box-shadow:0 2px 6px #0003;overflow:hidden;position:relative" class="flex items-center justify-center">
+  b.innerHTML=`<div style="width:52px;height:52px;border-radius:50%;margin:0 auto 2px;background:#${d.color.toString(16).padStart(6,'0')};border:2px solid #fff;box-shadow:0 2px 6px #0003;overflow:hidden;position:relative" class="flex items-center justify-center">
     <img src="${d.img}" style="width:100%;height:100%;object-fit:cover;opacity:${lock?.35:1}">
     ${lock?'<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:20px;background:#0004">🔒</span>':''}
   </div><div class="font-black leading-tight">${d.name}</div>`;
@@ -977,7 +782,7 @@ function renderWaitRoom(d){
     if(p){
       const drv=DRIVERS[p.drv||0]||DRIVERS[0];
       slots.push(`<div class="bg-white border-2 border-sky-300 rounded-2xl p-3 flex items-center gap-3 shadow-sm">
-        <div style="width:48px;height:48px;border-radius:50%;background:#${drv.color.toString(16).padStart(6,'0')};overflow:hidden;border:2px solid #fff" class="flex items-center justify-center"><img src="${drv.img}" style="width:100%;height:100%;object-fit:contain"></div>
+        <div style="width:48px;height:48px;border-radius:50%;background:#${drv.color.toString(16).padStart(6,'0')};overflow:hidden;border:2px solid #fff" class="flex items-center justify-center"><img src="${drv.img}" style="width:100%;height:100%;object-fit:cover"></div>
         <div class="flex-1"><div class="font-black text-lg text-slate-800">${esc(p.name)} ${p.id===d.host?'<span class="text-xs bg-amber-200 text-amber-900 px-2 py-0.5 rounded-full">房主</span>':''}</div><div class="text-xs text-slate-500">${drv.name}（#${drv.num}）</div></div>
       </div>`);
     }else{
@@ -1123,27 +928,28 @@ function ribbon(a,b,y,cf,N=700){const pos=[],col=[],c=new THREE.Color();
  const m=new THREE.Mesh(g,new THREE.MeshStandardMaterial({vertexColors:true,roughness:.85}));m.receiveShadow=true;scene.add(m)}
 
 function makeStartBannerTex(){
- const bcv=document.createElement('canvas');bcv.width=512;bcv.height=96;const bx=bcv.getContext('2d');
- const grd=bx.createLinearGradient(0,0,512,0);grd.addColorStop(0,'#1e3a8a');grd.addColorStop(.5,'#dc2626');grd.addColorStop(1,'#1e3a8a');
- bx.fillStyle=grd;bx.fillRect(0,0,512,96);bx.strokeStyle='#fde047';bx.lineWidth=8;bx.strokeRect(4,4,504,88);
- bx.fillStyle='#fde047';bx.font='900 40px "PingFang HK","Microsoft JhengHei",sans-serif';bx.textAlign='center';bx.textBaseline='middle';
- if(schoolBadgeImg){
-   drawImageProp(bx,schoolBadgeImg,16,12,84,72);
-   drawImageProp(bx,schoolBadgeImg,412,12,84,72);
-   bx.fillText('真鐸極速方程式',256,50);
- }else{
-   bx.fillText('🏁 真鐸極速方程式 🏁',256,50);
- }
- const btx=new THREE.CanvasTexture(bcv);btx.colorSpace=THREE.SRGBColorSpace;return btx;
+  const bcv=document.createElement('canvas');bcv.width=512;bcv.height=96;const bx=bcv.getContext('2d');
+  const grd=bx.createLinearGradient(0,0,512,0);grd.addColorStop(0,'#1e3a8a');grd.addColorStop(.5,'#dc2626');grd.addColorStop(1,'#1e3a8a');
+  bx.fillStyle=grd;bx.fillRect(0,0,512,96);bx.strokeStyle='#fde047';bx.lineWidth=8;bx.strokeRect(4,4,504,88);
+  bx.fillStyle='#fde047';bx.font='900 42px "PingFang HK","Microsoft JhengHei",sans-serif';bx.textAlign='center';bx.textBaseline='middle';
+  if(schoolBadgeImg){
+    drawImageProp(bx,schoolBadgeImg,20,12,72,72);
+    drawImageProp(bx,schoolBadgeImg,420,12,72,72);
+    bx.fillText('真鐸極速方程式',256,50);
+  }else{
+    bx.fillText('🏁 真鐸極速方程式 🏁',256,50);
+  }
+  const btx=new THREE.CanvasTexture(bcv);btx.colorSpace=THREE.SRGBColorSpace;
+  return btx;
 }
+
 function mkStart(){const f=frame(0),g=new THREE.Group();g.position.copy(f.p);g.rotation.y=Math.atan2(f.t.x,f.t.z);scene.add(g);
  const cv=document.createElement('canvas');cv.width=256;cv.height=32;const x=cv.getContext('2d');for(let i=0;i<16;i++)for(let j=0;j<2;j++){x.fillStyle=(i+j)%2?'#111':'#fff';x.fillRect(i*16,j*16,16,16)}
  const tx=new THREE.CanvasTexture(cv);tx.colorSpace=THREE.SRGBColorSpace;
  const pl=new THREE.Mesh(new THREE.PlaneGeometry(W,2),new THREE.MeshStandardMaterial({map:tx}));pl.rotation.x=-Math.PI/2;pl.position.y=.06;g.add(pl);
  const pm=new THREE.MeshStandardMaterial({color:0xf8fafc,metalness:.4,roughness:.3});[-W/2-1,W/2+1].forEach(px=>{const p=new THREE.Mesh(new THREE.CylinderGeometry(.45,.45,8.5),pm);p.position.set(px,4.2,0);p.castShadow=true;g.add(p)});
- const btx=makeStartBannerTex();
- const bn=new THREE.Mesh(new THREE.BoxGeometry(W+3,2.2,.6),new THREE.MeshStandardMaterial({map:btx,roughness:.3}));bn.position.y=8.2;g.add(bn);
- (window._startBanners=window._startBanners||[]).push(bn)}
+ const bn=new THREE.Mesh(new THREE.BoxGeometry(W+3,2.2,.6),new THREE.MeshStandardMaterial({map:makeStartBannerTex(),roughness:.3}));bn.position.y=8.2;g.add(bn);
+ window._startBanners=window._startBanners||[];window._startBanners.push(bn)}
 
 function meadowDeco(){const samp=[];for(let i=0;i<240;i++)samp.push(frame(i/240*L).p);
  const nearTrack=(x,z,d)=>samp.some(p=>(p.x-x)**2+(p.z-z)**2<d*d);
@@ -1176,87 +982,35 @@ function hoodTex(d){
   x.fillStyle=hex;x.fillRect(0,0,256,256);
   x.fillStyle=d.crown?'#fde047':'#ffffff';x.fillRect(92,0,72,256);
   x.fillStyle=d.crown?'#78350f':'#0f172a';x.fillRect(102,0,8,256);x.fillRect(146,0,8,256);
-  if(schoolBadgeImg)drawImageProp(x,schoolBadgeImg,88,10,80,68);
-  x.beginPath();x.arc(128,148,62,0,Math.PI*2);x.fillStyle=d.crown?'#1e293b':'#ffffff';x.fill();
+  if(schoolBadgeImg){
+    drawImageProp(x,schoolBadgeImg,92,10,72,64);
+  }
+  x.beginPath();x.arc(128,148,64,0,Math.PI*2);x.fillStyle=d.crown?'#1e293b':'#ffffff';x.fill();
   x.lineWidth=10;x.strokeStyle=d.crown?'#facc15':'#0f172a';x.stroke();
   x.fillStyle=d.crown?'#fde047':'#0f172a';
-  x.font=(d.num&&d.num.length>2)?'900 42px system-ui,sans-serif':'900 70px system-ui,sans-serif';
+  x.font=(d.num&&d.num.length>2)?'900 42px system-ui,sans-serif':'900 72px system-ui,sans-serif';
   x.textAlign='center';x.textBaseline='middle';x.fillText(d.num||'01',128,152);
   const t=new THREE.CanvasTexture(cv);t.colorSpace=THREE.SRGBColorSpace;return t;
 }
+
 function wingTex(d){
   const cv=document.createElement('canvas');cv.width=512;cv.height=128;const x=cv.getContext('2d');
-  x.translate(512,128);x.scale(-1,-1);
+  x.save();x.translate(512,128);x.scale(-1,-1);
   x.fillStyle=d.crown?'#78350f':'#0f172a';x.fillRect(0,0,512,128);
   x.strokeStyle='#facc15';x.lineWidth=10;x.strokeRect(5,5,502,118);
   x.fillStyle='#fde047';x.font='900 50px "PingFang HK","Microsoft JhengHei",sans-serif';
   x.textAlign='center';x.textBaseline='middle';
   if(schoolBadgeImg){
-    drawImageProp(x,schoolBadgeImg,18,16,110,96);
-    x.fillText('真鐸 CHUN TOK',300,66);
+    drawImageProp(x,schoolBadgeImg,18,16,96,96);
+    x.fillText('真鐸 CHUN TOK',292,66);
   }else{
     x.fillText('🏫 真鐸 CHUN TOK',256,66);
   }
+  x.restore();
   const t=new THREE.CanvasTexture(cv);t.colorSpace=THREE.SRGBColorSpace;return t;
 }
 
-// 為每位車手建立真正立體 3D 駕駛員模型（從車尾望過去立體自然，絕不用紙片人！）
-function build3DPilot(d,M,cGold){
-  const drv=new THREE.Group();drv.position.set(0,.88,-.22);
-  const dm=(geo,mat,x,y,z,rx=0,ry=0,rz=0)=>{const o=new THREE.Mesh(geo,mat);o.position.set(x,y,z);o.rotation.set(rx,ry,rz);o.castShadow=true;drv.add(o);return o};
-  const suitCol=d.kind==='chan'?0x1e293b:d.kind==='tam'?0x1f2937:0xffffff;
-  const trimCol=d.color;
-  // 3D 身體與肩膀賽車服條紋
-  dm(new THREE.CylinderGeometry(.42,.52,.85,14),M(suitCol),0,.42,0);
-  dm(new THREE.CylinderGeometry(.44,.46,.22,14),M(trimCol),0,.55,0);
-  // 雙手握方向盤姿勢
-  [-.38,.38].forEach(x=>dm(new THREE.CylinderGeometry(.11,.11,.55,10),M(suitCol),x,.58,.25,Math.PI/3,0,0));
-  dm(new THREE.TorusGeometry(.24,.045,8,16),M(0x111827),0,.72,.52,-.5,0,0);
-  // 3D 頭部
-  dm(new THREE.SphereGeometry(.52,20,16),M(0xffd7b5),0,1.18,0);
-  const hairMat=M(0x2b1810);
-  if(d.kind==='helmetB'||d.kind==='helmetP'){
-    // 全罩式 3D 賽車頭盔 + 護目鏡
-    const hCol=d.kind==='helmetB'?0x2563eb:0x9333ea;
-    dm(new THREE.SphereGeometry(.58,20,16),M(hCol),0,1.2,0);
-    dm(new THREE.CylinderGeometry(.59,.59,.16,16,1,false,-Math.PI*.35,Math.PI*.7),M(0x0f172a),0,1.2,.04);
-    dm(new THREE.BoxGeometry(.18,.5,1.18),M(0xffffff),0,1.25,0);
-  }else{
-    // 立體頭髮後腦與髮型（由車尾望過去有立體層次）
-    dm(new THREE.SphereGeometry(.55,18,14,0,Math.PI*2,0,Math.PI*.62),hairMat,0,1.22,-.04,.22,0,0);
-    if(d.kind==='chan'){
-      // 陳校長：立體 3D 金皇冠
-      dm(new THREE.CylinderGeometry(.44,.36,.32,12),cGold,0,1.82,0);
-      for(let k=0;k<6;k++){const a=k/6*Math.PI*2;dm(new THREE.ConeGeometry(.09,.28,6),cGold,Math.cos(a)*.38,2.05,Math.sin(a)*.38)}
-    }else if(d.kind==='tam'){
-      // 譚主任：型格立體黑超鏡框（延伸至兩側太陽穴）
-      dm(new THREE.BoxGeometry(1.08,.16,.55),M(0x111827),0,1.22,.22);
-    }else if(d.kind==='headband'){
-      // 閃電號：藍白運動頭帶 + 飄逸頭帶尾
-      dm(new THREE.CylinderGeometry(.565,.565,.16,18),M(0x1d4ed8),0,1.32,0);
-      dm(new THREE.BoxGeometry(.14,.35,.08),M(0xffffff),.15,1.22,-.56,.3,0,.25);
-    }else if(d.kind==='bow'){
-      // 火箭號：馬尾 + 紫色立體蝴蝶結
-      dm(new THREE.SphereGeometry(.24,12,10),hairMat,.28,1.35,-.52);
-      dm(new THREE.BoxGeometry(.42,.2,.14),M(0x7c3aed),.28,1.52,-.48,0,0,-.2);
-    }else if(d.kind==='cap'){
-      // 旋風號：藍白立體鴨嘴帽
-      dm(new THREE.SphereGeometry(.57,18,12,0,Math.PI*2,0,Math.PI*.5),M(0x1e40af),0,1.28,0);
-      dm(new THREE.BoxGeometry(.75,.06,.5),M(0xffffff),0,1.32,.42);
-    }else if(d.kind==='glasses'){
-      // 流星號：低馬尾髮髻 + 眼鏡框邊
-      dm(new THREE.SphereGeometry(.22,12,10),hairMat,0,1.02,-.56);
-      dm(new THREE.BoxGeometry(1.08,.08,.5),M(0x1f2937),0,1.2,.2);
-    }else if(d.kind==='headphone'){
-      // 彩虹號：立體電競耳機
-      [-.55,.55].forEach(x=>dm(new THREE.CylinderGeometry(.2,.2,.16,14),M(0x1d4ed8),x,1.2,0,0,0,Math.PI/2));
-      dm(new THREE.TorusGeometry(.56,.055,8,18,Math.PI),M(0x1e293b),0,1.22,0);
-    }
-  }
-  return drv;
-}
-
-// 打造賽車 + 立體 3D 駕駛員
+// 打造賽車 + 立體 3D 真鐸車手模型
 function makeKart(d,labelTxt=''){
   const g=new THREE.Group(), bodyGrp=new THREE.Group();g.add(bodyGrp);
   const M=c=>new THREE.MeshPhysicalMaterial({color:c,roughness:.22,metalness:.35,clearcoat:1,clearcoatRoughness:.06});
@@ -1277,7 +1031,6 @@ function makeKart(d,labelTxt=''){
   const rg=new THREE.CylinderGeometry(.34,.34,.64,14);rg.rotateZ(Math.PI/2);
   const wm=new THREE.MeshStandardMaterial({color:0x18181b,roughness:.75});
   [[1.32,1.25],[-1.32,1.25],[1.38,-1.22],[-1.38,-1.22]].forEach(([x,z])=>{add(wg,wm,x,.58,z);add(rg,cGold,x,.58,z)});
-  // 車尾雙氮氣噴火管
   const flMat=new THREE.MeshBasicMaterial({color:0x38bdf8,transparent:true,opacity:.9});
   const flInMat=new THREE.MeshBasicMaterial({color:0xfef08a});
   const flames=[];
@@ -1289,9 +1042,38 @@ function makeKart(d,labelTxt=''){
     fl.add(c1,c2);fl.visible=false;g.add(fl);flames.push(fl);
   });
   g.userData.flames=flames;
-  // 加入真正立體 3D 車手模型（唔再用怪異嘅平面紙牌！）
-  const pilot=build3DPilot(d,M,cGold);
-  g.add(pilot);g.userData.pilot=pilot;
+
+  // 真正 3D 立體車手模型（唔用平面紙牌）
+  const drv=new THREE.Group();drv.position.set(0,.92,-.2);g.add(drv);
+  const dm=(geo,mat,x,y,z,rx=0,ry=0,rz=0)=>{const o=new THREE.Mesh(geo,mat);o.position.set(x,y,z);o.rotation.set(rx,ry,rz);o.castShadow=true;drv.add(o);return o};
+  const suitCol=d.kind==='chan'?0x1e293b:d.kind==='tam'?0x1f2937:0xffffff;
+  dm(new THREE.CylinderGeometry(.44,.54,.85,12),M(suitCol),0,.42,0);
+  dm(new THREE.SphereGeometry(.54,18,14),M(0xffd7b5),0,1.2,0);
+  const hairMat=M(0x3b2314);
+  if(d.kind==='helmetB'||d.kind==='helmetP'){
+    const hc=d.kind==='helmetB'?0x2563eb:0xf3e8ff;
+    dm(new THREE.SphereGeometry(.62,18,14),M(hc),0,1.24,0);
+    dm(new THREE.BoxGeometry(.78,.28,.35),M(0x0ea5e9),0,1.24,.42);
+  }else{
+    dm(new THREE.SphereGeometry(.58,18,14,0,Math.PI*2,0,Math.PI*.58),hairMat,0,1.25,0);
+    if(d.kind==='headband'){
+      dm(new THREE.CylinderGeometry(.59,.59,.14,16,1,true),M(0x1e40af),0,1.34,0);
+    }else if(d.kind==='bow'){
+      dm(new THREE.SphereGeometry(.24,10,10),hairMat,0,1.18,-.62);
+      dm(new THREE.BoxGeometry(.42,.18,.12),M(0x7c3aed),.28,1.58,-.35,0,0,-.3);
+    }else if(d.kind==='cap'){
+      dm(new THREE.SphereGeometry(.6,16,12,0,Math.PI*2,0,Math.PI*.5),M(0x1e40af),0,1.3,0);
+      dm(new THREE.BoxGeometry(.75,.08,.45),M(0x1e3a8a),0,1.38,.52,.15,0,0);
+    }else if(d.kind==='headphone'){
+      [-.58,.58].forEach(x=>dm(new THREE.CylinderGeometry(.18,.18,.15,12),M(0x1e3a8a),x,1.22,0,0,0,Math.PI/2));
+    }else if(d.kind==='tam'){
+      dm(new THREE.BoxGeometry(.82,.2,.2),M(0x111827),0,1.24,.48);
+    }else if(d.kind==='chan'){
+      dm(new THREE.CylinderGeometry(.46,.38,.34,10),cGold,0,1.88,0);
+      for(let k=0;k<5;k++){const a=k/5*Math.PI*2;dm(new THREE.ConeGeometry(.1,.28,5),cGold,Math.cos(a)*.42,2.14,Math.sin(a)*.42)}
+    }
+  }
+
   if(useExternalGLB&&d.glb){
     const applyGlb=gltf=>{
       const model=gltf.scene.clone(true);
@@ -1303,7 +1085,7 @@ function makeKart(d,labelTxt=''){
       const tint=new THREE.Color(d.color);
       model.traverse(n=>{if(n.isMesh){n.castShadow=n.receiveShadow=true;if(n.material&&n.material.color&&n.name&&/body|paint|hull|car/i.test(n.name)){n.material=n.material.clone();n.material.color.lerp(tint,.65)}}});
       bodyGrp.clear();bodyGrp.add(model);
-      const wPlate=new THREE.Mesh(new THREE.BoxGeometry(2.2,.12,.6),mWing);wPlate.position.set(0,1.45,-1.65);bodyGrp.add(wPlate);
+      const wPlate=new THREE.Mesh(new THREE.BoxGeometry(2.2,.14,.65),mWing);wPlate.position.set(0,1.45,-1.65);bodyGrp.add(wPlate);
     };
     if(glbCache[d.glb])applyGlb(glbCache[d.glb]);
     else gltfLoader.load(d.glb,gltf=>{glbCache[d.glb]=gltf;applyGlb(gltf)},undefined,()=>{});
