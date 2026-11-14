@@ -684,7 +684,10 @@ function ensureMqtt(){
       const cid='ct_'+Math.random().toString(36).slice(2,10);
       const c=window.mqtt.connect(url,{clientId:cid,clean:true,connectTimeout:4000,reconnectPeriod:2000});
       const to=setTimeout(()=>{try{c.end(true)}catch(e){}tried++;if(tried<MP_BROKERS.length*2)tryConnect();else reject(new Error('timeout'))},4200);
-      c.on('connect',()=>{clearTimeout(to);mqClient=c;setupMqttHandlers(c);resolve(c)});
+      c.on('connect',()=>{clearTimeout(to);mqClient=c;
+        if(!c._h){c._h=1;setupMqttHandlers(c)}
+        else{c.subscribe(TOPIC_PREFIX+'directory/+');if(mpState.code)c.subscribe(TOPIC_PREFIX+'room/'+mpState.code)}
+        resolve(c)});
       c.on('error',()=>{});
     };
     tryConnect();
@@ -888,7 +891,8 @@ function startMpRaceFromRoom(d){
 function syncMyMpPos(force=false){
   if(!mpState.active||!mpState.code||!race)return;
   const now=performance.now(),steerChg=Math.abs(race.p.steer-(mpState.lastSteer||0))>0.22;
-  if(!force&&!steerChg&&now-mpState.lastSync<80)return;
+  if(!force&&now-mpState.lastSync<45)return;
+  if(!force&&!steerChg&&now-mpState.lastSync<90)return;
   mpState.lastSync=now;mpState.lastSteer=race.p.steer;
   pubRoom({t:'pos',id:mySessionId,s:+race.p.s.toFixed(2),x:+race.p.x.toFixed(2),v:+race.p.v.toFixed(1),st:+race.p.steer.toFixed(2),b:race.p.boost>0?1:0,sh:race.p.shield>0?1:0,sp:race.p.spin>0?1:0,ts:Date.now()});
 }
@@ -1088,7 +1092,7 @@ function meadowDeco(){rkDeco();const samp=[];for(let i=0;i<240;i++)samp.push(fra
 /* ===== 全新 Kenney Racing Kit 模組化賽道(格仔拼接,車道跟足地磚) ===== */
 const TILE=30,DIRS={E:[1,0],W:[-1,0],S:[0,1],N:[0,-1]},OPP={E:'W',W:'E',N:'S',S:'N'},ROT={E:'N',N:'W',W:'S',S:'E'};
 let RKS=null,ROADY=0,curRoute=null;const rkBase={},rkConn={};
-function rkWrap(m,k){const o=m.clone(true);o.scale.setScalar(k);o.traverse(n=>{if(n.isMesh){n.castShadow=n.receiveShadow=true}});const w=new THREE.Group();w.add(o);const b=new THREE.Box3().setFromObject(o),c=new THREE.Vector3(),s=new THREE.Vector3();b.getCenter(c);b.getSize(s);o.position.set(-c.x,-b.min.y,-c.z);w.userData.longX=s.x>s.z;return w}
+function rkWrap(m,k){const o=m.clone(true);o.scale.setScalar(k);o.traverse(n=>{if(n.isMesh){n.castShadow=n.receiveShadow=true}});const w=new THREE.Group();w.add(o);const b=new THREE.Box3().setFromObject(o),c=new THREE.Vector3(),s=new THREE.Vector3();b.getCenter(c);b.getSize(s);o.position.set(-c.x,-b.min.y,-c.z);w.userData.longX=s.x>s.z;w.userData.r=Math.hypot(s.x,s.z)/2;w.userData.len=Math.max(s.x,s.z);return w}
 async function rkScale(){if(RKS)return RKS;const m=await rkLoad('roadStraight');if(!m)return null;const b=new THREE.Box3().setFromObject(m),s=new THREE.Vector3();b.getSize(s);const k=TILE/Math.max(s.x,s.z,.001);RKS={k};ROADY=Math.min(s.y*k,1.2);return RKS}
 async function rkGet(n){const S=await rkScale();if(!S)return null;if(rkBase[n]!==undefined)return rkBase[n];const m=await rkLoad(n);rkBase[n]=m?rkWrap(m,S.k):null;return rkBase[n]}
 function rkEdges(base){const rc=new THREE.Raycaster(),h=TILE/2*.82,out=[];base.updateMatrixWorld(true);
@@ -1110,7 +1114,7 @@ function gridRoute(moves){const n=moves.length;let x=0,z=0;const cells=[];for(le
   else{const P=[wx+(a[0]+b[0])*h,wz+(a[1]+b[1])*h],B=[wx+b[0]*h,wz+b[1]*h];let a0=Math.atan2(A[1]-P[1],A[0]-P[0]),a1=Math.atan2(B[1]-P[1],B[0]-P[0]),d=a1-a0;while(d>Math.PI)d-=2*Math.PI;while(d<-Math.PI)d+=2*Math.PI;
    for(let k=0;k<5;k++){const t=a0+d*k/5;pts.push([P[0]+Math.cos(t)*h,P[1]+Math.sin(t)*h])}}});
  return{pts,seq,cells:seq.map(o=>o.c),W2}}
-async function buildKenney(g,city,grp){const S=await rkScale();if(!S){console.warn('Kenney 賽道模型未能載入(請用 GitHub 網址開啟)');return}
+async function buildKenneyOld(g,city,grp){const S=await rkScale();if(!S){console.warn('Kenney 賽道模型未能載入(請用 GitHub 網址開啟)');return}
  const lv=qLv,road=new Set(g.cells.map(c=>c.join(','))),h=TILE/2,seq=g.seq,P={},add=(n,it)=>{(P[n]=P[n]||[]).push(it)};
  for(let i=0;i<seq.length;i++){const o=seq[i],[x,z]=g.W2(o.c),need=[OPP[o.inD],o.out],str=o.inD===o.out;
   if(str){if(!(i===0&&await rkTile('roadStart',need,x,z,grp)))await rkTile('roadStraight',need,x,z,grp);
@@ -1133,9 +1137,74 @@ async function buildKenney(g,city,grp){const S=await rkScale();if(!S){console.wa
   else if(lv>=1&&d===2){if(city){if(r<.4)add('pitsOffice',{x,z,yaw});else if(r<.7)add('grandStandCovered',{x,z,yaw});else add('tentClosedLong',{x,z,yaw})}else trees(lv===2?4:2)}
   else if(lv===2&&!city&&r<.5)trees(3)}
  for(const n in P)rkPut(n,P[n],grp)}
+/* 安全擺位：每件模型都檢查同賽道中心線嘅距離，唔可以入賽道範圍 */
+async function buildKenneySlow(g,city,grp){const S=await rkScale();if(!S){return}
+ const samp=[];for(let i=0;i<400;i++)samp.push(frame(i/400*L).p);
+ const near=(x,z)=>{let m=1e18,q=samp[0];for(const p of samp){const d=(p.x-x)**2+(p.z-z)**2;if(d<m){m=d;q=p}}return[Math.sqrt(m),q]};
+ const lv=qLv,CL=W/2+4;
+ const put=async(n,x,z,face=true)=>{const b=await rkGet(n);if(!b)return false;const[d,q]=near(x,z);if(d-b.userData.r<CL)return false;
+  const o=b.clone(true);o.position.set(x,0,z);o.rotation.y=face?Math.atan2(q.x-x,q.z-z):Math.random()*6.28;grp.add(o);return true};
+ /* 1. 賽道兩邊紅白圍欄(貼住路肩外面) */
+ const bw=await rkGet('barrierWhite'),br=await rkGet('barrierRed');
+ if(bw||br){const len=(bw||br).userData.len||6,stp=len*(lv?1.02:2.2);let k=0;
+  for(let s=0;s<L;s+=stp,k++){const f=frame(s);for(const sd of[-1,1]){const b=(k%2?br:bw)||bw||br,o=b.clone(true);
+   o.position.copy(f.p).addScaledVector(f.r,sd*(W/2+2.6));o.position.y=0;
+   o.rotation.y=b.userData.longX?Math.atan2(-f.t.z,f.t.x):Math.atan2(f.t.x,f.t.z);grp.add(o)}}}
+ /* 2. 起跑區：看台在左、維修站在右，旗塔在路肩外 */
+ const f0=frame(10);
+ for(const[n,sd,ds] of [['grandStandCovered',-1,0],['grandStand',-1,34],['pitsGarage',1,0],['pitsOffice',1,30]]){const b=await rkGet(n);if(!b)continue;const f=frame(10+ds),off=CL+b.userData.r+3;await put(n,f.p.x+f.r.x*sd*off,f.p.z+f.r.z*sd*off)}
+ for(const sd of[-1,1]){const b=await rkGet('bannerTowerRed');if(b){const off=CL+b.userData.r+1;await put('bannerTowerRed',f0.p.x+f0.r.x*sd*off,f0.p.z+f0.r.z*sd*off)}}
+ /* 3. 沿路散佈裝飾(每件都要喺路肩外) */
+ const xs=samp.map(p=>p.x),zs=samp.map(p=>p.z),x0=Math.min(...xs)-70,x1=Math.max(...xs)+70,z0=Math.min(...zs)-70,z1=Math.max(...zs)+70,gs=[34,20,14][lv];
+ const side=city?['lightPostModern','billboard','tentLong','flagRed','billboardLower','lightRedDouble']:['lightPostLarge','tent','billboardLow','flagCheckers','flagGreen','radarEquipment'];
+ const far=city?['pitsOffice','grandStandCovered','tentClosedLong','pitsGarageClosed','grandStandRound']:['treeLarge','treeSmall','treeLarge','treeSmall','tentRoof'];
+ for(let x=x0;x<=x1;x+=gs)for(let z=z0;z<=z1;z+=gs){const px=x+(Math.random()-.5)*gs*.6,pz=z+(Math.random()-.5)*gs*.6,[d]=near(px,pz);
+  if(d<CL+3)continue;
+  if(d<CL+22){if(Math.random()<[.25,.4,.55][lv])await put(side[rnd(side.length)],px,pz)}
+  else if(Math.random()<[.3,.55,.8][lv]){const n=far[rnd(far.length)];await put(n,px,pz,!/tree/.test(n))}}
+}
+/* 高效能版：同款模型合併成 InstancedMesh（一款一次 draw call），並鎖定本賽道曲線，避免切換賽道時擺錯位 */
+async function buildKenney(g,city,grp){
+ const cv=curve,LL=L,fr=s=>{const u=((s%LL)+LL)%LL/LL,p=cv.getPointAt(u),t=cv.getTangentAt(u);return{p,t,r:new THREE.Vector3(-t.z,0,t.x)}};
+ const samp=[];for(let i=0;i<300;i++)samp.push(fr(i/300*LL).p);
+ const lv=qLv;
+ const side=city?['lightPostModern','billboard','tentLong','flagRed','billboardLower','lightRedDouble']:['lightPostLarge','tent','billboardLow','flagCheckers','flagGreen','radarEquipment'];
+ const far=city?['pitsOffice','grandStandCovered','tentClosedLong','pitsGarageClosed','grandStandRound']:['treeLarge','treeSmall','treeLarge','treeSmall','tentRoof'];
+ const names=[...new Set(['barrierWhite','barrierRed','grandStandCovered','grandStand','pitsGarage','pitsOffice','bannerTowerRed',...side,...far])];
+ const S=await rkScale();if(!S){console.warn('Kenney 模型未能載入(請用 GitHub 網址開啟)');return}
+ const B={};await Promise.all(names.map(async n=>{B[n]=await rkGet(n)}));
+ const near=(x,z)=>{let m=1e18,q=samp[0];for(const p of samp){const d=(p.x-x)**2+(p.z-z)**2;if(d<m){m=d;q=p}}return[Math.sqrt(m),q]};
+ const CL=W/2+4,P={},up=new THREE.Vector3(0,1,0),one=new THREE.Vector3(1,1,1);
+ const addM=(n,x,z,yaw)=>{(P[n]=P[n]||[]).push(new THREE.Matrix4().compose(new THREE.Vector3(x,0,z),new THREE.Quaternion().setFromAxisAngle(up,yaw),one))};
+ const put=(n,x,z,face=true)=>{const b=B[n];if(!b)return;const[d,q]=near(x,z);if(d-b.userData.r<CL)return;addM(n,x,z,face?Math.atan2(q.x-x,q.z-z):Math.random()*6.28)};
+ /* 1. 路肩紅白圍欄 */
+ const bw=B.barrierWhite,br=B.barrierRed,bb=bw||br;
+ if(bb){const len=bb.userData.len||6,stp=len*(lv?1.02:2.2);let k=0;
+  for(let s=0;s<LL;s+=stp,k++){const f=fr(s),n=(k%2&&br)?'barrierRed':(bw?'barrierWhite':'barrierRed'),b=B[n];
+   for(const sd of[-1,1]){const x=f.p.x+f.r.x*sd*(W/2+2.6),z=f.p.z+f.r.z*sd*(W/2+2.6);addM(n,x,z,b.userData.longX?Math.atan2(-f.t.z,f.t.x):Math.atan2(f.t.x,f.t.z))}}}
+ /* 2. 起跑區 */
+ for(const[n,sd,ds] of [['grandStandCovered',-1,0],['grandStand',-1,34],['pitsGarage',1,0],['pitsOffice',1,30]]){const b=B[n];if(!b)continue;const f=fr(10+ds),off=CL+b.userData.r+3;put(n,f.p.x+f.r.x*sd*off,f.p.z+f.r.z*sd*off)}
+ if(B.bannerTowerRed){const f0=fr(10),off=CL+B.bannerTowerRed.userData.r+1;for(const sd of[-1,1])put('bannerTowerRed',f0.p.x+f0.r.x*sd*off,f0.p.z+f0.r.z*sd*off)}
+ /* 3. 沿路裝飾 */
+ const xs=samp.map(p=>p.x),zs=samp.map(p=>p.z),gs=[34,20,14][lv];
+ for(let x=Math.min(...xs)-70;x<=Math.max(...xs)+70;x+=gs)for(let z=Math.min(...zs)-70;z<=Math.max(...zs)+70;z+=gs){const px=x+(Math.random()-.5)*gs*.6,pz=z+(Math.random()-.5)*gs*.6,[d]=near(px,pz);
+  if(d<CL+3)continue;
+  if(d<CL+22){if(Math.random()<[.25,.4,.55][lv])put(side[rnd(side.length)],px,pz)}
+  else if(Math.random()<[.3,.55,.8][lv]){const n=far[rnd(far.length)];put(n,px,pz,!/tree/.test(n))}}
+ /* 4. 合併成 InstancedMesh */
+ const t=new THREE.Matrix4();
+ for(const n in P){const b=B[n],list=P[n];if(!b||!list.length)continue;b.updateMatrixWorld(true);
+  b.traverse(o=>{if(!o.isMesh)return;const loc=o.matrixWorld.clone(),im=new THREE.InstancedMesh(o.geometry,o.material,list.length);
+   list.forEach((m,i)=>im.setMatrixAt(i,t.multiplyMatrices(m,loc)));im.instanceMatrix.needsUpdate=true;
+   im.castShadow=lv>0&&!/barrier/.test(n);im.receiveShadow=true;im.computeBoundingSphere();grp.add(im)})}
+}
 function buildKScene(sc){const city=sc==='city';
- const gd=new THREE.Mesh(new THREE.PlaneGeometry(1800,1800),new THREE.MeshStandardMaterial({color:city?0x8a8f99:0x7cc25a,roughness:1}));gd.rotation.x=-Math.PI/2;gd.position.y=-.15;gd.receiveShadow=true;scene.add(gd);
- ribbon(-W/2-2,W/2+2,-.08,(i,c)=>c.set(0x4b4f58));
+ const gd=new THREE.Mesh(new THREE.PlaneGeometry(1800,1800),new THREE.MeshStandardMaterial({color:city?0x9aa0a8:0x7cc25a,roughness:1}));gd.rotation.x=-Math.PI/2;gd.position.y=-.02;gd.receiveShadow=true;scene.add(gd);
+ /* Kenney 風格路面：深灰路面＋白邊線＋紅白路緣，與車道判定完全一致 */
+ ribbon(-W/2-1.2,W/2+1.2,.02,(i,c)=>c.set(0x3f434b));
+ ribbon(-W/2-1.2,-W/2-.4,.04,(i,c)=>c.set(0xf5f5f5));ribbon(W/2+.4,W/2+1.2,.04,(i,c)=>c.set(0xf5f5f5));
+ ribbon(-W/2-2.4,-W/2-1.2,.03,(i,c)=>c.set(Math.floor(i/3)%2?0xffffff:0xd94848));ribbon(W/2+1.2,W/2+2.4,.03,(i,c)=>c.set(Math.floor(i/3)%2?0xffffff:0xd94848));
+ [-W/6,W/6].forEach(o=>ribbon(o-.15,o+.15,.05,(i,c)=>c.set(i%4<2?0xffffff:0x3f434b)));
  mkStart();gates=mkGates();const grp=new THREE.Group();scene.add(grp);buildKenney(curRoute.grid,city,grp)}
 
 function makeNameSprite(txt,col='#fde047'){
@@ -1254,7 +1323,7 @@ function makeKart(d,labelTxt=''){
       const scale=4.6/Math.max(sz.x,sz.y,sz.z,.01);
       model.scale.setScalar(scale);
       model.position.set(-ctr.x*scale,-box.min.y*scale,-ctr.z*scale);
-      model.traverse(n=>{if(n.isMesh){n.castShadow=n.receiveShadow=true}});
+      model.traverse(n=>{if(n.isMesh){n.castShadow=n.receiveShadow=true;n.userData.shared=true}});
       bodyGrp.clear();bodyGrp.add(model);drv.visible=false;g.userData.flames=[];
       const mk=(c,r)=>{const f=new THREE.Group();f.position.set(c,.7,-scale*sz.z/2-.2);const a=new THREE.Mesh(new THREE.ConeGeometry(.28,1.8,10),new THREE.MeshBasicMaterial({color:0x38bdf8,transparent:true,opacity:.9}));a.rotation.x=-Math.PI/2;a.position.z=-.8;const b=new THREE.Mesh(new THREE.ConeGeometry(.14,1.1,8),new THREE.MeshBasicMaterial({color:0xfef08a}));b.rotation.x=-Math.PI/2;b.position.z=-.5;f.add(a,b);f.visible=false;g.add(f);g.userData.flames.push(f)};
       mk(-.5);mk(.5);
@@ -1472,7 +1541,11 @@ $('readBtn').onclick=()=>{readMode=readMode===2?0:2;$('readBtn').textContent=REA
 
 /* ===== 比賽 ===== */
 const VMAX=30;let race=null,cars=[];
-function clearRace(){cars.forEach(c=>scene.remove(c));cars=[];race=null}
+/* 每場完結釋放車輛專用資源（共用嘅 Kenney 模型唔釋放），長時間玩都唔會越嚟越慢 */
+function disposeKart(g){const keep=new Set([...Object.values(IT),...Object.values(HZ)]);
+ g.traverse(o=>{if(o.userData.shared||!(o.isMesh||o.isSprite))return;if(o.geometry&&o.geometry!==itemGeo)o.geometry.dispose();
+  [].concat(o.material||[]).forEach(m=>{if(m.map&&!keep.has(m.map))m.map.dispose();m.dispose()})})}
+function clearRace(){cars.forEach(c=>{scene.remove(c);if(c.userData&&c.userData.col)disposeKart(c)});cars=[];race=null}
 async function startRace(roomDoc=null){
  aInit();AU.song=(AU.song+1)%SONGS.length;applyTOD(TODK[Math.floor(Math.random()*TODK.length)]);musStart();clearRace();
  const st=await getStats();weak=weakList(st,30).filter(k=>k.split('×').some(n=>TBL.has(+n))).slice(0,6);
@@ -1510,7 +1583,7 @@ function showQ(){const q=race.gi<TOTALQ?gates[race.gi%GPL].q:null;
  $('hOpts').innerHTML=q?q.opts.map((o,k)=>`<span class="chip" style="background:${LCOL[k]}">${o}</span>`).join(''):'';if(q&&race.state!=='count')speakQ(q)}
 let msgT=0;function msg(t,c='#fff',d=1.3){if(!/^(🏁|❌|🎵)/.test(t))return;$('hMsg').textContent=t;$('hMsg').style.color=c;msgT=d}
 const laneOf=x=>x<-W/6?0:x>W/6?2:1;
-function place(o,s,x,yaw=0){const f=frame(s);o.position.copy(f.p).addScaledVector(f.r,x);o.position.y+=ROADY;o.rotation.y=Math.atan2(f.t.x,f.t.z)+yaw;return f}
+function place(o,s,x,yaw=0){const f=frame(s);o.position.copy(f.p).addScaledVector(f.r,x);o.position.y=.05;o.rotation.y=Math.atan2(f.t.x,f.t.z)+yaw;return f}
 
 function update(dt){const R=race;R.t+=dt;const p=R.p;R.hitCD=(R.hitCD||0)-dt;R.wallCD=(R.wallCD||0)-dt;updSparks(dt);
  if(R.state==='count'){R.cd-=dt;const n=Math.ceil(R.cd);$('hMsg').style.color='#fde047';$('hMsg').textContent=R.cd>.5?(n>3?3:n):'開始！';const bk=R.cd>.5?Math.min(3,n):0;if(bk!==R.lastN){R.lastN=bk;sfx(bk?'beep':'go')}
@@ -1559,7 +1632,7 @@ function update(dt){const R=race;R.t+=dt;const p=R.p;R.hitCD=(R.hitCD||0)-dt;R.w
  updItems(dt);
  if(p.boost>0&&R.state==='race'){fxCv.style.opacity='1';drawSpeedLines()}else{fxCv.style.opacity='0'}
  const f=place(p.mesh,p.s,p.x,-p.steer*.3+p.spin*Math.PI*2);
- const want=p.mesh.position.clone().addScaledVector(f.t,-12).add(new THREE.Vector3(0,6.4,0));
+ const want=p.mesh.position.clone().addScaledVector(f.t,-13).add(new THREE.Vector3(0,7,0));
  cam.position.lerp(want,1-Math.exp(-dt*6));if(R.shake>0){R.shake-=dt;cam.position.x+=(Math.random()-.5)*R.shake*2;cam.position.y+=(Math.random()-.5)*R.shake}cam.lookAt(p.mesh.position.clone().addScaledVector(f.t,9).add(new THREE.Vector3(0,1.6,0)));
  cam.fov+=((65+(p.boost>0?8:0))-cam.fov)*Math.min(1,dt*4);cam.updateProjectionMatrix();
  sun.position.copy(p.mesh.position).add(new THREE.Vector3(40,80,30));sun.target.position.copy(p.mesh.position);
