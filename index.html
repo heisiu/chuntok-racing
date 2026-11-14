@@ -1,18 +1,18 @@
 <!DOCTYPE html>
 <html lang="zh-HK"><head><meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>真鐸學校・極速乘法方程式</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/mqtt@5.3.5/dist/mqtt.min.js"></script>
 <script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}</script>
 <style>
-html,body{margin:0;height:100%;overflow:hidden;background:#0b1b33;font-family:system-ui,"PingFang HK","Microsoft JhengHei",sans-serif;touch-action:none;user-select:none;-webkit-user-select:none}
+html,body{margin:0;width:100%;height:100%;height:100dvh;overflow:hidden;background:#0b1b33;font-family:system-ui,"PingFang HK","Microsoft JhengHei",sans-serif;touch-action:none;user-select:none;-webkit-user-select:none}
 #c{position:fixed;inset:0;width:100%;height:100%}
-.scr{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:20;background:radial-gradient(circle at 20% 15%,#38bdf855,transparent 45%),radial-gradient(circle at 85% 90%,#f472b655,transparent 45%),linear-gradient(135deg,#0f1f5acc,#1d4ed8bb 55%,#0ea5e9aa)}
+.scr{position:fixed;inset:0;width:100%;height:100dvh;display:none;align-items:center;justify-content:center;padding:6px;box-sizing:border-box;z-index:20;background:radial-gradient(circle at 20% 15%,#38bdf855,transparent 45%),radial-gradient(circle at 85% 90%,#f472b655,transparent 45%),linear-gradient(135deg,#0f1f5acc,#1d4ed8bb 55%,#0ea5e9aa)}
 .scr.on{display:flex}
-.scr.on .card{animation:pop .35s cubic-bezier(.2,1.3,.4,1)}
-@keyframes pop{from{opacity:0;transform:translateY(18px) scale(.94)}to{opacity:1;transform:none}}
-.card{background:linear-gradient(180deg,#fff,#eef5ff);border:3px solid #ffffffcc;border-radius:28px;padding:16px 22px;max-width:920px;width:95%;max-height:94vh;overflow:auto;box-shadow:0 18px 50px #0007,inset 0 2px 0 #fff}
+.scr.on .card{animation:pop .3s cubic-bezier(.2,1.3,.4,1)}
+@keyframes pop{from{opacity:0;transform:translateY(14px) scale(calc(var(--ui-scale,1) * .94))}to{opacity:1;transform:scale(var(--ui-scale,1))}}
+.card{background:linear-gradient(180deg,#fff,#eef5ff);border:3px solid #ffffffcc;border-radius:28px;padding:14px 20px;max-width:920px;width:95%;box-sizing:border-box;box-shadow:0 18px 50px #0007,inset 0 2px 0 #fff;transform:scale(var(--ui-scale,1));transform-origin:center center}
 .card h1,.card h2{background:linear-gradient(90deg,#1d4ed8,#7c3aed);-webkit-background-clip:text;background-clip:text;color:transparent!important}
 .btn{border-radius:16px;font-weight:800;padding:8px 14px;transition:transform .1s,box-shadow .15s,filter .15s;box-shadow:0 4px 0 #0002,0 6px 12px #0001}
 .btn:hover:not(:disabled){filter:brightness(1.06);transform:translateY(-1px)}
@@ -40,9 +40,9 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0b1b33;font-family:sy
 #mini{position:fixed;right:16px;bottom:calc(min(22vh,130px) + 22px);width:min(26vh,140px);height:min(26vh,140px);border-radius:16px;background:#0f172a88;border:3px solid #fff8;box-shadow:0 6px 18px #0007}
 #rot{position:fixed;inset:0;z-index:99;display:none;background:#0b1b33;color:#fff;flex-direction:column;align-items:center;justify-content:center;font-size:22px}
 @media (orientation:portrait){#rot{display:flex}}
-/* 手機打橫專用自適應縮放（保留 iPad 原有比例，解決手機橫屏擠迫重疊） */
+/* 手機打橫專用緊湊微調（配合 JS 自動縮放，確保有瀏覽器網址列都 100% 睇晒） */
 @media (max-height: 540px) and (orientation: landscape) {
-  .card{padding:8px 14px;border-radius:20px;max-height:95vh;width:96%}
+  .card{padding:8px 14px;border-radius:20px;width:96%}
   #sLogin .schoolBadge{font-size:15px;padding:2px 14px 2px 8px}
   #sLogin h1.gameTitle{font-size:28px!important}
   #sLogin .speedLine{margin:2px auto 0;height:3px}
@@ -51,21 +51,21 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0b1b33;font-family:sy
   #sLogin #noBox{padding:3px;font-size:15px;margin:2px 0}
   #sLogin #goLogin{font-size:17px;padding:6px;margin-top:2px}
   #sLogin .btn{padding:5px 10px;font-size:13px}
-  #sMenu h2.gameTitle{font-size:21px!important}
+  #sMenu h2.gameTitle{font-size:20px!important}
   #sMenu .schoolBadge.sm{font-size:11px;padding:1px 10px 1px 6px}
-  #sMenu .grid-cols-2{gap:10px;margin-top:4px}
+  #sMenu .grid-cols-2{gap:10px;margin-top:3px}
   #sMenu p{margin-bottom:2px;font-size:12px}
   #drvBox{gap:4px!important}
-  #drvBox .btn{padding:3px 2px!important;font-size:10px!important;border-radius:10px}
-  #drvBox .drvAvatar{width:34px!important;height:34px!important}
-  #drvRadarBar{padding:4px 8px!important;margin-top:4px!important}
-  #drvRadarBar svg{width:52px!important;height:52px!important}
-  #dfBox .btn{font-size:14px;padding:4px 8px;border-radius:10px}
-  #tbBox .btn{font-size:13px;padding:3px 2px;border-radius:8px}
-  #qLo,#qHi,#qUl{font-size:12px;padding:4px 6px;border-radius:10px}
-  #myProg{padding:4px 8px!important;margin-top:4px!important;font-size:11px!important;line-height:1.25}
-  #startBtn{font-size:18px!important;padding:6px!important;margin-top:6px!important;border-radius:12px}
-  #mpBtn,#quickMpBtn,#lbBtn{font-size:13px!important;padding:5px 8px!important;border-radius:10px}
+  #drvBox .btn{padding:2px 2px!important;font-size:10px!important;border-radius:10px}
+  #drvBox .drvAvatar{width:32px!important;height:32px!important}
+  #drvRadarBar{padding:3px 8px!important;margin-top:3px!important}
+  #drvRadarBar svg{width:46px!important;height:46px!important}
+  #dfBox .btn{font-size:13px;padding:3px 8px;border-radius:10px}
+  #tbBox .btn{font-size:12px;padding:2px 2px;border-radius:8px}
+  #qLo,#qHi,#qUl{font-size:12px;padding:3px 6px;border-radius:10px}
+  #myProg{padding:3px 8px!important;margin-top:3px!important;font-size:11px!important;line-height:1.2}
+  #startBtn{font-size:17px!important;padding:5px!important;margin-top:4px!important;border-radius:12px}
+  #mpBtn,#quickMpBtn,#lbBtn{font-size:12px!important;padding:4px 8px!important;border-radius:10px}
   #sMpLobby h2,#sMpWait h2,#sTrack h2,#sRoute h2{font-size:18px!important}
   #sMpLobby .p-4{padding:8px 10px!important}
   #sMpLobby .text-4xl{font-size:22px!important;margin-bottom:0!important}
@@ -119,7 +119,8 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0b1b33;font-family:sy
   </div>
   <button id="goLogin" class="btn text-white text-2xl w-full mt-1" disabled>開始比賽 ▶</button>
   <div class="flex gap-2 mt-2">
-    <button id="guestBtn" class="btn bg-amber-100 text-amber-800 flex-1">🙋 訪客模式（不記錄成績）</button>
+    <button id="guestBtn" class="btn bg-amber-100 text-amber-800 flex-1">🙋 訪客模式</button>
+    <button id="homeLbBtn" class="btn bg-gradient-to-b from-amber-200 to-amber-400 text-amber-950 flex-1">🏆 排行榜</button>
     <button id="teachBtn" class="btn bg-slate-200 text-slate-700 flex-1">👩‍🏫 老師後台</button>
   </div>
 </div></div>
@@ -219,9 +220,10 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0b1b33;font-family:sy
   <h2 class="text-3xl font-black">👩‍🏫 老師後台</h2>
   <p class="text-sm text-slate-500 mt-1">此區只供老師使用。老師帳戶的成績不會計入報告。</p>
   <div class="grid gap-2.5 mt-3">
-    <button id="adLb" class="btn bg-gradient-to-b from-amber-100 to-amber-300 text-amber-900 text-xl py-3">🏆 排行榜</button>
-    <button id="adRp" class="btn bg-gradient-to-b from-sky-100 to-sky-300 text-sky-900 text-xl py-3">📊 老師報告</button>
-    <button id="adTest" class="btn bg-gradient-to-b from-slate-100 to-slate-300 text-slate-800 text-xl py-3">🧪 老師測試（全部車手已解鎖）</button>
+    <button id="adLb" class="btn bg-gradient-to-b from-amber-100 to-amber-300 text-amber-900 text-xl py-2.5">🏆 排行榜</button>
+    <button id="adRp" class="btn bg-gradient-to-b from-sky-100 to-sky-300 text-sky-900 text-xl py-2.5">📊 老師報告</button>
+    <button id="adTest" class="btn bg-gradient-to-b from-slate-100 to-slate-300 text-slate-800 text-xl py-2.5">🔒 🧪 老師測試（全部車手已解鎖）</button>
+    <button id="adReset" class="btn bg-gradient-to-b from-red-100 to-red-300 text-red-900 text-lg py-2">🔒 🗑️ 新學年資料重設（清空所有成績）</button>
     <div class="bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-3 text-left text-xs text-slate-700">
       <div class="font-black text-emerald-900 text-sm mb-1">🐙 GitHub Pages 靜態資源直讀狀態</div>
       <div>① 10合1車手圖 (<code>./drivers_sheet.png</code>)：<b id="stDrivers" class="text-amber-600">偵測中…</b></div>
@@ -237,14 +239,14 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0b1b33;font-family:sy
   <div class="flex gap-2 my-2"><button id="lbA" class="btn bg-slate-100 flex-1 sel">🎯 答對率（本月）</button><button id="lbW" class="btn bg-slate-100 flex-1">🏅 勝出場數</button></div>
   <div class="flex gap-2 mb-2" id="lbGr"></div>
   <p class="text-xs text-slate-500 mb-1" id="lbNote"></p>
-  <div id="lbBox" class="text-slate-700">載入中…</div>
+  <div id="lbBox" class="text-slate-700" style="max-height:52vh;overflow:auto">載入中…</div>
 </div></div>
 
 <!-- 老師報告 -->
 <div id="sRp" class="scr"><div class="card" style="max-width:1000px">
   <div class="flex justify-between items-center flex-wrap gap-2"><h2 class="text-2xl font-black">📊 老師報告</h2><div><button id="rpXls" class="btn bg-green-600 text-white">📥 匯出 Excel</button> <button id="rpBack" class="btn bg-slate-200">⬅ 返回</button></div></div>
   <div class="flex gap-2 my-2 flex-wrap" id="rpGr"></div>
-  <div id="rpBox" class="text-slate-700">載入中…</div>
+  <div id="rpBox" class="text-slate-700" style="max-height:60vh;overflow:auto">載入中…</div>
 </div></div>
 
 <!-- 選擇賽道 -->
@@ -314,14 +316,32 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0b1b33;font-family:sy
 <button id="resumeBtn" class="btn bg-green-500 text-white text-2xl w-full py-3">▶ 繼續比賽</button>
 <button id="quitBtn" class="btn bg-red-100 text-red-700 text-lg w-full mt-3">🚪 離開比賽（今場不計成績）</button></div></div>
 
+<!-- 老師密碼及新學年重設再三確認彈窗 -->
+<div id="pwOv" style="position:fixed;inset:0;z-index:50;display:none;background:#0009;align-items:center;justify-content:center"><div class="card text-center" style="max-width:440px" id="pwBox"></div></div>
+
 <script type="module">
 import * as THREE from 'three';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import {getAuth,signInAnonymously} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import {getFirestore,doc,setDoc,getDoc,addDoc,collection,getDocs,query,orderBy,limit,serverTimestamp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import {getFirestore,doc,setDoc,getDoc,addDoc,deleteDoc,collection,getDocs,query,orderBy,limit,serverTimestamp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 const $=id=>document.getElementById(id);
+
+/* ===== 自動比例縮放（解決手機瀏覽器頂部網址列導致選單上下被切問題） ===== */
+function fitAllCards(){
+  const vw=window.visualViewport?window.visualViewport.width:window.innerWidth;
+  const vh=window.visualViewport?window.visualViewport.height:window.innerHeight;
+  const availW=vw-12, availH=vh-12;
+  document.querySelectorAll('.scr.on .card, #lockOv[style*="flex"] .card, #pauseOv[style*="flex"] .card, #pwOv[style*="flex"] .card').forEach(card=>{
+    card.style.setProperty('--ui-scale','1');
+    const w=card.offsetWidth||1, h=card.scrollHeight||card.offsetHeight||1;
+    const sc=Math.min(1, availW/w, availH/h);
+    card.style.setProperty('--ui-scale', sc.toFixed(3));
+  });
+}
+window.addEventListener('resize', fitAllCards);
+if(window.visualViewport) window.visualViewport.addEventListener('resize', fitAllCards);
 
 const GITHUB_SHEET_PATH='./drivers_sheet.png', GITHUB_BADGE_PATH='./school_badge.png';
 let schoolBadgeImg=null;
@@ -363,7 +383,7 @@ function makeChunTokAvatarDataURI(kind){
     if(kind==='cap'){g.fillStyle='#1e40af';g.beginPath();g.arc(90,66,46,Math.PI,0);g.fill()}
     if(kind==='chan'){g.fillStyle='#facc15';g.beginPath();g.moveTo(52,46);g.lineTo(58,18);g.lineTo(74,34);g.lineTo(90,12);g.lineTo(106,34);g.lineTo(122,18);g.lineTo(128,46);g.closePath();g.fill()}
   }
-  if(kind==='tam'){g.fillStyle='#111827';rr(52,72,32,22,8);g.fill();rr(96,72,32,22,8);g.fill();g.fillRect(82,78,16,4)}
+  if(kind==='tam'){g.fillStyle='#111817';rr(52,72,32,22,8);g.fill();rr(96,72,32,22,8);g.fill();g.fillRect(82,78,16,4)}
   else{[71,109].forEach(ex=>{g.fillStyle='#291811';g.beginPath();g.arc(ex,84,6.5,0,Math.PI*2);g.fill();g.fillStyle='#fff';g.beginPath();g.arc(ex-2,82,2.5,0,Math.PI*2);g.fill()})}
   g.fillStyle='#e11d48';g.beginPath();g.moveTo(76,104);g.quadraticCurveTo(90,118,104,104);g.closePath();g.fill();
   return cv.toDataURL('image/png');
@@ -511,6 +531,7 @@ function showDriverModal(d,tw={}){
     $('lkProg').textContent='五項能力平均，最適合新手練習！';
   }
   $('lockOv').style.display='flex';
+  requestAnimationFrame(fitAllCards);
 }
 $('lkOk').onclick=()=>$('lockOv').style.display='none';
 const UNLOCK_ACC=80;let guestWins=0,guestTW={};
@@ -523,7 +544,7 @@ const DIFF={'易':{sp:.80,acc:.55},'中':{sp:.92,acc:.75},'難':{sp:1.0,acc:.9}}
 /* ===== 儲存 ===== */
 const store={
  async get(k){try{const v=window.sayoStorage?await window.sayoStorage.getItem(k):localStorage.getItem(k);return v?JSON.parse(v):null}catch(e){return null}},
- async set(k,v){const s=JSON.stringify(v);try{window.sayoStorage?await window.sayoStorage.getItem(k,s):localStorage.setItem(k,s)}catch(e){}}};
+ async set(k,v){const s=JSON.stringify(v);try{window.sayoStorage?await window.sayoStorage.setItem(k,s):localStorage.setItem(k,s)}catch(e){}}};
 
 let user=null, diff='中', driverIdx=0, hiQ=false, guestStats={};
 const uid=()=>user.type==='student'?`${user.grade}${user.cls}-${user.no}`:user.type+'_'+Math.floor(100+Math.random()*900);
@@ -531,7 +552,7 @@ let mySessionId='';
 const label=()=>user.type==='student'?`${GNAME[user.grade]}年級 ${user.cls}班 ${user.no}號`:user.type==='guest'?'訪客（成績不會記錄）':'老師（不計入報告）';
 const shortName=()=>user.type==='student'?`${user.grade}${user.cls}(${user.no})`:user.type==='guest'?'訪客':'老師';
 const ALL_SCR=['sLogin','sMenu','sResult','sTrack','sRoute','sLb','sRp','sAdmin','sMpLobby','sMpWait'];
-const show=id=>{for(const s of ALL_SCR)$(s).classList.toggle('on',s===id);$('hud').style.display=id?'none':'block'};
+const show=id=>{for(const s of ALL_SCR)$(s).classList.toggle('on',s===id);$('hud').style.display=id?'none':'block';requestAnimationFrame(fitAllCards)};
 
 /* ===== 登入 ===== */
 let selGr=null, selCls=null, selNo=null;
@@ -547,11 +568,113 @@ $('noBox').addEventListener('change',()=>{selNo=$('noBox').value?Number($('noBox
 function chk(){$('goLogin').disabled=!(selGr&&selCls&&selNo)}
 $('goLogin').onclick=()=>login({grade:selGr,cls:selCls,no:selNo,type:'student'});
 $('guestBtn').onclick=()=>login({cls:'訪客',no:0,type:'guest'});
+$('homeLbBtn').onclick=()=>{window._lbFrom='sLogin';openLb()};
 $('teachBtn').onclick=()=>{user={cls:'老師',no:0,type:'teacher'};show('sAdmin')};
 $('adBack').onclick=()=>show('sLogin');
-$('adLb').onclick=()=>openLb();
+$('adLb').onclick=()=>{window._lbFrom='sAdmin';openLb()};
 $('adRp').onclick=()=>openRp();
-$('adTest').onclick=()=>login({cls:'老師測試',no:0,type:'teacher'});
+
+const TEACHER_PW='23265111';
+function closePwModal(){$('pwOv').style.display='none'}
+function openPwModal(title,subtitle,onSuccess){
+  $('pwBox').innerHTML=`
+    <h3 class="text-2xl font-black text-blue-800">${title}</h3>
+    <p class="text-sm text-slate-600 mt-1">${subtitle}</p>
+    <input id="pwInp" type="password" inputmode="numeric" placeholder="請輸入老師密碼" class="mt-3 w-full rounded-2xl border-2 border-slate-300 bg-slate-50 p-2.5 text-center text-2xl font-black tracking-widest text-slate-800">
+    <p id="pwErr" class="text-red-600 font-bold text-sm mt-1 h-5"></p>
+    <div class="flex gap-2 mt-2">
+      <button id="pwCancel" class="btn bg-slate-200 text-slate-700 flex-1 text-lg">取消</button>
+      <button id="pwOk" class="btn bg-blue-600 text-white flex-1 text-lg">確認</button>
+    </div>`;
+  $('pwOv').style.display='flex';
+  requestAnimationFrame(()=>{fitAllCards();$('pwInp').focus()});
+  const submit=()=>{
+    if(($('pwInp').value||'').trim()===TEACHER_PW){onSuccess()}
+    else{$('pwErr').textContent='❌ 密碼不正確，請重新輸入！';$('pwInp').value='';$('pwInp').focus()}
+  };
+  $('pwCancel').onclick=closePwModal;
+  $('pwOk').onclick=submit;
+  $('pwInp').onkeydown=e=>{if(e.key==='Enter')submit()};
+}
+
+$('adTest').onclick=()=>{
+  openPwModal('🔒 老師測試模式','請輸入老師密碼以解鎖全部 10 位真鐸車手：',()=>{
+    closePwModal();
+    login({cls:'老師測試',no:0,type:'teacher'});
+  });
+};
+
+$('adReset').onclick=()=>{
+  openPwModal('🔒 新學年資料重設','請先輸入老師密碼以進行驗證：',()=>showResetConfirmStep(1));
+};
+
+function showResetConfirmStep(step){
+  const msgs=[
+    null,
+    {
+      badge:'⚠️ 第 1 / 3 次確認',
+      title:'確定要啟動「新學年資料重設」嗎？',
+      desc:'此操作將會清除所有同學的比賽紀錄、排行榜分數、勝出場數及已解鎖車手進度。',
+      btn:'我明白，進入第 2 次確認 ▶',
+      btnCls:'bg-amber-500 text-white'
+    },
+    {
+      badge:'🚨 第 2 / 3 次確認',
+      title:'資料刪除後將無法復原！',
+      desc:'建議重設前先到「📊 老師報告」按「📥 匯出 Excel」備份本學年成績。你確定已經備份好並要繼續嗎？',
+      btn:'已備份好，進入最後確認 ▶',
+      btnCls:'bg-orange-600 text-white'
+    },
+    {
+      badge:'🛑 最後第 3 / 3 次確認',
+      title:'最後確認：立即清空全校新學年資料？',
+      desc:'按下「立即永久清空」後，雲端資料庫及本機的所有學生成績與排行榜將會即時歸零！',
+      btn:'🗑️ 立即永久清空所有資料',
+      btnCls:'bg-red-600 text-white'
+    }
+  ][step];
+  $('pwBox').innerHTML=`
+    <div class="inline-block bg-red-100 text-red-800 px-3 py-0.5 rounded-full text-xs font-black">${msgs.badge}</div>
+    <h3 class="text-xl font-black text-red-700 mt-2">${msgs.title}</h3>
+    <p class="text-sm text-slate-600 mt-2 leading-relaxed">${msgs.desc}</p>
+    <div id="rstStatus" class="text-sm font-bold text-blue-700 mt-2"></div>
+    <div class="flex gap-2 mt-4">
+      <button id="rstCancel" class="btn bg-slate-200 text-slate-700 flex-1">取消返回</button>
+      <button id="rstNext" class="btn ${msgs.btnCls} flex-1">${msgs.btn}</button>
+    </div>`;
+  requestAnimationFrame(fitAllCards);
+  $('rstCancel').onclick=closePwModal;
+  $('rstNext').onclick=async()=>{
+    if(step<3){showResetConfirmStep(step+1);return}
+    $('rstCancel').disabled=true;$('rstNext').disabled=true;
+    $('rstStatus').textContent='⏳ 正在清空雲端及本機所有資料，請稍候…';
+    try{
+      // 清空本機學生成績與解鎖紀錄（保留畫面與聲音偏好設定）
+      const prefs=await store.get('prefs');
+      try{localStorage.clear()}catch(e){}
+      if(prefs)await store.set('prefs',prefs);
+      guestWins=0;guestTW={};guestStats={};
+      // 清空 Firebase 雲端資料庫
+      if(FB.ok&&FB.db){
+        const pSnap=await getDocs(collection(FB.db,'players'));
+        for(const d of pSnap.docs){try{await deleteDoc(doc(FB.db,'players',d.id))}catch(e){}}
+        const rSnap=await getDocs(collection(FB.db,'races'));
+        for(const d of rSnap.docs){try{await deleteDoc(doc(FB.db,'races',d.id))}catch(e){}}
+      }
+      $('pwBox').innerHTML=`
+        <div class="text-5xl mb-2">✅</div>
+        <h3 class="text-2xl font-black text-green-700">新學年資料重設完成！</h3>
+        <p class="text-sm text-slate-600 mt-1">全校排行榜、比賽紀錄及車手解鎖進度已全部歸零。</p>
+        <button id="rstDone" class="btn bg-green-600 text-white text-lg w-full mt-4 py-2.5">完成</button>`;
+      requestAnimationFrame(fitAllCards);
+      $('rstDone').onclick=closePwModal;
+    }catch(e){
+      $('rstStatus').textContent='⚠️ 部分雲端資料清除時發生錯誤，請檢查網絡後再試。';
+      $('rstCancel').disabled=false;
+    }
+  };
+}
+
 async function login(u){user=u;mySessionId=u.type==='student'?`${u.grade}${u.cls}-${u.no}`:`${u.type}-${Math.floor(1000+Math.random()*9000)}`;
  window._inTest=u.type==='teacher';if(u.type==='student'){await store.set('lastUser',u);for(let i=0;i<15&&!FB.ok;i++)await new Promise(r=>setTimeout(r,100));await fbRestore();fbRetry()}if(u.type==='guest')guestStats={};showMenu()}
 $('logout').onclick=()=>{leaveMpRoom();window._inTest=false;selGr=selCls=selNo=null;[...$('grBox').children,...$('clsBox').children].forEach(x=>x.classList.remove('sel'));fillNo();chk();$('resume').innerHTML='';show('sLogin')};
@@ -562,7 +685,7 @@ async function initLogin(){
  prefsOK=true;
  const last=await store.get('lastUser');
  if(last&&last.grade&&CLASSES.includes(last.cls)){$('resume').innerHTML=`<div class="bg-amber-50 rounded-2xl p-2 flex items-center justify-between gap-2"><span class="font-bold text-lg">上次：${GNAME[last.grade]}年級 ${last.cls}班 ${last.no}號</span><span><button id="rsY" class="btn bg-green-500 text-white">繼續 ▶</button> <button id="rsN" class="btn bg-slate-200">不是我</button></span></div>`;
-  $('rsY').onclick=()=>login(last);$('rsN').onclick=()=>$('resume').innerHTML=''}
+  $('rsY').onclick=()=>login(last);$('rsN').onclick=()=>{($('resume').innerHTML='');fitAllCards()}}
  show('sLogin')}
 
 /* ===== 主選單 ===== */
@@ -582,6 +705,7 @@ function renderDrivers(w,tw={}){const box=$('drvBox');box.innerHTML='';
     updateMenuRadarBar(tw);
   };box.appendChild(b)});
  updateMenuRadarBar(tw);
+ requestAnimationFrame(fitAllCards);
 }
 Object.keys(DIFF).forEach(k=>{const b=document.createElement('button');b.className='btn bg-gradient-to-b from-white to-slate-200 flex-1 text-xl';b.textContent=k;
  b.onclick=()=>{diff=k;[...$('dfBox').children].forEach(x=>x.classList.toggle('sel',x===b))};if(k===diff)b.classList.add('sel');$('dfBox').appendChild(b)});
@@ -739,6 +863,7 @@ function renderWaitRoom(d){
       </div>`);
     }
   }$('waitPlayers').innerHTML=slots.join('');
+  requestAnimationFrame(fitAllCards);
 }
 $('btnLeaveRoom').onclick=()=>{leaveMpRoom();showMenu()};
 function leaveMpRoom(){
@@ -768,16 +893,27 @@ let lbMode='acc',lbGr=0;
 function grBtns(box,cur,fn){box.innerHTML='';[['全部',0],...GRADES.map(g=>[GNAME[g]+'年級',g])].forEach(([t,v])=>{const b=document.createElement('button');b.className='btn bg-slate-100 text-sm py-1 px-3'+(v===cur?' sel':'');b.textContent=t;b.onclick=()=>fn(v);box.appendChild(b)})}
 async function openLb(){show('sLb');$('lbBox').textContent='載入中…';await drawLb()}
 async function drawLb(){grBtns($('lbGr'),lbGr,v=>{lbGr=v;drawLb()});$('lbA').classList.toggle('sel',lbMode==='acc');$('lbW').classList.toggle('sel',lbMode==='win');
- const me=user.type==='student'?ID(user.grade,user.cls,user.no):null;let rows=[];
- if(lbMode==='acc'){$('lbNote').textContent='本月玩滿 3 場或以上才上榜；以平均答對率排名，相同則比較作答速度。';const rs=await fbRaces();if(!rs){$('lbBox').textContent='暫時未能連線，請稍後再試。';return}
+ const lastU=await store.get('lastUser');
+ const me=(user&&user.type==='student')?ID(user.grade,user.cls,user.no):(selGr&&selCls&&selNo)?ID(selGr,selCls,selNo):(lastU&&lastU.grade&&lastU.cls&&lastU.no)?ID(lastU.grade,lastU.cls,lastU.no):null;
+ let rows=[];
+ if(lbMode==='acc'){$('lbNote').textContent='📌 準則：本月玩滿 3 場或以上才上榜；以平均答對率排名，相同則比較作答速度。';const rs=await fbRaces();if(!rs){$('lbBox').textContent='暫時未能連線，請稍後再試。';return}
   const m0=new Date();m0.setDate(1);m0.setHours(0,0,0,0);const by={};rs.filter(r=>r.ms>=m0.getTime()&&(!lbGr||r.grade===lbGr)).forEach(r=>{const k=ID(r.grade,r.cls,r.no);(by[k]=by[k]||{k,n:0,a:0,t:0}).n++;by[k].a+=r.acc;by[k].t+=r.avgT});
   rows=Object.values(by).filter(x=>x.n>=3).map(x=>({k:x.k,v:Math.round(x.a/x.n),sub:`${x.n} 場・${(x.t/x.n).toFixed(1)} 秒/題`,t:x.t/x.n})).sort((a,b)=>b.v-a.v||a.t-b.t)}
- else{$('lbNote').textContent='累積勝出場數（第 1 名及答對率達標）。';const ps=await fbPlayers();if(!ps){$('lbBox').textContent='暫時未能連線，請稍後再試。';return}
-  rows=ps.filter(p=>(p.wins||0)>0&&(!lbGr||p.grade===lbGr)).map(p=>({k:ID(p.grade,p.cls,p.no),v:p.wins,sub:''})).sort((a,b)=>b.v-a.v)}
- if(!rows.length){$('lbBox').textContent='暫時未有資料，快去比賽吧！';return}
+ else{$('lbNote').textContent=`📌 準則：學生登入比賽獲得「第 1 名」且「答對率達 ${UNLOCK_ACC}% 或以上」計 1 場勝出；累積滿 1 場即上榜！`;
+  const [ps,rs]=await Promise.all([fbPlayers(),fbRaces()]);if(!ps&&!rs){$('lbBox').textContent='暫時未能連線，請稍後再試。';return}
+  const winMap={};
+  (ps||[]).forEach(p=>{if((p.wins||0)>0&&(!lbGr||p.grade===lbGr)){const k=ID(p.grade,p.cls,p.no);winMap[k]=Math.max(winMap[k]||0,p.wins)}});
+  const rCount={};
+  (rs||[]).forEach(r=>{if(r.rank===1&&(r.acc||0)>=UNLOCK_ACC&&(!lbGr||r.grade===lbGr)){const k=ID(r.grade,r.cls,r.no);rCount[k]=(rCount[k]||0)+1}});
+  Object.entries(rCount).forEach(([k,w])=>{winMap[k]=Math.max(winMap[k]||0,w)});
+  rows=Object.entries(winMap).map(([k,v])=>({k,v,sub:'第1名＋答對≥80%'})).sort((a,b)=>b.v-a.v)}
+ if(!rows.length){$('lbBox').textContent='暫時未有資料，快去比賽吧！';requestAnimationFrame(fitAllCards);return}
  const top=rows.slice(0,10),mi=me?rows.findIndex(r=>r.k===me):-1,md=['🥇','🥈','🥉'],unit=lbMode==='acc'?'%':' 場';
- $('lbBox').innerHTML=top.map((r,i)=>`<div class="flex items-center gap-3 rounded-xl px-3 py-1 mb-1 ${r.k===me?'bg-amber-100 font-black':'bg-slate-50'}"><span class="text-2xl w-10 text-center">${md[i]||i+1}</span><span class="text-xl font-bold flex-1">${esc(r.k)}</span><span class="text-xs text-slate-500">${esc(r.sub)}</span><span class="text-2xl font-black text-blue-700 w-20 text-right">${r.v}${unit}</span></div>`).join('')+(mi>=10?`<div class="mt-2 rounded-xl bg-amber-100 px-3 py-1 font-black">你排第 ${mi+1} 名：${esc(rows[mi].k)}　${rows[mi].v}${unit}</div>`:'')}
-$('lbBtn').onclick=openLb;$('lbBack').onclick=()=>{user&&user.type==='teacher'&&!window._inTest?show('sAdmin'):showMenu()};$('lbA').onclick=()=>{lbMode='acc';drawLb()};$('lbW').onclick=()=>{lbMode='win';drawLb()};
+ $('lbBox').innerHTML=top.map((r,i)=>`<div class="flex items-center gap-3 rounded-xl px-3 py-1 mb-1 ${r.k===me?'bg-amber-100 font-black':'bg-slate-50'}"><span class="text-2xl w-10 text-center">${md[i]||i+1}</span><span class="text-xl font-bold flex-1">${esc(r.k)}</span><span class="text-xs text-slate-500">${esc(r.sub)}</span><span class="text-2xl font-black text-blue-700 w-20 text-right">${r.v}${unit}</span></div>`).join('')+(mi>=10?`<div class="mt-2 rounded-xl bg-amber-100 px-3 py-1 font-black">你排第 ${mi+1} 名：${esc(rows[mi].k)}　${rows[mi].v}${unit}</div>`:'');
+ requestAnimationFrame(fitAllCards)}
+$('lbBtn').onclick=()=>{window._lbFrom='sMenu';openLb()};
+$('lbBack').onclick=()=>{if(window._lbFrom==='sLogin')show('sLogin');else if(window._lbFrom==='sAdmin'||(user&&user.type==='teacher'&&!window._inTest))show('sAdmin');else showMenu()};
+$('lbA').onclick=()=>{lbMode='acc';drawLb()};$('lbW').onclick=()=>{lbMode='win';drawLb()};
 let rpGr=0,rpData=null;
 async function openRp(){show('sRp');$('rpBox').textContent='載入中…';const rs=await fbRaces();if(!rs){$('rpBox').textContent='暫時未能連線，請稍後再試。';return}rpData=rs;drawRp()}
 function rpStats(rs){const by={};rs.forEach(r=>{const k=ID(r.grade,r.cls,r.no);const o=by[k]=by[k]||{k,g:r.grade,c:r.cls,no:r.no,rs:[]};o.rs.push(r)});
@@ -796,7 +932,8 @@ function drawRp(){grBtns($('rpGr'),rpGr,v=>{rpGr=v;drawRp()});const{rs,ps}=rpAll
  $('rpBox').innerHTML=`<div class="grid grid-cols-4 gap-2">${card('玩過人數',played,`共 ${total} 人・${Math.round(played/total*100)}%`,'bg-sky-50')}${card('總場數',rs.length,'','bg-violet-50')}${card('整體答對率',acc+'%',`平均 ${avT} 秒/題`,'bg-green-50')}${card('平均進步',impAvg===null?'—':(impAvg>0?'+':'')+impAvg+'%','玩 2 場或以上的同學','bg-amber-50')}</div>
  <p class="font-black text-blue-800 mt-3">🏫 各班概況</p><table class="w-full text-sm mt-1"><tr class="text-left text-slate-500"><th>班別</th><th>玩過人數</th><th>場數</th><th>答對率</th></tr>${clsRows.map(r=>`<tr class="border-t"><td>${esc(r.k)}</td><td>${r.pl}/${MAXNO}</td><td>${r.races}</td><td>${r.acc===null?'—':r.acc+'%'}</td></tr>`).join('')}</table>
  <p class="font-black text-blue-800 mt-3">❌ 最常錯的題目</p><div class="flex flex-wrap gap-2 mt-1">${hard.length?hard.map(h=>`<span class="rounded-xl bg-red-50 px-3 py-1 font-bold">${h.k}　錯 ${h.r}%<span class="text-xs text-slate-500">（${h.w}/${h.n}）</span></span>`).join(''):'<span class="text-slate-500">資料未足</span>'}</div>
- <p class="font-black text-blue-800 mt-3">📈 同學進步及作答時間</p><div style="max-height:200px;overflow:auto"><table class="w-full text-sm"><tr class="text-left text-slate-500"><th>學生</th><th>場數</th><th>答對率</th><th>秒/題</th><th>進步</th></tr>${[...ps].sort((a,b)=>a.k.localeCompare(b.k,'zh')).map(p=>`<tr class="border-t"><td>${esc(p.k)}</td><td>${p.n}</td><td>${p.acc}%</td><td>${p.t.toFixed(1)}</td><td class="${p.imp>0?'text-green-600':p.imp<0?'text-red-500':''}">${p.imp===null?'—':(p.imp>0?'+':'')+p.imp+'%'}</td></tr>`).join('')}</table></div>`}
+ <p class="font-black text-blue-800 mt-3">📈 同學進步及作答時間</p><div style="max-height:200px;overflow:auto"><table class="w-full text-sm"><tr class="text-left text-slate-500"><th>學生</th><th>場數</th><th>答對率</th><th>秒/題</th><th>進步</th></tr>${[...ps].sort((a,b)=>a.k.localeCompare(b.k,'zh')).map(p=>`<tr class="border-t"><td>${esc(p.k)}</td><td>${p.n}</td><td>${p.acc}%</td><td>${p.t.toFixed(1)}</td><td class="${p.imp>0?'text-green-600':p.imp<0?'text-red-500':''}">${p.imp===null?'—':(p.imp>0?'+':'')+p.imp+'%'}</td></tr>`).join('')}</table></div>`;
+ requestAnimationFrame(fitAllCards)}
 function xlsEsc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 function sheet(name,rows){return `<Worksheet ss:Name="${xlsEsc(name)}"><Table>${rows.map(r=>`<Row>${r.map(v=>typeof v==='number'?`<Cell><Data ss:Type="Number">${v}</Data></Cell>`:`<Cell><Data ss:Type="String">${xlsEsc(v)}</Data></Cell>`).join('')}</Row>`).join('')}</Table></Worksheet>`}
 $('rpXls').onclick=()=>{if(!rpData)return;const{rs,ps}=rpAll(),fq={};rs.flatMap(r=>r.qs||[]).forEach(x=>{const k=factKey(x.a,x.b),o=fq[k]=fq[k]||{n:0,w:0,t:0};o.n++;o.t+=x.t;if(!x.ok)o.w++});
@@ -1172,7 +1309,7 @@ bind($('bL'),'l');bind($('bR'),'r');
 addEventListener('keydown',e=>{if(['ArrowLeft','a','A'].includes(e.key))keys.l=true;if(['ArrowRight','d','D'].includes(e.key))keys.r=true});
 addEventListener('keyup',e=>{if(['ArrowLeft','a','A'].includes(e.key))keys.l=false;if(['ArrowRight','d','D'].includes(e.key))keys.r=false});
 let paused=false;
-$('pauseBtn').onclick=()=>{if(!race||!['race','count'].includes(race.state))return;paused=true;keys.l=keys.r=false;musStop();$('pauseOv').style.display='flex'};
+$('pauseBtn').onclick=()=>{if(!race||!['race','count'].includes(race.state))return;paused=true;keys.l=keys.r=false;musStop();$('pauseOv').style.display='flex';requestAnimationFrame(fitAllCards)};
 $('resumeBtn').onclick=()=>{paused=false;$('pauseOv').style.display='none';clock.getDelta();musStart()};
 $('quitBtn').onclick=()=>{paused=false;$('pauseOv').style.display='none';musStop();if(race){race.state='quit';clearRace()}showMenu()};
 
