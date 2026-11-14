@@ -444,10 +444,10 @@ const DRIVERS=[
  {name:'流星號',color:0xfacc15,num:'05',row:2,col:1,kind:'glasses',tbl:5,need:5,st:[2,4,5,2,3],tag:'小鋼炮,最易操控',glb:KENNEY_CDN+'hatchback-sports.glb'},
  {name:'彩虹號',color:0xa855f7,num:'06',row:3,col:0,kind:'headphone',tbl:6,need:5,st:[2,2,3,5,3],tag:'豪華SUV,耐力一流',glb:KENNEY_CDN+'suv-luxury.glb'},
  {name:'雷霆號',color:0xf97316,num:'07',row:3,col:1,kind:'helmetB',tbl:7,need:5,st:[3,2,3,4,5],tag:'警車,終點衝刺王',glb:KENNEY_CDN+'police.glb'},
- {name:'極光號',color:0x06b6d4,num:'08',row:4,col:0,kind:'helmetP',tbl:8,need:5,st:[2,5,3,2,3],tag:'起步最快',glb:KENNEY_CDN+'kart-oobi.glb'},
- {name:'疾風號',color:0x84cc16,num:'09',row:4,col:1,kind:'boy',tbl:9,need:5,st:[4,3,3,2,3],tag:'的士,靈活穿梭',glb:KENNEY_CDN+'taxi.glb'},
- {name:'譚主任',color:0x0f766e,num:'TAM',row:0,col:1,kind:'tam',boss:'tam',need:5,crown:true,st:[4,4,4,4,4],tag:'主任專屬未來戰車',glb:KENNEY_CDN+'race-future.glb'},
- {name:'陳校長',color:0xd4a017,num:'CHAN',row:0,col:0,kind:'chan',boss:'chan',need:10,crown:true,st:[4.5,4.5,4.5,4.5,4.5],tag:'校長金色傳說',glb:KENNEY_CDN+'race.glb'}
+ {name:'極光號',color:0x06b6d4,num:'08',row:4,col:0,kind:'helmetP',tbl:8,need:5,st:[2,5,3,2,3],tag:'起步最快',glb:KENNEY_CDN+'kart-oodi.glb'},
+ {name:'疾風號',color:0x84cc16,num:'09',row:4,col:1,kind:'boy',tbl:9,need:5,st:[4,3,3,2,3],tag:'輕巧卡丁車,快如疾風',glb:KENNEY_CDN+'kart-ooli.glb'},
+ {name:'譚主任',color:0x0f766e,num:'TAM',row:0,col:1,kind:'tam',boss:'tam',need:5,crown:true,st:[4,4,4,4,4],tag:'綠色 F1 方程式戰車',glb:KENNEY_CDN+'raceCarGreen.glb'},
+ {name:'陳校長',color:0xd4a017,num:'CHAN',row:0,col:0,kind:'chan',boss:'chan',need:10,crown:true,st:[4.5,4.5,4.5,4.5,4.5],tag:'金橙 F1 冠軍戰車',glb:KENNEY_CDN+'raceCarOrange.glb'}
 ];
 DRIVERS.forEach(d=>{d.img=makeChunTokAvatarDataURI(d.kind)});
 
@@ -1028,28 +1028,46 @@ async function rkPlace(names,size,list,parent){/* list:[{s,x,yaw}] */
   list.forEach((it,i)=>{const o=base.clone(true),f=frame(it.s);o.position.copy(f.p).addScaledVector(f.r,it.x);o.rotation.y=Math.atan2(f.t.x,f.t.z)+(it.yaw||0);(parent||scene).add(o)});
   return true}
  return false}
+/* 實際用 Kenney Racing Kit 檔名(多個候補名,找到第一個存在的就用) */
+const RKN={
+ bar:['barrierRed','barrierWhite'],
+ fence:['fenceStraight'],
+ lamp:['lightPostLarge','lightPostModern','lightRed'],
+ tire:['barrierWall'],
+ flag:['flagCheckers','flagRed','flagGreen'],
+ tree:['treeLarge','treeSmall'],
+ stand:['grandStandCovered','grandStand','grandStandAwning','grandStandCoveredRound'],
+ pits:['pitsGarage','pitsOffice','pitsGarageClosed'],
+ banner:['bannerTowerRed','bannerTowerGreen','overhead'],
+ board:['billboard','billboardLow','billboardLower'],
+ tent:['tent','tentLong','tentRoof','tentClosed'],
+ cone:['pylon'],
+ radar:['radarEquipment','camera_exclusive']
+};
 function rkDeco(){const lv=qLv,grp=new THREE.Group();scene.add(grp);
- const step=[0,44,26][lv]||44,bar=[],tire=[],lamp=[],flag=[],tree=[];
- if(lv===0){/* 省電:只放起跑區 */}
- else{
-  for(let s=10;s<L;s+=step){bar.push({s,x:-W/2-2.4},{s,x:W/2+2.4})}
-  for(let s=20;s<L;s+=step*2){lamp.push({s:s,x:-W/2-5},{s:s+step,x:W/2+5})}
-  if(lv===2){for(let s=30;s<L;s+=step*1.5){tire.push({s,x:-W/2-4.2,yaw:Math.PI/2},{s:s+step*.7,x:W/2+4.2})}
-   for(let s=5;s<L;s+=70){flag.push({s,x:s%140<70?-W/2-7:W/2+7})}
-   for(let s=0;s<L;s+=34){tree.push({s,x:(s%68<34?-1:1)*(W/2+14+Math.random()*10)})}}}
- rkPlace(['barrierWall','barrierRed','barrierWhite'],6,bar,grp);
- rkPlace(['lightPostLarge','lightPostModern','lightRed'],9,lamp,grp);
- rkPlace(['tires','tireRed','tireWhite'],3.2,tire,grp);
- rkPlace(['flagCheckers','flagRed','flagGreen'],7,flag,grp);
- rkPlace(['treeLarge','treeSmall'],9,tree,grp);
- /* 起跑區:看台、維修站、橫幅塔 */
- const st=[{s:6,x:-W/2-16,yaw:Math.PI/2}],gs=[{s:6,x:W/2+16,yaw:-Math.PI/2}];
- rkPlace(['grandStandCovered','grandStand','grandStandAwning'],lv?30:18,st,grp);
- rkPlace(['pitsGarage','pitsGarageClosed','pitsOffice'],lv?22:14,gs,grp);
- if(lv>=1){rkPlace(['bannerTowerRed','bannerTowerGreen','overhead'],12,[{s:-2,x:-W/2-3},{s:-2,x:W/2+3}],grp);
-  rkPlace(['grandStand','grandStandCovered'],26,[{s:40,x:-W/2-16,yaw:Math.PI/2},{s:74,x:-W/2-16,yaw:Math.PI/2}],grp)}
- if(lv===2){rkPlace(['pitsOffice','pitsGarage'],18,[{s:30,x:W/2+16,yaw:-Math.PI/2},{s:54,x:W/2+16,yaw:-Math.PI/2}],grp);
-  rkPlace(['billboard','billboardLow'],9,[{s:100,x:-W/2-8},{s:L*.5,x:W/2+8},{s:L*.75,x:-W/2-8}],grp)}
+ const k=[1.6,1,.7][lv],step=44*k;
+ const bar=[],fence=[],tire=[],lamp=[],flag=[],tree=[],cone=[];
+ for(let s=8;s<L;s+=step*.45){bar.push({s,x:-W/2-1.8},{s,x:W/2+1.8})}
+ for(let s=14;s<L;s+=step){lamp.push({s,x:-W/2-4.5},{s:s+step*.5,x:W/2+4.5})}
+ if(lv>=1){for(let s=20;s<L;s+=step*.9){fence.push({s,x:-W/2-3.6},{s,x:W/2+3.6})}
+  for(let s=30;s<L;s+=step*1.6){tire.push({s,x:-W/2-2.6},{s:s+step*.8,x:W/2+2.6})}
+  for(let s=5;s<L;s+=step*1.5){flag.push({s,x:(s%(step*3)<step*1.5)?-W/2-6:W/2+6})}}
+ if(lv>=1){for(let s=0;s<L;s+=step*.7){tree.push({s,x:(Math.floor(s/step)%2?1:-1)*(W/2+12+Math.random()*14)})}}
+ if(lv===2){for(let s=0;s<L;s+=step*.35){tree.push({s,x:(Math.floor(s/step)%2?-1:1)*(W/2+24+Math.random()*20)})}}
+ rkPlace(RKN.bar,5,bar,grp);rkPlace(RKN.fence,5,fence,grp);rkPlace(RKN.lamp,10,lamp,grp);
+ rkPlace(RKN.tire,5,tire,grp);rkPlace(RKN.flag,8,flag,grp);rkPlace(RKN.tree,10,tree,grp);
+ if(lv>=1){const tn=[],cn=[];for(let s=60;s<L;s+=step*2.4){tn.push({s,x:(Math.floor(s/step)%2?1:-1)*(W/2+22),yaw:Math.PI/2})}
+  for(let s=30;s<L;s+=step*.5){cn.push({s,x:-W/2+1.2},{s,x:W/2-1.2})}
+  rkPlace(RKN.tent,14,tn,grp);if(lv===2)rkPlace(RKN.cone,2.4,cn,grp);
+  rkPlace(RKN.radar,8,[{s:L*.3,x:W/2+7},{s:L*.7,x:-W/2-7}],grp)}
+ /* 起跑區 */
+ rkPlace(RKN.stand,lv?34:22,[{s:6,x:-W/2-18,yaw:Math.PI/2}],grp);
+ rkPlace(RKN.pits,lv?24:16,[{s:6,x:W/2+16,yaw:-Math.PI/2}],grp);
+ rkPlace(RKN.banner,14,[{s:-3,x:-W/2-3},{s:-3,x:W/2+3}],grp);
+ if(lv>=1){rkPlace(RKN.stand,30,[{s:46,x:-W/2-18,yaw:Math.PI/2},{s:84,x:-W/2-18,yaw:Math.PI/2}],grp);
+  rkPlace(RKN.pits,22,[{s:34,x:W/2+16,yaw:-Math.PI/2},{s:62,x:W/2+16,yaw:-Math.PI/2}],grp)}
+ if(lv===2){rkPlace(RKN.board,10,[{s:L*.2,x:-W/2-9},{s:L*.4,x:W/2+9},{s:L*.6,x:-W/2-9},{s:L*.8,x:W/2+9}],grp);
+  rkPlace(RKN.stand,32,[{s:L*.5,x:W/2+20,yaw:-Math.PI/2}],grp)}
 }
 function meadowDeco(){rkDeco();const samp=[];for(let i=0;i<240;i++)samp.push(frame(i/240*L).p);
  const nearTrack=(x,z,d)=>samp.some(p=>(p.x-x)**2+(p.z-z)**2<d*d);
@@ -1113,8 +1131,9 @@ function wingTex(d){
 // 打造賽車 + 立體 3D 真鐸車手模型
 function makeKart(d,labelTxt=''){
   const g=new THREE.Group(), bodyGrp=new THREE.Group();g.add(bodyGrp);
+  const _fb=new THREE.Group();bodyGrp.add(_fb);
   const M=c=>new THREE.MeshPhysicalMaterial({color:c,roughness:.22,metalness:.35,clearcoat:1,clearcoatRoughness:.06});
-  const add=(geo,mat,x,y,z,rx=0,ry=0,rz=0)=>{const o=new THREE.Mesh(geo,mat);o.position.set(x,y,z);o.rotation.set(rx,ry,rz);o.castShadow=true;bodyGrp.add(o);return o};
+  const add=(geo,mat,x,y,z,rx=0,ry=0,rz=0)=>{const o=new THREE.Mesh(geo,mat);o.position.set(x,y,z);o.rotation.set(rx,ry,rz);o.castShadow=true;_fb.add(o);return o};
   const cMain=M(d.color),cWhite=M(d.crown?0xfde047:0xf8fafc),cDark=M(0x0f172a),cGold=new THREE.MeshStandardMaterial({color:0xfbbf24,metalness:.88,roughness:.18});
   const mHood=new THREE.MeshPhysicalMaterial({map:hoodTex(d),roughness:.2,metalness:.2,clearcoat:1});
   const mWing=new THREE.MeshStandardMaterial({map:wingTex(d),roughness:.25,metalness:.3});
@@ -1182,11 +1201,10 @@ function makeKart(d,labelTxt=''){
       const scale=3.8/Math.max(sz.x,sz.y,sz.z,.01);
       model.scale.setScalar(scale);
       model.position.set(-ctr.x*scale,-box.min.y*scale,-ctr.z*scale);
-      const tint=new THREE.Color(d.color);
-      model.traverse(n=>{if(n.isMesh){n.castShadow=n.receiveShadow=true;if(n.material&&n.material.color&&n.name&&/body|paint|hull|car/i.test(n.name)){n.material=n.material.clone();n.material.color.lerp(tint,.65)}}});
-      bodyGrp.clear();bodyGrp.add(model);
-      if(!/race|kart/i.test(d.glb))drv.visible=false;
-      const wPlate=new THREE.Mesh(new THREE.BoxGeometry(2.2,.14,.65),mWing);wPlate.position.set(0,1.45,-1.65);bodyGrp.add(wPlate);
+      model.traverse(n=>{if(n.isMesh){n.castShadow=n.receiveShadow=true}});
+      bodyGrp.clear();bodyGrp.add(model);drv.visible=false;g.userData.flames=[];
+      const mk=(c,r)=>{const f=new THREE.Group();f.position.set(c,.7,-scale*sz.z/2-.2);const a=new THREE.Mesh(new THREE.ConeGeometry(.28,1.8,10),new THREE.MeshBasicMaterial({color:0x38bdf8,transparent:true,opacity:.9}));a.rotation.x=-Math.PI/2;a.position.z=-.8;const b=new THREE.Mesh(new THREE.ConeGeometry(.14,1.1,8),new THREE.MeshBasicMaterial({color:0xfef08a}));b.rotation.x=-Math.PI/2;b.position.z=-.5;f.add(a,b);f.visible=false;g.add(f);g.userData.flames.push(f)};
+      mk(-.5);mk(.5);
     };
     if(glbCache[d.glb])applyGlb(glbCache[d.glb]);
     else gltfLoader.load(d.glb,gltf=>{glbCache[d.glb]=gltf;applyGlb(gltf)},undefined,()=>{});
@@ -1222,11 +1240,20 @@ const ROUTES={
   {name:'海旁彎道',desc:'連續彎位，節奏明快',pts:ring(16,a=>{const r=140+22*Math.sin(a*4);return[r*1.3,r*.85]})}]};
 function mkCurve(P){return new THREE.CatmullRomCurve3(P.map(([x,z])=>new THREE.Vector3(x,0,z)),true,'centripetal')}
 function setCurve(P){curve=mkCurve(P);L=curve.getLength();gateOff=[...Array(GPL)].map((_,i)=>L*(i+.6)/GPL)}
+/* Kenney 路面:沿曲線點點連續連接賽道地磚 */
+async function rkRoad(grp){const tiles=['roadStraight','roadStraightLong','roadSide'];let m=null;
+ for(const n of tiles){m=await rkLoad(n);if(m)break}
+ if(!m)return;
+ const b=new THREE.Box3().setFromObject(m),sz=new THREE.Vector3(),ct=new THREE.Vector3();b.getSize(sz);b.getCenter(ct);
+ const sc=(W+3)/Math.max(sz.x,.01),len=sz.z*sc,step=Math.max(2,len*.96);
+ const base=new THREE.Group();const mm=m.clone(true);mm.scale.setScalar(sc);mm.position.set(-ct.x*sc,-b.min.y*sc+.04,-ct.z*sc);base.add(mm);base.traverse(o=>{if(o.isMesh){o.receiveShadow=true}});
+ for(let s=0;s<L;s+=step){const f=frame(s+step/2),o=base.clone(true);o.position.copy(f.p);o.rotation.y=Math.atan2(f.t.x,f.t.z);grp.add(o)}}
 function buildMeadow(){scene.add(ground.clone());
  ribbon(-W/2,W/2,.02,(i,c)=>c.set(0x4b4f58));
  ribbon(-W/2-1.4,-W/2,.04,(i,c)=>c.set(Math.floor(i/3)%2?0xffffff:0xe11d48));
  ribbon(W/2,W/2+1.4,.04,(i,c)=>c.set(Math.floor(i/3)%2?0xffffff:0xe11d48));
  [-W/6,W/6].forEach(o=>ribbon(o-.15,o+.15,.05,(i,c)=>c.set(i%4<2?0xffffff:0x4b4f58)));
+ const rg=new THREE.Group();scene.add(rg);if(qLv>=1)rkRoad(rg);
  mkStart();meadowDeco();gates=mkGates()}
 const SCN={meadow:{bg:0x8fd3ff,fog:[140,460],sun:0xfff0d0,build:()=>buildMeadow()},city:{bg:0xf4b07a,fog:[80,380],sun:0xffc58a,build:()=>buildCity()}};
 function getTrack(sc,ri){const k=sc+ri;if(TR[k])return TR[k];const before=new Set(scene.children);cityWin=[];setCurve(ROUTES[sc][ri].pts);SCN[sc].build();
