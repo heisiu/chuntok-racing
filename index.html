@@ -426,10 +426,36 @@ const GITHUB_SHEET_PATH='./drivers_sheet.png', GITHUB_BADGE_PATH='./school_badge
 let schoolBadgeImg=null;
 
 /* ===== Firebase ===== */
-const FB={ok:false,db:null};
+const FB={ok:false,db:null,resetMs:0};
 try{const app=initializeApp({apiKey:"AIzaSyCCqRocv1fsExjhIo3WVymQwJtOEgUfGYc",authDomain:"chuntok-racing.firebaseapp.com",projectId:"chuntok-racing",storageBucket:"chuntok-racing.firebasestorage.app",messagingSenderId:"583186654240",appId:"1:583186654240:web:65e748cf5074a79a4e0845"});
- FB.db=getFirestore(app);signInAnonymously(getAuth(app)).then(()=>{FB.ok=true;syncTag('☁️ 已連線')}).catch(()=>syncTag('📴 離線模式'))}catch(e){}
+ FB.db=getFirestore(app);signInAnonymously(getAuth(app)).then(async()=>{FB.ok=true;await fetchResetEpoch();syncTag('☁️ 已連線')}).catch(()=>syncTag('📴 離線模式'))}catch(e){}
 function syncTag(t){const e=$('syncTag');if(e)e.textContent=t}
+async function fetchResetEpoch(){
+  const localRst=(await store.get('schoolResetMs'))||0;
+  FB.resetMs=Math.max(FB.resetMs,localRst);
+  if(!FB.ok||!FB.db)return FB.resetMs;
+  try{
+    const s=await getDoc(doc(FB.db,'players','__SCHOOL_RESET__'));
+    if(s.exists()){
+      const d=s.data(), ms=d.resetMs||(d.ts?d.ts.toMillis():0)||0;
+      if(ms>FB.resetMs){FB.resetMs=ms;await store.set('schoolResetMs',ms)}
+    }
+  }catch(e){}
+  return FB.resetMs;
+}
+async function checkStudentEpochReset(){
+  await fetchResetEpoch();
+  if(!FB.resetMs)return;
+  const myEpoch=(await store.get('myEpoch_'+uid()))||0;
+  if(myEpoch<FB.resetMs){
+    await store.set('wins_'+uid(),0);
+    await store.set('tw_'+uid(),{});
+    await store.set('stats_'+uid(),{});
+    const recs=((await store.get('records'))||[]).filter(r=>new Date(r.date||0).getTime()>FB.resetMs);
+    await store.set('records',recs);
+    await store.set('myEpoch_'+uid(),FB.resetMs);
+  }
+}
 async function fbRetry(){const q=(await store.get('pendingUp'))||[];if(!q.length||!FB.ok)return;const rest=[];
  for(const it of q){try{await fbWrite(it)}catch(e){rest.push(it)}}await store.set('pendingUp',rest);syncTag(rest.length?'📴 '+rest.length+' 筆待上傳':'☁️ 已同步')}
 async function fbWrite(it){if(it.k==='race')await addDoc(collection(FB.db,'races'),{...it.d,ts:serverTimestamp()});else if(it.k==='player')await setDoc(doc(FB.db,'players',it.id),{...it.d,ts:serverTimestamp()},{merge:true})}
@@ -437,7 +463,12 @@ async function fbUp(it){if(user.type!=='student')return;
  if(!FB.ok){const q=(await store.get('pendingUp'))||[];q.push(it);await store.set('pendingUp',q.slice(-50));syncTag('📴 待上傳');return}
  try{await fbWrite(it);syncTag('☁️ 已同步')}catch(e){const q=(await store.get('pendingUp'))||[];q.push(it);await store.set('pendingUp',q.slice(-50));syncTag('📴 待上傳')}}
 async function fbRestore(){if(user.type!=='student'||!FB.ok)return;
- try{const s=await getDoc(doc(FB.db,'players',uid()));if(s.exists()){const d=s.data(),lw=(await store.get('wins_'+uid()))||0,ltw=(await store.get('tw_'+uid()))||{};
+ await checkStudentEpochReset();
+ try{const s=await getDoc(doc(FB.db,'players',uid()));if(s.exists()){const d=s.data();
+  const docMs=d.ts?d.ts.toMillis():(d.resetMs||0);
+  if(FB.resetMs && docMs && docMs < FB.resetMs) return;
+  if(d.resetCleared && (d.wins||0)===0) return;
+  const lw=(await store.get('wins_'+uid()))||0,ltw=(await store.get('tw_'+uid()))||{};
   if((d.wins||0)>lw)await store.set('wins_'+uid(),d.wins);
   if(d.tw){const m={...ltw};for(const k in d.tw)m[k]=Math.max(m[k]||0,d.tw[k]);await store.set('tw_'+uid(),m)}
   if(d.stats){const ls=(await store.get('stats_'+uid()))||{};for(const k in d.stats){const a=d.stats[k],b=ls[k]||{n:0,w:0};if(a.n>b.n)ls[k]=a}await store.set('stats_'+uid(),ls)}}}catch(e){}}
@@ -722,30 +753,41 @@ function showResetConfirmStep(step){
     if(step<3){showResetConfirmStep(step+1);return}
     $('rstCancel').disabled=true;$('rstNext').disabled=true;
     $('rstStatus').textContent='⏳ 正在清空雲端及本機所有資料，請稍候…';
-    try{
-      // 清空本機學生成績與解鎖紀錄（保留畫面與聲音偏好設定）
-      const prefs=await store.get('prefs');
-      try{localStorage.clear()}catch(e){}
-      if(prefs)await store.set('prefs',prefs);
-      guestWins=0;guestTW={};guestStats={};
-      // 清空 Firebase 雲端資料庫
-      if(FB.ok&&FB.db){
+    const nowMs=Date.now();
+    FB.resetMs=nowMs;
+    // 1. 清空本機所有成績、紀錄及解鎖進度（保留畫面與聲音偏好設定）
+    const prefs=await store.get('prefs');
+    try{localStorage.clear()}catch(e){}
+    if(prefs)await store.set('prefs',prefs);
+    await store.set('schoolResetMs',nowMs);
+    guestWins=0;guestTW={};guestStats={};
+    // 2. 同步重設雲端 Firebase 資料（採用 setDoc 標記重設時間點 + 歸零，完美兼容禁止 delete 嘅安全規則）
+    if(FB.ok&&FB.db){
+      try{
+        await setDoc(doc(FB.db,'players','__SCHOOL_RESET__'),{resetMs:nowMs,grade:0,cls:'SYS',no:0,wins:0,ts:serverTimestamp()});
+      }catch(e){}
+      try{
         const pSnap=await getDocs(collection(FB.db,'players'));
-        for(const d of pSnap.docs){try{await deleteDoc(doc(FB.db,'players',d.id))}catch(e){}}
+        await Promise.all(pSnap.docs.filter(d=>d.id!=='__SCHOOL_RESET__').map(async d=>{
+          try{await deleteDoc(doc(FB.db,'players',d.id))}
+          catch(e){try{await setDoc(doc(FB.db,'players',d.id),{wins:0,tw:{},stats:{},resetCleared:true,resetMs:nowMs,ts:serverTimestamp()})}catch(e2){}}
+        }));
+      }catch(e){}
+      try{
         const rSnap=await getDocs(collection(FB.db,'races'));
-        for(const d of rSnap.docs){try{await deleteDoc(doc(FB.db,'races',d.id))}catch(e){}}
-      }
-      $('pwBox').innerHTML=`
-        <div class="text-5xl mb-2">✅</div>
-        <h3 class="text-2xl font-black text-green-700">新學年資料重設完成！</h3>
-        <p class="text-sm text-slate-600 mt-1">全校排行榜、比賽紀錄及車手解鎖進度已全部歸零。</p>
-        <button id="rstDone" class="btn bg-green-600 text-white text-lg w-full mt-4 py-2.5">完成</button>`;
-      requestAnimationFrame(fitAllCards);
-      $('rstDone').onclick=closePwModal;
-    }catch(e){
-      $('rstStatus').textContent='⚠️ 部分雲端資料清除時發生錯誤，請檢查網絡後再試。';
-      $('rstCancel').disabled=false;
+        await Promise.all(rSnap.docs.map(async d=>{
+          try{await deleteDoc(doc(FB.db,'races',d.id))}catch(e){}
+        }));
+      }catch(e){}
     }
+    rpData=null;
+    $('pwBox').innerHTML=`
+      <div class="text-5xl mb-2">✅</div>
+      <h3 class="text-2xl font-black text-green-700">新學年資料重設完成！</h3>
+      <p class="text-sm text-slate-600 mt-1">全校排行榜、老師報告、比賽紀錄及車手解鎖進度已全部歸零。</p>
+      <button id="rstDone" class="btn bg-green-600 text-white text-lg w-full mt-4 py-2.5">完成</button>`;
+    requestAnimationFrame(fitAllCards);
+    $('rstDone').onclick=closePwModal;
   };
 }
 
@@ -961,8 +1003,8 @@ function syncMyMpPos(force=false){
 /* ===== 排行榜及老師報告 ===== */
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ID=(g,c,n)=>`${GNAME[g]}${c}${n}`;
-async function fbRaces(max=3000){if(!FB.ok)return null;try{const s=await getDocs(query(collection(FB.db,'races'),orderBy('ts','desc'),limit(max)));return s.docs.map(d=>{const x=d.data();x.ms=x.ts?x.ts.toMillis():0;return x})}catch(e){return null}}
-async function fbPlayers(){if(!FB.ok)return null;try{const s=await getDocs(query(collection(FB.db,'players'),limit(2000)));return s.docs.map(d=>d.data())}catch(e){return null}}
+async function fbRaces(max=3000){if(!FB.ok)return null;try{await fetchResetEpoch();const s=await getDocs(query(collection(FB.db,'races'),orderBy('ts','desc'),limit(max)));return s.docs.map(d=>{const x=d.data();x.ms=x.ts?x.ts.toMillis():0;return x}).filter(x=>!FB.resetMs||x.ms>FB.resetMs)}catch(e){return null}}
+async function fbPlayers(){if(!FB.ok)return null;try{await fetchResetEpoch();const s=await getDocs(query(collection(FB.db,'players'),limit(2000)));return s.docs.filter(d=>d.id!=='__SCHOOL_RESET__').map(d=>{const x=d.data();x.ms=x.ts?x.ts.toMillis():(x.resetMs||0);return x}).filter(x=>!x.resetCleared&&(!FB.resetMs||!x.ms||x.ms>FB.resetMs))}catch(e){return null}}
 let lbMode='acc',lbGr=0;
 function grBtns(box,cur,fn){box.innerHTML='';[['全部',0],...GRADES.map(g=>[GNAME[g]+'年級',g])].forEach(([t,v])=>{const b=document.createElement('button');b.className='btn bg-slate-100 text-sm py-1 px-3'+(v===cur?' sel':'');b.textContent=t;b.onclick=()=>fn(v);box.appendChild(b)})}
 async function openLb(){show('sLb');$('lbBox').textContent='載入中…';await drawLb()}
