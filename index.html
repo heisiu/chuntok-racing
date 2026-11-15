@@ -40,7 +40,19 @@ html,body{margin:0;width:100%;height:100%;height:100dvh;overflow:hidden;backgrou
 .chip{border-radius:14px;padding:2px 16px;font-weight:900;font-size:28px;min-width:70px;text-align:center;border:3px solid #fff;box-shadow:0 4px 10px #0006}
 #hQ{background:linear-gradient(180deg,#0b1b33cc,#1e3a8acc)!important;border:3px solid #ffffffaa;box-shadow:0 6px 18px #0008}
 #hud .btn{backdrop-filter:blur(4px);border:2px solid #fff6}
-#mini{position:fixed;right:16px;bottom:calc(min(22vh,130px) + 22px);width:min(26vh,140px);height:min(26vh,140px);border-radius:16px;background:#0f172a88;border:3px solid #fff8;box-shadow:0 6px 18px #0007}
+#mini{position:fixed;left:16px;bottom:calc(min(22vh,130px) + 18px);width:min(24vh,126px);height:min(24vh,126px);border-radius:16px;background:#0f172a88;border:3px solid #fff8;box-shadow:0 6px 18px #0007}
+#item-slot{position:fixed;right:20px;bottom:calc(min(22vh,130px) + 22px);width:76px;height:76px;border-radius:50%;background:radial-gradient(circle,rgba(30,41,59,0.9) 0%,rgba(15,23,42,0.96) 100%);border:3.5px solid rgba(255,255,255,0.45);display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:auto;cursor:pointer;box-shadow:0 6px 18px #0008;transition:transform .12s,border-color .2s,box-shadow .2s}
+#item-slot.ready{border-color:#facc15;box-shadow:0 0 20px rgba(250,204,21,0.9),inset 0 0 12px rgba(250,204,21,0.4);animation:itemPulse 1s infinite alternate}
+#item-slot:active{transform:scale(.9)}
+#item-slot .item-ico{font-size:30px;line-height:1}
+#item-slot .item-lbl{font-size:11px;font-weight:900;color:#fff;margin-top:2px;text-shadow:0 1px 3px #000;white-space:nowrap}
+@keyframes itemPulse{from{transform:scale(1)}to{transform:scale(1.07)}}
+@keyframes wrongShake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
+.wrong-shake{animation:wrongShake .35s ease-in-out;background:linear-gradient(180deg,#fca5a5,#ef4444)!important;color:#fff!important;border-color:#b91c1c!important;opacity:.85}
+.right-pop{background:linear-gradient(180deg,#4ade80,#16a34a)!important;color:#fff!important;border-color:#15803d!important;transform:scale(1.06);box-shadow:0 0 20px #4ade80aa!important}
+#ink-splat{position:fixed;inset:38% 10% 6% 10%;pointer-events:none;z-index:22;opacity:0;transition:opacity .25s;background:radial-gradient(circle at 24% 48%,rgba(15,23,42,0.94) 0%,rgba(15,23,42,0.86) 17%,transparent 22%),radial-gradient(circle at 74% 52%,rgba(15,23,42,0.94) 0%,rgba(15,23,42,0.86) 20%,transparent 25%),radial-gradient(circle at 50% 72%,rgba(15,23,42,0.92) 0%,rgba(15,23,42,0.82) 15%,transparent 20%)}
+#ink-splat.show{opacity:1}
+.chip.star-hint{box-shadow:0 0 22px #facc15,0 0 10px #fff inset!important;border-color:#fde047!important;transform:scale(1.1)}
 #rot{position:fixed;inset:0;z-index:99;display:none;background:#0b1b33;color:#fff;flex-direction:column;align-items:center;justify-content:center;font-size:22px}
 @media (orientation:portrait){#rot{display:flex}}
 #fsBtn{position:fixed;top:6px;right:8px;z-index:60;background:linear-gradient(180deg,#1e3a8acc,#0f172acc);color:#fde047;border:2px solid #ffffffaa;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:900;backdrop-filter:blur(4px);box-shadow:0 3px 10px #0006;cursor:pointer}
@@ -109,7 +121,10 @@ html,body{margin:0;width:100%;height:100%;height:100dvh;overflow:hidden;backgrou
   #spdBox{padding:2px 8px!important;margin-top:1px!important;border-radius:10px!important}
   #hSpd{font-size:18px!important}
   #spdBox .w-28{width:64px!important;height:5px!important;margin-top:2px!important}
-  #mini{width:74px!important;height:74px!important;right:8px!important;bottom:84px!important;border-width:2px!important;border-radius:10px!important}
+  #mini{width:68px!important;height:68px!important;left:10px!important;bottom:82px!important;border-width:2px!important;border-radius:10px!important}
+  #item-slot{width:56px!important;height:56px!important;right:14px!important;bottom:82px!important;border-width:2.5px!important}
+  #item-slot .item-ico{font-size:22px!important}
+  #item-slot .item-lbl{font-size:9.5px!important}
   .ctl{width:68px!important;height:68px!important;bottom:8px!important;font-size:26px!important;border-width:3px!important}
   #hMsg{font-size:36px!important}
 }
@@ -265,7 +280,7 @@ html,body{margin:0;width:100%;height:100%;height:100dvh;overflow:hidden;backgrou
 <!-- 選擇賽道 -->
 <div id="sTrack" class="scr"><div class="card text-center"><h2 class="text-2xl font-black mb-2">🗺️ 選擇賽道</h2>
 <div class="grid grid-cols-2 gap-4"><button data-t="meadow" class="tk btn bg-gradient-to-b from-green-100 to-green-300 text-green-900 py-6 text-2xl">🌳 綠野山谷<div class="text-sm font-bold mt-1">草地、樹林、高山、熱氣球</div></button><button data-t="city" class="tk btn bg-gradient-to-b from-orange-100 to-orange-300 text-orange-900 py-6 text-2xl">🌇 城市街景<div class="text-sm font-bold mt-1">大廈、街燈</div></button></div>
-<p class="text-sm text-slate-500 mt-2">兩條賽道都有道具：⚡ 加速、🛡️ 護盾；小心 💣 炸彈及 🍌 香蕉皮！</p>
+<p class="text-sm text-slate-500 mt-2">撞擊賽道彩光問號箱 ❓ 可抽取 7 款道具：🍄 噴射蘑菇、🛡️ 能量護盾、🍌 香蕉皮、🐢 紅龜殼、🦑 噴墨、⚡ 全場閃電、🌟 無敵星星！</p>
 <button id="tkBack" class="btn bg-slate-200 mt-2">⬅ 返回</button></div></div>
 
 <!-- 選擇路線 -->
@@ -280,12 +295,16 @@ html,body{margin:0;width:100%;height:100%;height:100dvh;overflow:hidden;backgrou
 <div id="hud">
   <canvas id="fxLines" width="800" height="450" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;opacity:0;transition:opacity .2s"></canvas>
   <div id="hudLeft" class="fixed top-2 left-3 text-lg font-black leading-tight">
-    <div>圈數 <span id="hLap">1/3</span></div><div>名次 <span id="hPos" class="text-3xl text-yellow-300">1</span>/4</div>
-    <div class="text-sm">答對 <span id="hScore">0/0</span></div>
-    <div class="text-sm" id="hTod"></div>
+    <div>圈數 <span id="hLap">1/3</span>　<span class="text-xs font-bold" id="hTod"></span></div>
+    <div>名次 <span id="hPos" class="text-3xl text-yellow-300">1</span>/4　<span class="text-sm">答對 <span id="hScore">0/0</span></span></div>
     <div class="text-xs text-sky-300" id="hRoomTag"></div>
   </div>
   <canvas id="mini" width="300" height="300"></canvas>
+  <div id="item-slot" title="點擊施放道具（電腦可按空白鍵 Space）">
+    <div class="item-ico" id="item-ico">❓</div>
+    <div class="item-lbl" id="item-lbl">無道具</div>
+  </div>
+  <div id="ink-splat"></div>
   <div id="hudRight" class="fixed top-2 right-3 text-right font-black">
     <div class="topBtns flex items-center justify-end gap-1.5 mb-1">
       <button id="readBtn" style="pointer-events:auto" class="btn bg-sky-500/75 text-white text-sm py-1 px-2.5">🔈 讀題</button>
@@ -332,6 +351,9 @@ html,body{margin:0;width:100%;height:100%;height:100dvh;overflow:hidden;backgrou
 <!-- 老師密碼及新學年重設再三確認彈窗 -->
 <div id="pwOv" style="position:fixed;inset:0;z-index:50;display:none;background:#0009;align-items:center;justify-content:center"><div class="card text-center" style="max-width:440px" id="pwBox"></div></div>
 
+<!-- 🛠️ 戰車維修站：賽後錯題重溫 MC 彈窗 -->
+<div id="retryOv" style="position:fixed;inset:0;z-index:55;display:none;background:#000b;align-items:center;justify-content:center;backdrop-filter:blur(5px)"><div class="card text-center" style="max-width:500px" id="retryBox"></div></div>
+
 <!-- iPhone 全螢幕指引彈窗 -->
 <div id="iosFsOv" style="position:fixed;inset:0;z-index:70;display:none;background:#0009;align-items:center;justify-content:center"><div class="card text-center" style="max-width:430px">
   <h3 class="text-2xl font-black text-blue-800">📱 iPhone 全螢幕設定</h3>
@@ -362,7 +384,7 @@ function fitAllCards(){
   const vw=window.visualViewport?window.visualViewport.width:window.innerWidth;
   const vh=window.visualViewport?window.visualViewport.height:window.innerHeight;
   const availW=vw-8, availH=vh-8;
-  document.querySelectorAll('.scr.on .card, #lockOv[style*="flex"] .card, #pauseOv[style*="flex"] .card, #pwOv[style*="flex"] .card, #iosFsOv[style*="flex"] .card').forEach(card=>{
+  document.querySelectorAll('.scr.on .card, #lockOv[style*="flex"] .card, #pauseOv[style*="flex"] .card, #pwOv[style*="flex"] .card, #retryOv[style*="flex"] .card, #iosFsOv[style*="flex"] .card').forEach(card=>{
     card.style.setProperty('--ui-scale','1');
     const w=card.offsetWidth||1, h=card.scrollHeight||card.offsetHeight||1;
     const sc=Math.min(1, availW/w, availH/h);
@@ -895,8 +917,12 @@ function handleRoomPacket(msg){
     if(opp){
       const lat=Math.min(0.25,Math.max(0,(Date.now()-(msg.ts||Date.now()))/1000));
       opp.netS=msg.s+msg.v*lat;opp.netX=msg.x;opp.netV=msg.v;opp.steer=msg.st||0;
-      opp.boost=msg.b||0;opp.shield=msg.sh||0;opp.spin=msg.sp||0;opp.lastSeen=performance.now();
+      opp.boost=msg.b||0;opp.shield=msg.sh||0;opp.spin=msg.sp||0;opp.star=msg.sr||0;opp.shrink=msg.sk||0;opp.lastSeen=performance.now();
     }
+  }else if(msg.t==='mkitem'&&race&&mpState.active){
+    if(msg.id===mySessionId)return;
+    const opp=race.ai.find(a=>a.pid===msg.id);
+    if(opp)triggerRemoteKartItem(opp,msg.k,msg.s,msg.x);
   }
 }
 $('mpBtn').onclick=()=>{
@@ -997,7 +1023,7 @@ function syncMyMpPos(force=false){
   const now=performance.now(),steerChg=Math.abs(race.p.steer-(mpState.lastSteer||0))>0.22;
   if(!force&&!steerChg&&now-mpState.lastSync<80)return;
   mpState.lastSync=now;mpState.lastSteer=race.p.steer;
-  pubRoom({t:'pos',id:mySessionId,s:+race.p.s.toFixed(2),x:+race.p.x.toFixed(2),v:+race.p.v.toFixed(1),st:+race.p.steer.toFixed(2),b:race.p.boost>0?1:0,sh:race.p.shield>0?1:0,sp:race.p.spin>0?1:0,ts:Date.now()});
+  pubRoom({t:'pos',id:mySessionId,s:+race.p.s.toFixed(2),x:+race.p.x.toFixed(2),v:+race.p.v.toFixed(1),st:+race.p.steer.toFixed(2),b:race.p.boost>0?1:0,sh:race.p.shield>0?1:0,sp:race.p.spin>0?1:0,sr:race.p.star>0?1:0,sk:race.p.shrink>0?1:0,ts:Date.now()});
 }
 
 /* ===== 排行榜及老師報告 ===== */
@@ -1367,32 +1393,296 @@ function updSparks(dt){for(let i=0;i<SP;i++)if(spLife[i]>0){spLife[i]-=dt;spVel[
 function musStop(){clearInterval(AU.timer);AU.timer=null;if(AU.eg)AU.eg.gain.setTargetAtTime(0,AU.ctx.currentTime,.05)}
 $('muteBtn').onclick=()=>{AU.mute=!AU.mute;$('muteBtn').textContent=AU.mute?'🔇':'🔊';if(AU.master)AU.master.gain.value=AU.mute?0:.8;savePrefs()};
 
-/* ===== 道具（不彈出阻擋視野文字） ===== */
-const boxTex=(e,c)=>cvTex(g=>{g.fillStyle=c;g.fillRect(0,0,128,128);g.strokeStyle='#fff';g.lineWidth=10;g.strokeRect(5,5,118,118);g.font='80px system-ui';g.textAlign='center';g.textBaseline='middle';g.fillText(e,64,70)});
+/* ===== Mario Kart 7 款道具系統 ＋ 彩光問號箱 [?] ＋ 名次平衡機制 ===== */
+const MK_ITEMS={
+  mushroom: {ico:'🍄',name:'噴射蘑菇',weights:[30,30,20,10]},
+  shield:   {ico:'🛡️',name:'能量護盾',weights:[35,20,10, 5]},
+  banana:   {ico:'🍌',name:'香蕉皮',  weights:[35,15, 5, 0]},
+  shell:    {ico:'🐢',name:'紅龜殼',  weights:[ 0,25,30,20]},
+  ink:      {ico:'🦑',name:'噴墨',    weights:[ 0,10,20,15]},
+  lightning:{ico:'⚡',name:'全場閃電',weights:[ 0, 0,10,25]},
+  star:     {ico:'🌟',name:'無敵星星',weights:[ 0, 0, 5,25]}
+};
 const emoTex=e=>cvTex(g=>{g.font='100px system-ui';g.textAlign='center';g.textBaseline='middle';g.fillText(e,64,72)});
-const IT={boost:boxTex('⚡','#f59e0b'),shield:boxTex('🛡️','#0ea5e9')},HZ={bomb:emoTex('💣'),banana:emoTex('🍌')},itemGeo=new THREE.BoxGeometry(2,2,2);
-function attachShield(pm){const sh=new THREE.Mesh(new THREE.SphereGeometry(2.8,20,14),new THREE.MeshBasicMaterial({color:0x38bdf8,transparent:true,opacity:.25,depthWrite:false}));sh.position.y=1.2;sh.visible=false;pm.add(sh);pm.userData.shield=sh}
-function mkItems(pm){const out=[];attachShield(pm);
- for(let lap=0;lap<LAPS;lap++)for(let i=0;i<GPL;i++){const s0=lap*L+gateOff[i]+L/GPL*.4,l=shuffle([0,1,2]);
-  if(Math.random()<.45){const t=Math.random()<.6?'boost':'shield',m=new THREE.Mesh(itemGeo,new THREE.MeshBasicMaterial({map:IT[t]}));scene.add(m);cars.push(m);out.push({s:s0,x:LANES[l[0]],t,m,on:true,item:true})}
-  if(Math.random()<.35){const t=Math.random()<.5?'bomb':'banana',m=new THREE.Sprite(new THREE.SpriteMaterial({map:HZ[t]}));m.scale.set(3,3,1);scene.add(m);cars.push(m);out.push({s:s0+25,x:LANES[l[1]],t,m,on:true,item:false})}}
- return out}
-function updKartFX(mesh,boostOn){
-  const fl=mesh.userData.flames;if(!fl)return;const s=.8+Math.random()*.55;
-  fl.forEach(f=>{f.visible=boostOn;if(boostOn)f.scale.set(1,1,s)});
+const HZ={banana:emoTex('🍌'),shell:emoTex('🐢')};
+const mysteryBoxTex=cvTex(g=>{
+  const gr=g.createLinearGradient(0,0,128,128);
+  gr.addColorStop(0,'#f43f5e');gr.addColorStop(.25,'#f59e0b');gr.addColorStop(.5,'#10b981');gr.addColorStop(.75,'#3b82f6');gr.addColorStop(1,'#a855f7');
+  g.fillStyle=gr;g.fillRect(0,0,128,128);
+  g.strokeStyle='rgba(255,255,255,0.9)';g.lineWidth=10;g.strokeRect(5,5,118,118);
+  g.fillStyle='#fff';g.font='900 84px system-ui,sans-serif';g.textAlign='center';g.textBaseline='middle';
+  g.shadowColor='rgba(0,0,0,0.45)';g.shadowBlur=6;g.fillText('?',64,70);
+});
+const itemGeo=new THREE.BoxGeometry(1.85,1.85,1.85);
+let heldItem=null, itemRolling=false, rollTimer=null;
+
+function attachShield(pm){
+  const sh=new THREE.Mesh(new THREE.SphereGeometry(2.8,20,14),new THREE.MeshBasicMaterial({color:0x38bdf8,transparent:true,opacity:.28,depthWrite:false}));
+  sh.position.y=1.2;sh.visible=false;pm.add(sh);pm.userData.shield=sh;
+  const st=new THREE.Mesh(new THREE.SphereGeometry(2.95,20,14),new THREE.MeshBasicMaterial({color:0xfacc15,transparent:true,opacity:.32,wireframe:true,depthWrite:false}));
+  st.position.y=1.2;st.visible=false;pm.add(st);pm.userData.starMesh=st;
 }
-function updItems(dt){const R=race,p=R.p,tm=performance.now()/300;p.shield=(p.shield||0)-dt;p.spin=Math.max(0,(p.spin||0)-dt);
- R.items.forEach(it=>{const ds=it.s-p.s;it.m.visible=it.on&&ds>-8&&ds<260;if(!it.m.visible)return;
-  place(it.m,it.s,it.x);it.m.position.y=it.item?1.6+Math.sin(tm)*.3:1.5;if(it.item)it.m.rotation.y+=tm%(Math.PI*2);
-  if(R.state==='race'&&Math.abs(ds)<1.8&&Math.abs(p.x-it.x)<2.3){it.on=false;it.m.visible=false;
-   if(it.t==='boost'){p.boost=3*p.bstMul;sfx('boost')}
-   else if(it.t==='shield'){p.shield=8;sfx('shield')}
-   else if(p.shield>0){sfx('shield')}
-   else if(it.t==='bomb'){p.v*=.35;p.slow=1.5*p.endMul;R.shake=.9;sfx('bomb')}
-   else{p.spin=1*p.endMul;p.v*=.55;sfx('banana')}
-   syncMyMpPos(true)}});
- if(p.mesh.userData.shield)p.mesh.userData.shield.visible=p.shield>0;
- updKartFX(p.mesh,p.boost>0)}
+
+// 賽道上每個數學閘口之間擺放左、中、右 3 個旋轉彩光問號箱 [?]
+function mkItems(pm){
+  const out=[];attachShield(pm);
+  heldItem=null;itemRolling=false;clearInterval(rollTimer);updateItemSlotUI();
+  const inkEl=$('ink-splat');if(inkEl)inkEl.classList.remove('show');
+  for(let i=0;i<GPL;i++){
+    const sBase=(gateOff[i]+L/GPL*.48)%L;
+    LANES.forEach(laneX=>{
+      const m=new THREE.Mesh(itemGeo,new THREE.MeshBasicMaterial({map:mysteryBoxTex,transparent:true,opacity:.94}));
+      scene.add(m);cars.push(m);
+      out.push({sBase,x:laneX,m,cd:0});
+    });
+  }
+  return out;
+}
+
+function rollItemByRank(rank){
+  const idx=Math.max(0,Math.min(3,(rank||1)-1));
+  const entries=Object.entries(MK_ITEMS);
+  let total=entries.reduce((s,[,v])=>s+v.weights[idx],0), r=Math.random()*total;
+  for(const [k,v] of entries){if((r-=v.weights[idx])<=0)return k}
+  return 'mushroom';
+}
+
+function updateItemSlotUI(){
+  const slot=$('item-slot'),ico=$('item-ico'),lbl=$('item-lbl');
+  if(!slot||!ico||!lbl)return;
+  if(heldItem&&MK_ITEMS[heldItem]){
+    slot.classList.add('ready');
+    ico.textContent=MK_ITEMS[heldItem].ico;
+    lbl.textContent=MK_ITEMS[heldItem].name;
+  }else if(!itemRolling){
+    slot.classList.remove('ready');
+    ico.textContent='❓';
+    lbl.textContent='無道具';
+  }
+}
+
+function triggerItemBoxRoll(rank){
+  if(heldItem||itemRolling)return;
+  itemRolling=true;
+  const keys=Object.keys(MK_ITEMS),ico=$('item-ico'),lbl=$('item-lbl');
+  let ticks=0;
+  clearInterval(rollTimer);
+  rollTimer=setInterval(()=>{
+    const k=keys[ticks%keys.length];
+    if(ico)ico.textContent=MK_ITEMS[k].ico;
+    if(lbl)lbl.textContent=MK_ITEMS[k].name;
+    if(AU.ctx)tone(520+(ticks%5)*85,AU.ctx.currentTime,.04,'triangle',.08);
+    ticks++;
+    if(ticks>=10){
+      clearInterval(rollTimer);
+      heldItem=rollItemByRank(rank);
+      itemRolling=false;
+      updateItemSlotUI();
+      sfx('ok');
+    }
+  },80);
+}
+
+function triggerInkScreen(){
+  const el=$('ink-splat');if(!el)return;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t=setTimeout(()=>el.classList.remove('show'),3000);
+}
+
+function refreshStarGateHint(){
+  const chips=document.querySelectorAll('#hOpts .chip');
+  if(!race||!chips.length)return;
+  const on=(race.p.star||0)>0 && race.gi<TOTALQ;
+  const q=race.gi<TOTALQ?gates[race.gi%GPL].q:null;
+  chips.forEach((ch,idx)=>{
+    ch.classList.toggle('star-hint',!!(on&&q&&q.opts[idx]===q.ans));
+  });
+}
+
+function spawnHazardEntity(type,sPos,xPos,owner){
+  const m=new THREE.Sprite(new THREE.SpriteMaterial({map:HZ[type]}));
+  m.scale.set(2.8,2.8,1);
+  place(m,sPos,xPos);m.position.y=1.35;
+  scene.add(m);cars.push(m);
+  race.hazards.push({type,m,s:sPos,x:xPos,owner,ttl:type==='shell'?7.5:22,safe:0.45});
+}
+
+function activateKartItem(racer,kind,isPlayer){
+  if(!race)return;
+  const allRacers=[race.p,...race.ai];
+  if(kind==='mushroom'){
+    racer.boost=Math.max(racer.boost||0,3.2*(racer.bstMul||1));
+    racer.v=Math.max(racer.v,VMAX+10);
+    if(isPlayer)sfx('boost');
+  }else if(kind==='shield'){
+    racer.shield=6.5;
+    if(isPlayer)sfx('shield');
+  }else if(kind==='banana'){
+    spawnHazardEntity('banana',racer.s-4.2,racer.x,racer);
+    if(isPlayer)sfx('banana');
+  }else if(kind==='shell'){
+    spawnHazardEntity('shell',racer.s+3.2,racer.x,racer);
+    if(isPlayer)sfx('boost');
+  }else if(kind==='ink'){
+    if(isPlayer)sfx('banana');
+    allRacers.forEach(r=>{
+      if(r!==racer && r.s>racer.s && !(r.shield>0) && !(r.star>0)){
+        r.v*=0.78;r.slow=Math.max(r.slow||0,1.6);
+        if(r===race.p)triggerInkScreen();
+      }
+    });
+  }else if(kind==='lightning'){
+    document.body.style.filter='brightness(1.85)';
+    setTimeout(()=>{document.body.style.filter=''},150);
+    sfx('bomb');
+    allRacers.forEach(r=>{
+      if(r!==racer && r.s>racer.s){
+        if(r.shield>0){r.shield=0}
+        else if(!(r.star>0)){
+          r.shrink=4.0;r.slow=Math.max(r.slow||0,4.0);r.v*=0.55;
+        }
+      }
+    });
+  }else if(kind==='star'){
+    racer.star=6.0;racer.shrink=0;
+    racer.boost=Math.max(racer.boost||0,6.0);
+    racer.v=Math.max(racer.v,VMAX+11);
+    if(isPlayer){sfx('shield');refreshStarGateHint()}
+  }
+}
+
+function triggerRemoteKartItem(opp,kind,sPos,xPos){
+  if(kind==='banana'||kind==='shell'){
+    spawnHazardEntity(kind,sPos+(kind==='shell'?3.0:-4.0),xPos,opp);
+  }else{
+    activateKartItem(opp,kind,false);
+  }
+}
+
+function useHeldItem(){
+  if(!heldItem||itemRolling||!race||race.state!=='race'||paused)return;
+  const k=heldItem;heldItem=null;updateItemSlotUI();
+  activateKartItem(race.p,k,true);
+  if(mpState.active&&mpState.code){
+    pubRoom({t:'mkitem',id:mySessionId,k,s:+race.p.s.toFixed(2),x:+race.p.x.toFixed(2),ts:Date.now()});
+    syncMyMpPos(true);
+  }
+}
+$('item-slot').addEventListener('pointerdown',e=>{e.preventDefault();useHeldItem()});
+addEventListener('keydown',e=>{if((e.code==='Space'||e.key==='ArrowUp')&&heldItem&&race&&race.state==='race'&&!paused){e.preventDefault();useHeldItem()}});
+
+function updKartFX(mesh,boostOn,shieldOn=false,starOn=false,shrinkOn=false){
+  const fl=mesh.userData.flames;
+  if(fl){const s=.8+Math.random()*.55;fl.forEach(f=>{f.visible=boostOn||starOn;if(f.visible)f.scale.set(1,1,s)})}
+  if(mesh.userData.shield)mesh.userData.shield.visible=shieldOn;
+  if(mesh.userData.starMesh){
+    mesh.userData.starMesh.visible=starOn;
+    if(starOn){
+      mesh.userData.starMesh.rotation.y+=0.15;
+      mesh.userData.starMesh.material.color.setHSL((performance.now()*0.002)%1,1,0.55);
+    }
+  }
+  const targetSc=shrinkOn?0.52:(starOn?1.12:1);
+  mesh.scale.setScalar(targetSc);
+}
+
+function updItems(dt){
+  const R=race,p=R.p,tm=performance.now()/300;
+  const allRacers=[p,...R.ai];
+  allRacers.forEach(r=>{
+    r.shield=Math.max(0,(r.shield||0)-dt);
+    r.spin=Math.max(0,(r.spin||0)-dt);
+    r.shrink=Math.max(0,(r.shrink||0)-dt);
+    const hadStar=r.star>0;
+    r.star=Math.max(0,(r.star||0)-dt);
+    if(r===p && hadStar && r.star<=0)refreshStarGateHint();
+  });
+
+  // 1. 彩光問號箱 [?] 旋轉、碰撞抽獎與 3 秒原地重生
+  const curLap=Math.max(0,Math.floor(p.s/L));
+  R.items.forEach(it=>{
+    if(it.cd>0){it.cd-=dt;if(it.cd<=0)it.m.visible=true;return}
+    let bestS=curLap*L+it.sBase;
+    if(bestS-p.s<-L/2)bestS+=L;
+    else if(bestS-p.s>L/2)bestS-=L;
+    const ds=bestS-p.s;
+    it.m.visible=ds>-12&&ds<260;
+    if(it.m.visible){
+      place(it.m,bestS,it.x);
+      it.m.position.y=1.6+Math.sin(tm+it.sBase)*.25;
+      it.m.rotation.y+=dt*2.4;it.m.rotation.x+=dt*1.1;
+    }
+    if(R.state!=='race')return;
+    for(const r of allRacers){
+      const rMod=((r.s%L)+L)%L;
+      const distS=Math.min(Math.abs(rMod-it.sBase),L-Math.abs(rMod-it.sBase));
+      if(distS<2.1&&Math.abs(r.x-it.x)<1.55){
+        it.cd=3.0;it.m.visible=false;
+        if(r===p){
+          triggerItemBoxRoll(R.rank||1);
+        }else if(!r.isRemote && !r.aiItem){
+          const aiRank=1+allRacers.filter(o=>o.s>r.s).length;
+          r.aiItem=rollItemByRank(aiRank);
+          r.aiItemDelay=1.4+Math.random()*1.6;
+        }
+        break;
+      }
+    }
+  });
+
+  // 2. 電腦 AI 自動施放抽到嘅道具
+  if(R.state==='race'){
+    R.ai.forEach(a=>{
+      if(!a.isRemote && a.aiItem){
+        a.aiItemDelay-=dt;
+        if(a.aiItemDelay<=0){
+          const k=a.aiItem;a.aiItem=null;
+          activateKartItem(a,k,false);
+        }
+      }
+    });
+  }
+
+  // 3. 場上紅龜殼自動追蹤前車 ＆ 香蕉皮陷阱碰撞
+  for(let i=R.hazards.length-1;i>=0;i--){
+    const h=R.hazards[i];
+    h.ttl-=dt;h.safe-=dt;
+    if(h.ttl<=0){scene.remove(h.m);R.hazards.splice(i,1);continue}
+    if(h.type==='shell'){
+      h.s+=54*dt;
+      let target=null,bestGap=999;
+      allRacers.forEach(r=>{
+        if(r!==h.owner){
+          const gap=r.s-h.s;
+          if(gap>-2 && gap<55 && gap<bestGap){bestGap=gap;target=r}
+        }
+      });
+      if(target)h.x+=Math.sign(target.x-h.x)*Math.min(Math.abs(target.x-h.x),10*dt);
+    }
+    place(h.m,h.s,h.x);h.m.position.y=1.35;
+    for(const r of allRacers){
+      if(r===h.owner && h.safe>0)continue;
+      if(Math.abs(r.s-h.s)<2.1 && Math.abs(r.x-h.x)<1.6){
+        if(r.star>0){
+          // 無敵星星直接撞飛陷阱
+        }else if(r.shield>0){
+          r.shield=0;if(r===p)sfx('shield');
+        }else{
+          r.spin=1.1*(r.endMul||1);
+          r.slow=Math.max(r.slow||0,1.2*(r.endMul||1));
+          r.v*=0.42;
+          if(r===p){R.shake=.65;sfx(h.type==='shell'?'bomb':'banana');syncMyMpPos(true)}
+          burst(r.mesh.position,18);
+        }
+        scene.remove(h.m);R.hazards.splice(i,1);
+        break;
+      }
+    }
+  }
+
+  updKartFX(p.mesh,p.boost>0,p.shield>0,p.star>0,p.shrink>0);
+}
 
 /* ===== 題目 ===== */
 const rnd=n=>Math.floor(Math.random()*n), shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=rnd(i+1);[a[i],a[j]]=[a[j],a[i]]}return a};
@@ -1462,7 +1752,7 @@ $('readBtn').onclick=()=>{
 
 /* ===== 比賽（結合車手 5 項能力值：極速、加速、操控、耐力、衝刺） ===== */
 const VMAX=30;let race=null,cars=[];
-function clearRace(){if('speechSynthesis' in window){try{window.speechSynthesis.cancel()}catch(e){}}cars.forEach(c=>scene.remove(c));cars=[];race=null}
+function clearRace(){if('speechSynthesis' in window){try{window.speechSynthesis.cancel()}catch(e){}}clearInterval(rollTimer);heldItem=null;itemRolling=false;updateItemSlotUI();const inkEl=$('ink-splat');if(inkEl)inkEl.classList.remove('show');cars.forEach(c=>scene.remove(c));cars=[];race=null}
 async function startRace(roomDoc=null){
  aInit();AU.song=(AU.song+1)%SONGS.length;applyTOD(TODK[Math.floor(Math.random()*TODK.length)]);musStart();clearRace();
  autoRead=false;updateReadBtnUI();
@@ -1496,18 +1786,19 @@ async function startRace(roomDoc=null){
  gates.forEach(g=>setGate(g,mkQ()));
  // 將車手 5 項數值轉化為賽車操控加成
  const pObj={
-   s:-6,x:0,v:0,mesh:pm,boost:0,slow:0,steer:0,shield:0,spin:0,
+   s:-6,x:0,v:0,mesh:pm,boost:0,slow:0,steer:0,shield:0,spin:0,star:0,shrink:0,
    spdMax:VMAX+(dst[0]-3)*1.5,
    accRate:1.3+(dst[1]-3)*0.22,
    hndRate:14+(dst[2]-3)*1.6,
    endMul:1-(dst[3]-3)*0.12,
    bstMul:1+(dst[4]-3)*0.16
  };
- race={t:0,state:'count',cd:3.5,p:pObj,ai,gi:0,log:[],shownAt:0,laneAt:0,lane:1,finishT:0,rank:1,shake:0,adapt};race.items=mkItems(pm);
+ race={t:0,state:'count',cd:3.5,p:pObj,ai,gi:0,log:[],shownAt:0,laneAt:0,lane:1,finishT:0,rank:1,shake:0,adapt,hazards:[]};race.items=mkItems(pm);
  $('hMsg').textContent='';showQ();show(null)}
 function showQ(){const q=race.gi<TOTALQ?gates[race.gi%GPL].q:null;
  $('hQ').textContent=q?`${q.a} × ${q.b} = ?`:'衝線！';
  $('hOpts').innerHTML=q?q.opts.map((o,k)=>`<span class="chip" style="background:${LCOL[k]}">${o}</span>`).join(''):'';
+ refreshStarGateHint();
  if(q&&autoRead)readCurrentQuestion()}
 let msgT=0;function msg(t,c='#fff',d=1.3){$('hMsg').textContent=t;$('hMsg').style.color=c;msgT=d}
 const laneOf=x=>x<-W/6?0:x>W/6?2:1;
@@ -1536,23 +1827,22 @@ function update(dt){const R=race;R.t+=dt;const p=R.p;R.hitCD=(R.hitCD||0)-dt;R.w
    a.netS+=a.netV*dt;a.netX=Math.max(-W/2+1.3,Math.min(W/2-1.3,a.netX+(a.steer||0)*7*dt));
    const errS=a.netS-a.s;a.s+=Math.abs(errS)>35?errS:(a.netV*dt+errS*Math.min(1,dt*10));
    const prevX=a.x;a.x+=(a.netX-a.x)*Math.min(1,dt*14);dx=a.x-prevX;a.v=a.netV;
-   if(a.mesh.userData.shield)a.mesh.userData.shield.visible=a.shield>0;
-   updKartFX(a.mesh,a.boost>0);
+   updKartFX(a.mesh,a.boost>0,a.shield>0,a.star>0,a.shrink>0);
   }else{
    let tv=VMAX*D.sp*R.adapt*(1+.05*Math.sin(R.t*.7+a.ph));const gap=a.s-p.s;if(gap>120)tv*=.85;if(gap<-120)tv*=1.12;
-   if(a.boost>0)tv+=10;if(a.slow>0)tv*=.55;a.boost-=dt;a.slow-=dt;a.v+=(tv-a.v)*Math.min(1,dt*1.2);a.s+=a.v*dt;
+   if(a.boost>0||a.star>0)tv+=10;if(a.slow>0||a.shrink>0)tv*=.55;a.boost-=dt;a.slow-=dt;a.v+=(tv-a.v)*Math.min(1,dt*1.2);a.s+=a.v*dt;
    if(a.gi<TOTALQ){const gs=Math.floor(a.gi/GPL)*L+gateOff[a.gi%GPL],q=gates[a.gi%GPL].q;
     if(gs-a.s<60&&a.dec!==a.gi){a.dec=a.gi;const good=Math.random()<D.acc;a.lane=q?(good?q.opts.indexOf(q.ans):[0,1,2].filter(k=>q.opts[k]!==q.ans)[rnd(2)]):1;a.good=good}
     if(a.s>=gs){if(a.good)a.boost=1.4;else a.slow=1.1;a.gi++}}
    const tx=LANES[a.lane]+Math.sin(R.t+a.ph)*.6;dx=Math.max(-8*dt,Math.min(8*dt,tx-a.x));a.x+=dx;
-   updKartFX(a.mesh,a.boost>0);
+   updKartFX(a.mesh,a.boost>0,a.shield>0,a.star>0,a.shrink>0);
   }
   // 撞車不彈大字遮視野
   if(R.state==='race'&&R.hitCD<=0&&Math.abs(a.s-p.s)<3.6&&Math.abs(a.x-p.x)<2.3){R.hitCD=.8;const sd=p.x>=a.x?1:-1;
    p.x=Math.max(-W/2+1.3,Math.min(W/2-1.3,p.x+sd*1.6));a.x-=sd*1.2;
-   if(p.shield>0){a.v*=.5}else{p.v*=1-.35*p.endMul;a.v*=.8;p.spin=.15*p.endMul;R.shake=.5}
+   if(p.star>0){a.v*=.35;a.spin=.9}else if(p.shield>0){p.shield=0;a.v*=.5}else{p.v*=1-.35*p.endMul;a.v*=.8;p.spin=.15*p.endMul;R.shake=.5}
    burst(p.mesh.position.clone().lerp(a.mesh.position,.5));sfx('crash');syncMyMpPos(true)}
-  const yaw=a.isRemote?-(a.steer||0)*.28+(a.spin?R.t*10:0):-dx*2;
+  const yaw=(a.isRemote?-(a.steer||0)*.28:-dx*2)+((a.spin||0)>0?R.t*12:0);
   place(a.mesh,a.s,a.x,yaw)});
  if(R.state==='race'){R.rank=1+R.ai.filter(a=>a.s>p.s).length;if(p.s>=LAPS*L){R.state='finish';R.finishT=R.t;syncMyMpPos(true);msg(`🏁 完成！第 ${R.rank} 名`,'#fde047',3);musStop();sfx('finish')}}
  if(AU.ctx&&AU.timer){const at=AU.ctx.currentTime;AU.eo.frequency.setTargetAtTime(45+p.v*3.2+(p.boost>0?35:0),at,.1);AU.eg.gain.setTargetAtTime(racing?.07:.03,at,.1)}
@@ -1598,14 +1888,111 @@ async function finishRace(){musStop();fxCv.style.opacity='0';const R=race,log=R.
   <div class="bg-amber-50 rounded-2xl p-2"><div class="text-sm text-slate-500">與上次比較</div><div class="text-3xl font-black ${diffAcc>0?'text-green-600':diffAcc<0?'text-red-500':'text-slate-600'}">${diffAcc===null?'第一場':(diffAcc>0?'⬆️ ':diffAcc<0?'⬇️ ':'')+(diffAcc>0?'+':'')+diffAcc+'%'}</div>${prev?`<div class="text-sm">上次 ${prev.acc}%</div>`:''}</div></div>
  ${unlockMsg}
  <div class="text-slate-700"><b>💪 我最弱的題目：</b>${wk.length?wk.join('、')+'（下次會多出這些題目）':'全部答對，非常好！'}</div>
- ${wrong.length?`<div class="mt-1 text-slate-700"><b>今次答錯：</b>${wrong.map(l=>`${l.a} × ${l.b} = <b class="text-green-600">${l.ans}</b>（你選了 ${l.choice}）`).join('；')}</div>`:''}
+ ${wrong.length
+   ?`<div class="mt-1.5 bg-red-50 border-2 border-red-200 rounded-2xl p-2 text-slate-700 text-sm"><b>🛠️ 今場答錯（共 ${wrong.length} 題，出車前要先入維修站修正）：</b><br>${wrong.map(l=>`${l.a} × ${l.b} = <b class="text-green-600">${l.ans}</b>（你選了 <span class="text-red-600 font-bold">${l.choice}</span>）`).join('；')}</div>`
+   :`<div class="mt-1.5 bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-2 text-emerald-800 font-black text-center text-sm">🌟 今場全部答啱！戰車狀態 100% 完美，免入維修站！</div>`}
  <div class="flex gap-2 mt-3 flex-wrap">
-  <button id="again" class="btn bg-green-500 text-white text-xl flex-1">🔁 再玩一次</button>
-  <button id="toMenu" class="btn bg-slate-200 text-xl flex-1">🏠 主選單</button>
+  <button id="again" class="btn bg-green-500 text-white text-xl flex-1">${wrong.length?`🛠️ 修正錯題（${wrong.length} 題）並再玩一次`:'🔁 再玩一次'}</button>
+  <button id="toMenu" class="btn bg-slate-200 text-xl flex-1">${wrong.length?`🛠️ 修正錯題後返主選單`:'🏠 主選單'}</button>
  </div>`;
- $('again').onclick=()=>{if(mpState.active){leaveMpRoom();$('mpBtn').click()}else startRace()};
- $('toMenu').onclick=()=>{clearRace();showMenu()};
+ const goAgain=()=>{if(mpState.active){leaveMpRoom();$('mpBtn').click()}else startRace()};
+ const goMenu=()=>{clearRace();showMenu()};
+ $('again').onclick=()=>{if(wrong.length)openWrongReviewModal(wrong,goAgain);else goAgain()};
+ $('toMenu').onclick=()=>{if(wrong.length)openWrongReviewModal(wrong,goMenu);else goMenu()};
  show('sResult')}
+
+/* ===== 🛠️ 戰車維修站：賽後錯題重溫 MC 挑戰（錯幾多題做返晒幾多題，不計入老師後台分數） ===== */
+function buildReviewOpts(a,b,ans){
+  const set=new Set([ans]);
+  for(const c of shuffle([a*(b+1),a*(b-1),(a+1)*b,(a-1)*b,ans+10,ans-10,ans+1,ans-1,a+b])){
+    if(set.size>=3)break;
+    if(c>0&&!set.has(c))set.add(c);
+  }
+  return shuffle([...set]);
+}
+function speakReviewQ(a,b){
+  const txt=`${CN[a]}乘${CN[b]}`;
+  if(speakCantonese(txt))return;
+  if(window.sayoSpeak){
+    window.sayoSpeak(txt).then(r=>{if(r&&r.url){sAudio.src=r.url;sAudio.play().catch(()=>{})}}).catch(()=>{});
+  }
+}
+function openWrongReviewModal(wrongList,onComplete){
+  const drv=DRIVERS[driverIdx]||DRIVERS[0];
+  const queue=wrongList.map(w=>({a:w.a,b:w.b,ans:w.ans,prevChoice:w.choice,opts:buildReviewOpts(w.a,w.b,w.ans)}));
+  let idx=0, locked=false;
+  const ov=$('retryOv'), box=$('retryBox');
+  ov.style.display='flex';
+
+  const renderStep=()=>{
+    if(idx>=queue.length){
+      sfx('finish');
+      box.innerHTML=`
+        <div class="text-5xl mb-1">🎉🏎️✨</div>
+        <h3 class="text-2xl font-black text-green-700">戰車維修完成！</h3>
+        <p class="text-sm font-bold text-slate-600 mt-1">太棒了！今場答錯嘅 <b>${queue.length}</b> 題乘法你已經全部親手修正晒啦！</p>
+        <div class="bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-2.5 mt-2 text-xs text-emerald-900 font-bold leading-relaxed">
+          ${queue.map(q=>`<span class="inline-block bg-white border border-emerald-300 rounded-xl px-2.5 py-1 m-0.5">${q.a} × ${q.b} = <b class="text-green-600">${q.ans}</b> ✅</span>`).join('')}
+        </div>
+        <button id="rvDoneBtn" class="btn bg-gradient-to-b from-green-400 to-green-600 text-white text-xl w-full mt-3 py-2.5">🚀 立即出發 ▶</button>`;
+      requestAnimationFrame(fitAllCards);
+      $('rvDoneBtn').onclick=()=>{ov.style.display='none';onComplete()};
+      return;
+    }
+    const cur=queue[idx], pct=Math.round((idx/queue.length)*100);
+    locked=false;
+    box.innerHTML=`
+      <div class="flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2">
+          <div style="width:42px;height:42px;border-radius:50%;background:#${drv.color.toString(16).padStart(6,'0')};overflow:hidden;border:2px solid #fff;box-shadow:0 2px 6px #0003" class="flex-shrink-0"><img src="${drv.img}" style="width:100%;height:100%;object-fit:cover"></div>
+          <div class="text-left leading-tight">
+            <div class="text-lg font-black text-blue-900">🛠️ 戰車維修站・錯題重溫</div>
+            <div class="text-xs font-bold text-slate-500">答啱晒今場錯題，幫「${drv.name}」充滿電再出發！</div>
+          </div>
+        </div>
+        <span class="bg-amber-100 text-amber-900 font-black text-xs px-3 py-1 rounded-full whitespace-nowrap">第 ${idx+1} / ${queue.length} 題</span>
+      </div>
+      <div class="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden mt-2">
+        <div class="bg-gradient-to-r from-sky-400 to-green-500 h-full transition-all duration-300" style="width:${pct}%"></div>
+      </div>
+      <div class="bg-gradient-to-b from-slate-800 to-blue-950 text-white rounded-3xl py-4 px-4 mt-3 relative shadow-inner border-2 border-blue-400/50">
+        <button id="rvSpeakBtn" class="btn bg-sky-500/80 text-white text-xs py-1 px-2.5" style="position:absolute;top:8px;right:8px">🔈 讀題</button>
+        <div class="text-xs text-amber-300 font-bold mb-0.5">頭先比賽時你揀咗 ${cur.prevChoice}，正確答案係幾多？</div>
+        <div class="text-5xl font-black tracking-wider my-1" id="rvQText">${cur.a} × ${cur.b} = ?</div>
+      </div>
+      <div class="grid grid-cols-3 gap-3 mt-3" id="rvOptsBox">
+        ${cur.opts.map((v,k)=>`<button data-v="${v}" class="rv-opt btn text-white text-3xl font-black py-3.5 rounded-2xl border-3 border-white shadow-md" style="background:${LCOL[k]}">${v}</button>`).join('')}
+      </div>
+      <div id="rvFeedback" class="text-sm font-black mt-2 h-5 text-slate-500">請點選正確答案以修復戰車 🔧</div>`;
+    requestAnimationFrame(fitAllCards);
+    if(autoRead)speakReviewQ(cur.a,cur.b);
+    $('rvSpeakBtn').onclick=()=>speakReviewQ(cur.a,cur.b);
+    box.querySelectorAll('.rv-opt').forEach(btn=>{
+      btn.onclick=()=>{
+        if(locked)return;
+        const val=Number(btn.dataset.v);
+        if(val===cur.ans){
+          locked=true;
+          sfx('ok');
+          btn.classList.add('right-pop');
+          $('rvQText').textContent=`${cur.a} × ${cur.b} = ${cur.ans}`;
+          $('rvFeedback').className='text-sm font-black mt-2 h-5 text-green-600';
+          $('rvFeedback').textContent=`✅ 答啱啦！${cur.a} × ${cur.b} = ${cur.ans}！`;
+          setTimeout(()=>{idx++;renderStep()},580);
+        }else{
+          sfx('bad');
+          btn.classList.remove('wrong-shake');
+          void btn.offsetWidth;
+          btn.classList.add('wrong-shake');
+          btn.disabled=true;
+          $('rvFeedback').className='text-sm font-black mt-2 h-5 text-red-600';
+          $('rvFeedback').textContent=`❌ ${val} 唔啱喎，再諗一諗 ${cur.a} 乘 ${cur.b} 係幾多？`;
+        }
+      };
+    });
+  };
+  renderStep();
+}
 
 /* ===== 主迴圈 ===== */
 const clock=new THREE.Clock();let idle=0;
