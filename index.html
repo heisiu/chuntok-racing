@@ -1176,243 +1176,718 @@ function makeNameSprite(txt,col='#fde047'){
   const t=new THREE.CanvasTexture(cv);t.colorSpace=THREE.SRGBColorSpace;
   const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:t,depthTest:false}));sp.scale.set(4.5,1.12,1);sp.position.set(0,3.5,0);return sp;
 }
-function hoodTex(d){
-  const cv=document.createElement('canvas');cv.width=256;cv.height=256;const x=cv.getContext('2d');
-  x.fillStyle='#'+d.color.toString(16).padStart(6,'0');x.fillRect(0,0,256,256);
-  x.fillStyle=d.crown?'#fde047':'#ffffff';x.fillRect(92,0,72,256);
-  x.fillStyle=d.crown?'#78350f':'#0f172a';x.fillRect(102,0,8,256);x.fillRect(146,0,8,256);
-  if(schoolBadgeImg)drawImageProp(x,schoolBadgeImg,92,10,72,64);
-  x.beginPath();x.arc(128,148,64,0,Math.PI*2);x.fillStyle=d.crown?'#1e293b':'#ffffff';x.fill();
-  x.lineWidth=10;x.strokeStyle=d.crown?'#facc15':'#0f172a';x.stroke();
-  x.fillStyle=d.crown?'#fde047':'#0f172a';
-  x.font=(d.num&&d.num.length>2)?'900 42px system-ui,sans-serif':'900 72px system-ui,sans-serif';
-  x.textAlign='center';x.textBaseline='middle';x.fillText(d.num||'01',128,152);
-  const t=new THREE.CanvasTexture(cv);t.colorSpace=THREE.SRGBColorSpace;return t;
+
+function M(color, extra={}) {
+  return new THREE.MeshStandardMaterial({color, roughness:0.45, metalness:0.18, ...extra});
 }
-function wingTex(d){
-  const cv=document.createElement('canvas');cv.width=512;cv.height=128;const x=cv.getContext('2d');
-  x.save();x.translate(512,128);x.scale(-1,-1);
-  x.fillStyle=d.crown?'#78350f':'#0f172a';x.fillRect(0,0,512,128);
-  x.strokeStyle='#facc15';x.lineWidth=10;x.strokeRect(5,5,502,118);
-  x.fillStyle='#fde047';x.font='900 50px "PingFang HK","Microsoft JhengHei",sans-serif';
-  x.textAlign='center';x.textBaseline='middle';
-  if(schoolBadgeImg){drawImageProp(x,schoolBadgeImg,18,16,96,96);x.fillText('真鐸 CHUN TOK',292,66)}
-  else x.fillText('🏫 真鐸 CHUN TOK',256,66);
-  x.restore();
-  const t=new THREE.CanvasTexture(cv);t.colorSpace=THREE.SRGBColorSpace;return t;
+function add(parent, geo, mat, x=0,y=0,z=0, rx=0,ry=0,rz=0) {
+  const m = new THREE.Mesh(geo, mat);
+  m.position.set(x,y,z);
+  m.rotation.set(rx,ry,rz);
+  m.castShadow = m.receiveShadow = true;
+  parent.add(m);
+  return m;
+}
+function bone(parent, mat, a, b, r=0.035) {
+  const dir = new THREE.Vector3(b[0]-a[0], b[1]-a[1], b[2]-a[2]);
+  const len = dir.length();
+  const mesh = new THREE.Mesh(new THREE.CylinderGeometry(r, r, len, 8), mat);
+  mesh.position.set((a[0]+b[0])/2, (a[1]+b[1])/2, (a[2]+b[2])/2);
+  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.clone().normalize());
+  mesh.castShadow = mesh.receiveShadow = true;
+  parent.add(mesh);
+  return mesh;
+}
+function taperWidth(geo, nose=0.55, tail=0.18) {
+  const pos = geo.attributes.position;
+  let minX=Infinity, maxX=-Infinity;
+  for (let i=0;i<pos.count;i++){ const x=pos.getX(i); if(x<minX)minX=x; if(x>maxX)maxX=x; }
+  for (let i=0;i<pos.count;i++){
+    const x=pos.getX(i), z=pos.getZ(i);
+    let w=1;
+    if (x>0.25) w = 1 - (x-0.25)/Math.max(0.01,maxX-0.25)*nose;
+    else if (x<-0.7) w = 1 - (-0.7-x)/Math.max(0.01,-0.7-minX)*tail;
+    if (w<0.32) w=0.32;
+    pos.setZ(i, z*w);
+  }
+  pos.needsUpdate = true;
+  geo.computeVertexNormals();
+}
+function numPlane(text, color='#fff', bg='#111') {
+  const c = document.createElement('canvas');
+  c.width = 256; c.height = 128;
+  const g = c.getContext('2d');
+  g.fillStyle = bg; g.fillRect(0,0,256,128);
+  g.fillStyle = color; g.font = '900 78px system-ui,sans-serif';
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText(text, 128, 70);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(0.55, 0.28), new THREE.MeshBasicMaterial({map:tex, transparent:true}));
+  return m;
+}
+function wheel(r=0.28, w=0.16, tire='#111', rim='#d0d4d8') {
+  const g = new THREE.Group();
+  g.userData.wheelR = r;
+  add(g, new THREE.CylinderGeometry(r, r, w, 20), M(tire,{roughness:0.9}), 0,0,0, 0,0,Math.PI/2);
+  add(g, new THREE.CylinderGeometry(r*0.55, r*0.55, w+0.02, 16), M(rim,{metalness:0.7,roughness:0.25}), 0,0,0, 0,0,Math.PI/2);
+  add(g, new THREE.CylinderGeometry(r*0.12, r*0.12, w+0.04, 10), M('#222'), 0,0,0, 0,0,Math.PI/2);
+  return g;
+}
+function exhaustGlow(r=0.1, len=0.28) {
+  const g = new THREE.Group();
+  add(g, new THREE.CylinderGeometry(r, r*0.7, len, 12), M('#1a1a1a',{metalness:0.8}));
+  const fire = add(g, new THREE.ConeGeometry(r*0.55, len*0.9, 10), M('#ff7a18',{emissive:'#ff4d00',emissiveIntensity:1.4,roughness:1}), 0, -len*0.7, 0);
+  fire.userData.pulse = true;
+  return g;
+}
+
+
+function addRacer(parent, kind, x=0, y=0, z=0, scale=0.7, lean=0.35) {
+  const g = new THREE.Group();
+  const skin = M('#f1c7a3',{roughness:0.65,metalness:0.04});
+  const hairC = M('#2a1810',{roughness:0.75});
+  const suitW = M('#f4f4f0',{roughness:0.52});
+  const isGirl = kind==='bow'||kind==='glasses'||kind==='helmetP';
+  const trim = M(isGirl?'#6d28d9':'#1e3a8a',{roughness:0.42});
+  const glove = M('#1c1917',{roughness:0.45});
+  const badge = M('#6d28d9',{roughness:0.35,metalness:0.25});
+  const badgeGold = M('#fde047',{roughness:0.35,metalness:0.4});
+
+  add(g, new THREE.CylinderGeometry(0.15, 0.19, 0.34, 10), suitW, 0, 0.20, 0, lean, 0, 0);
+  add(g, new THREE.BoxGeometry(0.40, 0.09, 0.16), trim, 0, 0.34, 0.01, lean, 0, 0);
+  add(g, new THREE.BoxGeometry(0.055, 0.055, 0.02), badge, 0.07, 0.24, 0.16, lean, 0, 0);
+  add(g, new THREE.BoxGeometry(0.03, 0.03, 0.015), badgeGold, 0.07, 0.24, 0.172, lean, 0, 0);
+  add(g, new THREE.BoxGeometry(0.28, 0.10, 0.16), trim, 0, 0.04, -0.02);
+  add(g, new THREE.BoxGeometry(0.08, 0.16, 0.09), suitW, 0.08, 0.00, 0.08, 0.85, 0, 0);
+  add(g, new THREE.BoxGeometry(0.08, 0.16, 0.09), suitW, -0.08, 0.00, 0.08, 0.85, 0, 0);
+  bone(g, suitW, [0.18, 0.32, 0.02], [0.20, 0.16, 0.22], 0.032);
+  add(g, new THREE.SphereGeometry(0.042, 8, 8), glove, 0.20, 0.14, 0.26);
+  bone(g, suitW, [-0.18, 0.32, 0.02], [-0.20, 0.16, 0.22], 0.032);
+  add(g, new THREE.SphereGeometry(0.042, 8, 8), glove, -0.20, 0.14, 0.26);
+  add(g, new THREE.CylinderGeometry(0.045, 0.05, 0.06, 8), skin, 0, 0.40, 0.05);
+  const hx=0, hy=0.55, hz=0.07;
+  add(g, new THREE.SphereGeometry(0.145, 14, 12), skin, hx, hy, hz);
+  const eye = M('#1c1917');
+  add(g, new THREE.SphereGeometry(0.022, 8, 8), eye, 0.045, hy+0.01, hz+0.125);
+  add(g, new THREE.SphereGeometry(0.022, 8, 8), eye, -0.045, hy+0.01, hz+0.125);
+
+  const helmeted = kind==='helmetB'||kind==='helmetP';
+  if(!helmeted){
+    add(g, new THREE.SphereGeometry(0.152, 12, 10, 0, Math.PI*2, 0, Math.PI*0.58), hairC, hx, hy+0.02, hz-0.01, 0.15, 0, 0);
+  }
+  if(kind==='headband'){
+    add(g, new THREE.ConeGeometry(0.05, 0.10, 6), hairC, 0.04, hy+0.16, hz-0.02, 0.15, 0, 0.2);
+    add(g, new THREE.ConeGeometry(0.045, 0.09, 6), hairC, -0.05, hy+0.15, hz-0.04, 0.2, 0, -0.2);
+    add(g, new THREE.CylinderGeometry(0.155, 0.155, 0.045, 16, 1, true), M('#f8fafc',{roughness:0.5,side:THREE.DoubleSide}), hx, hy+0.04, hz);
+    add(g, new THREE.TorusGeometry(0.155, 0.012, 8, 20), trim, hx, hy+0.055, hz, Math.PI/2, 0, 0);
+    add(g, new THREE.TorusGeometry(0.155, 0.012, 8, 20), trim, hx, hy+0.025, hz, Math.PI/2, 0, 0);
+  } else if(kind==='bow'){
+    add(g, new THREE.SphereGeometry(0.07, 10, 8), hairC, -0.02, hy-0.02, hz-0.16);
+    add(g, new THREE.SphereGeometry(0.055, 8, 8), hairC, -0.02, hy-0.10, hz-0.18);
+    const bowC = M('#7c3aed',{roughness:0.45});
+    const b1 = add(g, new THREE.SphereGeometry(0.05, 8, 8), bowC, 0.14, hy+0.10, hz-0.02);
+    b1.scale.set(1.3, 0.7, 0.5);
+    const b2 = add(g, new THREE.SphereGeometry(0.05, 8, 8), bowC, 0.20, hy+0.08, hz-0.02);
+    b2.scale.set(1.3, 0.7, 0.5);
+    add(g, new THREE.SphereGeometry(0.025, 8, 8), bowC, 0.17, hy+0.09, hz+0.01);
+    const dot = M('#f5d0fe');
+    add(g, new THREE.SphereGeometry(0.012, 6, 6), dot, 0.14, hy+0.12, hz+0.01);
+    add(g, new THREE.SphereGeometry(0.012, 6, 6), dot, 0.20, hy+0.06, hz+0.01);
+  } else if(kind==='cap'){
+    const capW = M('#f8fafc',{roughness:0.5});
+    const capB = M('#1e3a8a',{roughness:0.42});
+    add(g, new THREE.SphereGeometry(0.16, 14, 10, 0, Math.PI*2, 0, Math.PI*0.52), capW, hx, hy+0.04, hz-0.01);
+    add(g, new THREE.SphereGeometry(0.162, 14, 8, 0, Math.PI*2, Math.PI*0.35, Math.PI*0.2), capB, hx, hy+0.02, hz-0.01);
+    add(g, new THREE.BoxGeometry(0.16, 0.025, 0.14), capB, hx, hy+0.06, hz+0.14, 0.15, 0, 0);
+  } else if(kind==='glasses'){
+    add(g, new THREE.SphereGeometry(0.065, 10, 8), hairC, 0, hy-0.02, hz-0.15);
+    add(g, new THREE.SphereGeometry(0.05, 8, 8), hairC, 0, hy-0.10, hz-0.16);
+    const frame = M('#1c1917',{roughness:0.35,metalness:0.2});
+    add(g, new THREE.TorusGeometry(0.045, 0.008, 8, 16), frame, 0.05, hy+0.01, hz+0.13);
+    add(g, new THREE.TorusGeometry(0.045, 0.008, 8, 16), frame, -0.05, hy+0.01, hz+0.13);
+    add(g, new THREE.BoxGeometry(0.03, 0.01, 0.01), frame, 0, hy+0.01, hz+0.135);
+  } else if(kind==='headphone'){
+    const hp = M('#1e3a8a',{roughness:0.4});
+    add(g, new THREE.CylinderGeometry(0.07, 0.07, 0.05, 12), hp, 0.15, hy, hz, 0, 0, Math.PI/2);
+    add(g, new THREE.CylinderGeometry(0.07, 0.07, 0.05, 12), hp, -0.15, hy, hz, 0, 0, Math.PI/2);
+    add(g, new THREE.TorusGeometry(0.15, 0.018, 8, 16, Math.PI), hp, hx, hy+0.02, hz, 0, 0, 0);
+  } else if(kind==='helmetB'){
+    const hBlue = M('#1d4ed8',{roughness:0.35,metalness:0.2});
+    const hW = M('#eef2ff',{roughness:0.4});
+    add(g, new THREE.SphereGeometry(0.17, 16, 12, 0, Math.PI*2, 0, Math.PI*0.72), hBlue, hx, hy+0.02, hz-0.01, 0.12, 0, 0);
+    add(g, new THREE.SphereGeometry(0.168, 16, 8, 0, Math.PI*2, Math.PI*0.55, Math.PI*0.28), hW, hx, hy, hz);
+    add(g, new THREE.BoxGeometry(0.18, 0.07, 0.08), M('#1e293b',{transparent:true,opacity:0.65,roughness:0.2,metalness:0.4}), hx, hy+0.12, hz+0.10, -0.5, 0, 0);
+  } else if(kind==='helmetP'){
+    const hW = M('#f5f3ff',{roughness:0.4});
+    const stripe = M('#7c3aed',{roughness:0.4});
+    add(g, new THREE.SphereGeometry(0.17, 16, 12, 0, Math.PI*2, 0, Math.PI*0.72), hW, hx, hy+0.02, hz-0.01, 0.12, 0, 0);
+    add(g, new THREE.BoxGeometry(0.05, 0.08, 0.28), stripe, hx, hy+0.12, hz-0.02, 0.15, 0, 0);
+    add(g, new THREE.SphereGeometry(0.05, 8, 8), hairC, 0.14, hy-0.04, hz-0.08);
+    add(g, new THREE.SphereGeometry(0.05, 8, 8), hairC, -0.14, hy-0.04, hz-0.08);
+    add(g, new THREE.BoxGeometry(0.18, 0.07, 0.08), M('#1e293b',{transparent:true,opacity:0.55,roughness:0.2}), hx, hy+0.12, hz+0.10, -0.5, 0, 0);
+  } else if(kind==='boy'){
+    add(g, new THREE.SphereGeometry(0.04, 8, 8), hairC, 0.06, hy+0.10, hz+0.04);
+    add(g, new THREE.SphereGeometry(0.04, 8, 8), hairC, -0.06, hy+0.10, hz+0.04);
+  }
+
+  g.position.set(x,y,z);
+  g.scale.setScalar(scale);
+  parent.add(g);
+  return g;
+}
+
+function buildBolt() {
+  const g = new THREE.Group();
+  const red = M('#d61f2a',{metalness:0.35,roughness:0.35});
+  const black = M('#151515',{roughness:0.5});
+  const white = M('#f4f4f0');
+  add(g, new THREE.BoxGeometry(0.7, 0.18, 2.35), red, 0, 0.28, 0.05);
+  add(g, new THREE.BoxGeometry(0.28, 0.16, 0.9), red, 0, 0.3, 1.35);
+  add(g, new THREE.BoxGeometry(0.22, 0.1, 0.7), white, 0, 0.28, 1.7);
+  add(g, new THREE.BoxGeometry(1.55, 0.06, 0.38), black, 0, 0.2, 1.85); // front wing
+  add(g, new THREE.BoxGeometry(0.06, 0.16, 0.36), red, 0.76, 0.28, 1.85);
+  add(g, new THREE.BoxGeometry(0.06, 0.16, 0.36), red, -0.76, 0.28, 1.85);
+  add(g, new THREE.BoxGeometry(1.05, 0.28, 0.85), red, 0, 0.34, 0.15); // sidepods
+  add(g, new THREE.BoxGeometry(0.42, 0.22, 0.5), M('#223344',{metalness:0.4}), 0, 0.5, 0.15); // cockpit
+  add(g, new THREE.TorusGeometry(0.2, 0.025, 8, 20, Math.PI), M('#ddd',{metalness:0.7}), 0, 0.62, 0.15, 0,0,0); // halo
+  add(g, new THREE.BoxGeometry(0.9, 0.55, 0.06), black, 0, 0.62, -1.05); // rear wing
+  add(g, new THREE.BoxGeometry(0.08, 0.4, 0.12), red, 0.22, 0.48, -0.95);
+  add(g, new THREE.BoxGeometry(0.08, 0.4, 0.12), red, -0.22, 0.48, -0.95);
+  add(g, new THREE.BoxGeometry(0.9, 0.05, 0.18), red, 0, 0.88, -1.05);
+  [[0.62,0.28,1.15],[-0.62,0.28,1.15],[0.62,0.3,-0.7],[-0.62,0.3,-0.7]].forEach(([x,y,z])=>{
+    const w = wheel(0.28, 0.16, '#111', '#eee'); w.position.set(x,y,z); g.add(w);
+  });
+  const n = numPlane('02', '#fff', '#d61f2a'); n.position.set(0.36, 0.45, 0.55); n.rotation.y = Math.PI/2; g.add(n);
+  addRacer(g,'headband', 0, 0.42, 0.10, 0.72, 0.4);
+  return g;
+}
+
+function buildRocket() {
+  const g = new THREE.Group();
+  const white = M('#f3f0ea',{metalness:0.25,roughness:0.4});
+  const orange = M('#e85d04',{metalness:0.2});
+  const dark = M('#222');
+  add(g, new THREE.CylinderGeometry(0.38, 0.42, 2.0, 18), white, 0, 0.62, 0, Math.PI/2,0,0);
+  add(g, new THREE.ConeGeometry(0.38, 0.7, 16), orange, 0, 0.62, 1.32, Math.PI/2,0,0);
+  add(g, new THREE.CylinderGeometry(0.22, 0.22, 0.42, 12), M('#89c4f4',{metalness:0.3,roughness:0.2,transparent:true,opacity:0.4}), 0, 0.86, 0.35, Math.PI/2,0,0);
+  // side boosters
+  for (const s of [-1,1]) {
+    add(g, new THREE.CylinderGeometry(0.18, 0.18, 1.15, 14), white, s*0.52, 0.5, -0.15, Math.PI/2,0,0);
+    add(g, new THREE.ConeGeometry(0.18, 0.32, 12), orange, s*0.52, 0.5, 0.58, Math.PI/2,0,0);
+    const ex = exhaustGlow(0.12, 0.32); ex.rotation.x = Math.PI/2; ex.position.set(s*0.52, 0.5, -0.85); g.add(ex);
+  }
+  const mid = exhaustGlow(0.16, 0.4); mid.rotation.x = Math.PI/2; mid.position.set(0, 0.5, -1.15); g.add(mid);
+  add(g, new THREE.BoxGeometry(0.08, 0.7, 0.45), orange, 0, 0.85, -0.7);
+  add(g, new THREE.BoxGeometry(0.7, 0.08, 0.45), orange, 0, 0.35, -0.7);
+  // tiny landing gear
+  [[0.35,0.16,0.5],[-0.35,0.16,0.5],[0,0.16,-0.55]].forEach(([x,y,z])=>{
+    const w = wheel(0.14, 0.08); w.position.set(x,y,z); g.add(w);
+  });
+  const n = numPlane('03', '#fff', '#e85d04'); n.position.set(0.43, 0.62, 0.1); n.rotation.y = Math.PI/2; g.add(n);
+  addRacer(g,'bow', 0, 0.72, 0.30, 0.68, 0.2);
+  return g;
+}
+
+function buildCyclone() {
+  const g = new THREE.Group();
+  const teal = M('#0d9488',{metalness:0.45,roughness:0.3});
+  const silver = M('#cfd8dc',{metalness:0.75,roughness:0.25});
+  const dark = M('#1e293b');
+  // twin hulls
+  for (const s of [-1,1]) {
+    add(g, new THREE.CapsuleGeometry(0.22, 1.6, 6, 12), teal, s*0.55, 0.55, 0, Math.PI/2,0,0);
+    add(g, new THREE.BoxGeometry(0.5, 0.06, 1.1), silver, s*0.75, 0.62, 0.15, 0, 0.35*s, 0.18*s); // forward-swept wing
+  }
+  add(g, new THREE.BoxGeometry(1.15, 0.16, 0.7), silver, 0, 0.62, 0);
+  add(g, new THREE.SphereGeometry(0.32, 16, 12), M('#7dd3fc',{metalness:0.3,roughness:0.15,transparent:true,opacity:0.38}), 0, 0.90, 0.1);
+  // hover fans
+  for (const s of [-1,1]) {
+    const fan = new THREE.Group();
+    add(fan, new THREE.TorusGeometry(0.28, 0.05, 8, 20), dark);
+    const blades = new THREE.Group();
+    for (let i=0;i<4;i++){
+      const b = add(blades, new THREE.BoxGeometry(0.48, 0.02, 0.1), silver);
+      b.rotation.y = i*Math.PI/2;
+    }
+    blades.userData.spin = 0.6;
+    fan.add(blades);
+    fan.rotation.x = Math.PI/2;
+    fan.position.set(s*0.55, 0.22, 0);
+    g.add(fan);
+  }
+  const n = numPlane('04', '#042f2e', '#99f6e4'); n.position.set(0, 0.72, 0.36); g.add(n);
+  addRacer(g,'cap', 0, 0.68, 0.08, 0.70, 0.15);
+  g.userData.hover = 0.08;
+  return g;
+}
+
+function buildMeteor() {
+  const g = new THREE.Group();
+  const paint = M('#4c1d95',{metalness:0.45,roughness:0.28});
+  const deep = M('#2e1065',{metalness:0.5,roughness:0.22});
+  const neon = M('#22d3ee',{emissive:'#22d3ee',emissiveIntensity:1.25,metalness:0.25,roughness:0.3});
+  const pink = M('#f0abfc',{emissive:'#e879f9',emissiveIntensity:1.15,metalness:0.2,roughness:0.28});
+  const glass = M('#a5f3fc',{metalness:0.35,roughness:0.08,transparent:true,opacity:0.4,emissive:'#22d3ee',emissiveIntensity:0.25});
+  const sh = new THREE.Shape();
+  const pts = [[1.72,0.05],[1.52,0.14],[1.08,0.22],[0.58,0.26],[0.18,0.52],[-0.22,0.56],[-0.62,0.42],[-1.02,0.28],[-1.38,0.22],[-1.48,0.10],[-1.42,0.05],[1.64,0.05]];
+  sh.moveTo(pts[0][0], pts[0][1]);
+  pts.slice(1).forEach(([x,y])=>sh.lineTo(x,y));
+  sh.closePath();
+  const bodyGeo = new THREE.ExtrudeGeometry(sh, {depth:0.88, bevelEnabled:true, bevelThickness:0.05, bevelSize:0.05, bevelSegments:3});
+  bodyGeo.translate(0,0,-0.44);
+  taperWidth(bodyGeo);
+  const body = new THREE.Mesh(bodyGeo, paint);
+  body.rotation.y = -Math.PI/2;
+  body.position.y = 0.22;
+  body.castShadow = body.receiveShadow = true;
+  g.add(body);
+  const cab = new THREE.Shape();
+  cab.moveTo(0.26,0.00); cab.lineTo(0.00,0.30); cab.lineTo(-0.48,0.28); cab.lineTo(-0.62,0.00); cab.closePath();
+  const cabGeo = new THREE.ExtrudeGeometry(cab, {depth:0.70, bevelEnabled:true, bevelThickness:0.02, bevelSize:0.02, bevelSegments:2});
+  cabGeo.translate(0,0,-0.35);
+  const cabM = new THREE.Mesh(cabGeo, glass);
+  cabM.rotation.y = -Math.PI/2;
+  cabM.position.set(0, 0.50, 0.10);
+  cabM.castShadow = true;
+  g.add(cabM);
+  add(g, new THREE.BoxGeometry(0.16, 0.14, 0.42), deep, 0.46, 0.40, -0.12);
+  add(g, new THREE.BoxGeometry(0.16, 0.14, 0.42), deep, -0.46, 0.40, -0.12);
+  add(g, new THREE.BoxGeometry(0.98, 0.03, 2.20), neon, 0, 0.20, 0.04);
+  add(g, new THREE.BoxGeometry(0.045, 0.045, 1.85), pink, 0.46, 0.44, 0.02);
+  add(g, new THREE.BoxGeometry(0.045, 0.045, 1.85), pink, -0.46, 0.44, 0.02);
+  add(g, new THREE.BoxGeometry(0.26, 0.06, 0.08), neon, 0.28, 0.38, 1.52);
+  add(g, new THREE.BoxGeometry(0.26, 0.06, 0.08), neon, -0.28, 0.38, 1.52);
+  add(g, new THREE.BoxGeometry(0.08, 0.52, 0.12), neon, 0.34, 0.68, -1.08);
+  add(g, new THREE.BoxGeometry(0.08, 0.52, 0.12), neon, -0.34, 0.68, -1.08);
+  add(g, new THREE.BoxGeometry(1.42, 0.06, 0.38), pink, 0, 0.98, -1.16);
+  add(g, new THREE.BoxGeometry(1.42, 0.03, 0.09), neon, 0, 1.03, -1.28);
+  add(g, new THREE.BoxGeometry(0.06, 0.24, 0.38), deep, 0.70, 0.98, -1.16);
+  add(g, new THREE.BoxGeometry(0.06, 0.24, 0.38), deep, -0.70, 0.98, -1.16);
+  [[0.50,0.26,0.78],[-0.50,0.26,0.78],[0.52,0.26,-0.86],[-0.52,0.26,-0.86]].forEach(([x,y,z])=>{
+    const w = wheel(0.25, 0.17, '#050508', '#22d3ee'); w.position.set(x,y,z); g.add(w);
+  });
+  const n = numPlane('05', '#a5f3fc', '#2e1065'); n.position.set(0.50, 0.50, -0.05); n.rotation.y = Math.PI/2; n.scale.set(1.05,1.05,1); g.add(n);
+  addRacer(g,'glasses', 0, 0.55, 0.10, 0.68, 0.25);
+  return g;
+}
+
+function buildRainbow() {
+  const g = new THREE.Group();
+  const pink = M('#fb7185',{roughness:0.45});
+  const cream = M('#fff7ed',{roughness:0.5});
+  const yellow = M('#fde047');
+  add(g, new THREE.SphereGeometry(0.62, 20, 14, 0, Math.PI*2, Math.PI/2, Math.PI/2), pink, 0, 0.62, 0.15);
+  add(g, new THREE.SphereGeometry(0.5, 18, 12), pink, 0, 0.55, -0.55);
+  add(g, new THREE.SphereGeometry(0.42, 16, 12), pink, 0, 0.5, 0.75);
+  add(g, new THREE.BoxGeometry(0.9, 0.12, 1.6), cream, 0, 0.42, 0); // floor
+  // open cockpit
+  add(g, new THREE.TorusGeometry(0.42, 0.04, 8, 16, Math.PI), cream, 0, 0.95, 0.2, 0,0,0);
+  add(g, new THREE.BoxGeometry(0.55, 0.08, 0.02), M('#7dd3fc',{transparent:true,opacity:0.45}), 0, 1.05, 0.55, 0.4,0,0);
+  // cloud puffs
+  add(g, new THREE.SphereGeometry(0.18, 12, 10), cream, 0.55, 0.85, -0.2);
+  add(g, new THREE.SphereGeometry(0.14, 12, 10), cream, -0.58, 0.8, 0.1);
+  // rainbow arch wing
+  const cols = ['#ef4444','#f97316','#facc15','#22c55e','#3b82f6','#8b5cf6'];
+  cols.forEach((col,i)=>{
+    const a = add(g, new THREE.TorusGeometry(0.72, 0.045, 8, 24, Math.PI), M(col,{emissive:col,emissiveIntensity:0.25}), 0, 0.85, -0.55, 0,0,0);
+    a.scale.set(1-i*0.07, 1-i*0.07, 1);
+  });
+  [[0.55,0.28,0.55],[-0.55,0.28,0.55],[0.55,0.28,-0.55],[-0.55,0.28,-0.55]].forEach(([x,y,z])=>{
+    const w = wheel(0.26, 0.16, '#fff', '#f472b6'); w.position.set(x,y,z); g.add(w);
+  });
+  const n = numPlane('06', '#9d174d', '#fde68a'); n.position.set(0, 0.72, 0.95); g.add(n);
+  addRacer(g,'headphone', 0, 0.70, 0.12, 0.80, 0.2);
+  return g;
+}
+
+function buildThunder() {
+  const g = new THREE.Group();
+  const paint = M('#c2410c',{metalness:0.25,roughness:0.45});
+  const metal = M('#9ca3af',{metalness:0.85,roughness:0.25});
+  const dark = M('#1c1917');
+  add(g, new THREE.BoxGeometry(1.15, 0.45, 1.7), paint, 0, 0.95, 0);
+  add(g, new THREE.BoxGeometry(1.05, 0.28, 0.7), paint, 0, 1.22, -0.15);
+  add(g, new THREE.BoxGeometry(0.85, 0.18, 0.45), M('#67e8f9',{transparent:true,opacity:0.35,metalness:0.3}), 0, 1.28, 0.35);
+  add(g, new THREE.BoxGeometry(1.35, 0.12, 0.22), metal, 0, 0.78, 1.0); // bumper
+  add(g, new THREE.BoxGeometry(1.2, 0.35, 0.06), metal, 0, 0.95, 1.08); // bullbar
+  add(g, new THREE.CylinderGeometry(0.03, 0.03, 0.4, 8), metal, 0.4, 0.95, 1.08, Math.PI/2);
+  add(g, new THREE.CylinderGeometry(0.03, 0.03, 0.4, 8), metal, -0.4, 0.95, 1.08, Math.PI/2);
+  add(g, new THREE.BoxGeometry(0.16, 0.16, 0.16), M('#facc15',{emissive:'#facc15',emissiveIntensity:0.6}), 0.4, 0.82, 1.05);
+  add(g, new THREE.BoxGeometry(0.16, 0.16, 0.16), M('#facc15',{emissive:'#facc15',emissiveIntensity:0.6}), -0.4, 0.82, 1.05);
+  // huge wheels
+  const wr = 0.52;
+  [[0.7,wr,0.7],[-0.7,wr,0.7],[0.7,wr,-0.7],[-0.7,wr,-0.7]].forEach(([x,y,z])=>{
+    const w = wheel(wr, 0.32, '#111', '#d6d3d1'); w.position.set(x,y,z); g.add(w);
+    add(g, new THREE.CylinderGeometry(0.05, 0.05, 0.55, 8), dark, x*0.5, 0.7, z, 0,0, x>0?-0.4:0.4);
+  });
+  const n = numPlane('07', '#fff', '#c2410c'); n.position.set(0.59, 1.05, 0.1); n.rotation.y = Math.PI/2; g.add(n);
+  addRacer(g,'helmetB', 0, 1.14, -0.05, 0.75, 0.2);
+  return g;
+}
+
+function buildAurora() {
+  const g = new THREE.Group();
+  const ice = M('#e0f2fe',{metalness:0.55,roughness:0.22});
+  const blue = M('#0369a1',{metalness:0.5,roughness:0.28});
+  const glow = M('#38bdf8',{emissive:'#38bdf8',emissiveIntensity:1.1,roughness:0.3});
+  // triangular fighter body
+  const shape = new THREE.Shape();
+  shape.moveTo(0, 1.6); shape.lineTo(1.15, -1.2); shape.lineTo(-1.15, -1.2); shape.closePath();
+  const body = new THREE.ExtrudeGeometry(shape, {depth:0.18, bevelEnabled:true, bevelThickness:0.04, bevelSize:0.04, bevelSegments:2});
+  const mesh = new THREE.Mesh(body, ice);
+  mesh.rotation.x = -Math.PI/2;
+  mesh.position.set(0, 0.55, 0);
+  mesh.castShadow = mesh.receiveShadow = true;
+  g.add(mesh);
+  add(g, new THREE.ConeGeometry(0.22, 0.9, 3), blue, 0, 0.7, 0.5, Math.PI/2,0,Math.PI);
+  add(g, new THREE.SphereGeometry(0.28, 12, 10), M('#7dd3fc',{transparent:true,opacity:0.38,metalness:0.4}), 0, 0.85, 0.15);
+  // twin vertical tails
+  add(g, new THREE.BoxGeometry(0.06, 0.7, 0.35), blue, 0.42, 0.95, -0.85);
+  add(g, new THREE.BoxGeometry(0.06, 0.7, 0.35), blue, -0.42, 0.95, -0.85);
+  add(g, new THREE.BoxGeometry(0.05, 0.55, 0.06), glow, 0.46, 0.95, -0.85);
+  add(g, new THREE.BoxGeometry(0.05, 0.55, 0.06), glow, -0.46, 0.95, -0.85);
+  // maglev pads, no wheels
+  for (const s of [-1,1]) {
+    add(g, new THREE.CylinderGeometry(0.22, 0.22, 0.06, 16), glow, s*0.45, 0.28, 0.2);
+    add(g, new THREE.CylinderGeometry(0.18, 0.18, 0.06, 16), glow, s*0.4, 0.28, -0.7);
+  }
+  const n = numPlane('08', '#082f49', '#bae6fd'); n.position.set(0, 0.76, 0.55); n.rotation.x = -0.5; g.add(n);
+  addRacer(g,'helmetP', 0, 0.58, 0.12, 0.68, 0.2);
+  g.userData.hover = 0.12;
+  return g;
+}
+
+function buildGale() {
+  const g = new THREE.Group();
+  const carbon = M('#2a2a2e',{metalness:0.7,roughness:0.35});
+  const silver = M('#d1d5db',{metalness:0.8,roughness:0.22});
+  add(g, new THREE.ConeGeometry(0.38, 1.5, 8), silver, 0, 0.38, 0.95, Math.PI/2,0,0); // pointed nose
+  add(g, new THREE.BoxGeometry(0.85, 0.28, 1.35), carbon, 0, 0.4, -0.15);
+  add(g, new THREE.BoxGeometry(0.7, 0.16, 0.55), M('#111',{metalness:0.5}), 0, 0.55, 0.15);
+  add(g, new THREE.SphereGeometry(0.22, 12, 8, 0, Math.PI*2, 0, Math.PI/2), M('#94a3b8',{transparent:true,opacity:0.4,metalness:0.5}), 0, 0.55, 0.2, Math.PI,0,0);
+  // high carbon wing
+  add(g, new THREE.BoxGeometry(0.08, 0.55, 0.14), carbon, 0.18, 0.7, -0.85);
+  add(g, new THREE.BoxGeometry(0.08, 0.55, 0.14), carbon, -0.18, 0.7, -0.85);
+  add(g, new THREE.BoxGeometry(1.05, 0.05, 0.28), carbon, 0, 1.0, -0.88);
+  add(g, new THREE.BoxGeometry(1.05, 0.03, 0.06), silver, 0, 1.04, -0.88);
+  [[0.42,0.24,0.35],[-0.42,0.24,0.35],[0.42,0.24,-0.7],[-0.42,0.24,-0.7]].forEach(([x,y,z])=>{
+    const w = wheel(0.22, 0.14, '#111', '#9ca3af'); w.position.set(x,y,z); g.add(w);
+  });
+  const n = numPlane('09', '#fff', '#2a2a2e'); n.position.set(0.44, 0.48, 0.0); n.rotation.y = Math.PI/2; g.add(n);
+  addRacer(g,'boy', 0, 0.48, 0.12, 0.72, 0.35);
+  return g;
+}
+
+function buildTam() {
+  const g = new THREE.Group();
+  const sil = M('#d5dbe3',{metalness:0.48,roughness:0.28});
+  const chrome = M('#f3f4f6',{metalness:0.5,roughness:0.2});
+  const gold = M('#d4a017',{metalness:0.5,roughness:0.28});
+  const blue = M('#2b5a8a',{metalness:0.35,roughness:0.3});
+  const skin = M('#f1c7a3',{roughness:0.65,metalness:0.05});
+  const glass = M('#7dd3fc',{metalness:0.28,roughness:0.08,transparent:true,opacity:0.4,emissive:'#22d3ee',emissiveIntensity:0.2});
+  const beamMat = M('#86efac',{emissive:'#4ade80',emissiveIntensity:0.9,transparent:true,opacity:0.4,roughness:0.8,metalness:0,side:THREE.DoubleSide});
+  // classic saucer
+  const disc = new THREE.Mesh(new THREE.SphereGeometry(1.15, 32, 16), sil);
+  disc.scale.set(1, 0.22, 1);
+  disc.position.y = 0.50;
+  disc.castShadow = disc.receiveShadow = true;
+  g.add(disc);
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(1.16, 0.09, 10, 36), gold);
+  rim.rotation.x = Math.PI/2;
+  rim.position.y = 0.50;
+  rim.castShadow = true;
+  g.add(rim);
+  add(g, new THREE.CylinderGeometry(0.58, 0.58, 0.05, 24), blue, 0, 0.62, 0);
+  const dome = new THREE.Mesh(new THREE.SphereGeometry(0.58, 22, 14, 0, Math.PI*2, 0, Math.PI/2), glass);
+  dome.position.y = 0.64;
+  dome.castShadow = true;
+  g.add(dome);
+  // 譚主任, slightly to the left, waving
+  add(g, new THREE.SphereGeometry(0.11, 14, 12), skin, -0.16, 0.82, 0.06);
+  add(g, new THREE.BoxGeometry(0.16, 0.035, 0.045), M('#111'), -0.16, 0.84, 0.14);
+  add(g, new THREE.BoxGeometry(0.16, 0.18, 0.11), blue, -0.16, 0.68, 0.04);
+  add(g, new THREE.BoxGeometry(0.035, 0.12, 0.035), gold, -0.16, 0.70, 0.10);
+  add(g, new THREE.BoxGeometry(0.035, 0.13, 0.035), skin, -0.06, 0.72, 0.10, 0.5, 0, 0);
+  add(g, new THREE.BoxGeometry(0.035, 0.14, 0.035), skin, -0.28, 0.90, 0.04, 0, 0, -0.8);
+  // green alien co-pilot
+  const alien = M('#4ade80',{roughness:0.5,metalness:0.08});
+  add(g, new THREE.SphereGeometry(0.14, 14, 12), alien, 0.18, 0.84, -0.02);
+  add(g, new THREE.SphereGeometry(0.045, 8, 8), M('#111'), 0.13, 0.86, 0.09);
+  add(g, new THREE.SphereGeometry(0.045, 8, 8), M('#111'), 0.23, 0.86, 0.09);
+  add(g, new THREE.SphereGeometry(0.015, 6, 6), M('#fff'), 0.14, 0.88, 0.12);
+  add(g, new THREE.SphereGeometry(0.015, 6, 6), M('#fff'), 0.24, 0.88, 0.12);
+  add(g, new THREE.BoxGeometry(0.10, 0.14, 0.08), alien, 0.18, 0.68, -0.02);
+  add(g, new THREE.CylinderGeometry(0.012, 0.012, 0.09, 6), alien, 0.12, 1.00, -0.02);
+  add(g, new THREE.CylinderGeometry(0.012, 0.012, 0.09, 6), alien, 0.24, 1.00, -0.02);
+  add(g, new THREE.SphereGeometry(0.025, 8, 8), M('#f472b6'), 0.12, 1.06, -0.02);
+  add(g, new THREE.SphereGeometry(0.025, 8, 8), M('#f472b6'), 0.24, 1.06, -0.02);
+  // antenna
+  add(g, new THREE.CylinderGeometry(0.016, 0.016, 0.32, 8), chrome, 0, 1.22, 0);
+  const ball = add(g, new THREE.SphereGeometry(0.055, 12, 10), gold, 0, 1.40, 0);
+  ball.userData.pulse = true;
+  // colorful rim lights
+  const colors = ['#22d3ee','#f0abfc','#facc15','#4ade80'];
+  for (let i=0;i<12;i++){
+    const a = i/12*Math.PI*2;
+    const lamp = new THREE.Mesh(
+      new THREE.SphereGeometry(0.085, 10, 8),
+      M(colors[i%4],{emissive:colors[i%4],emissiveIntensity:1.2})
+    );
+    lamp.position.set(Math.cos(a)*1.22, 0.50, Math.sin(a)*1.22);
+    lamp.userData.pulse = true;
+    g.add(lamp);
+  }
+  // tractor beam
+  const beam = new THREE.Mesh(new THREE.ConeGeometry(0.78, 0.85, 24, 1, true), beamMat);
+  beam.rotation.x = Math.PI;
+  beam.position.y = 0.02;
+  beam.userData.pulse = true;
+  g.add(beam);
+
+  // little cow hanging in the beam
+  const cow = new THREE.Group();
+  const fur = M('#f5f5f4',{roughness:0.75,metalness:0});
+  const spot = M('#1c1917',{roughness:0.75});
+  const muzzle = M('#f9a8d4',{roughness:0.7});
+  add(cow, new THREE.BoxGeometry(0.26, 0.15, 0.14), fur, 0, 0.14, 0);
+  add(cow, new THREE.BoxGeometry(0.07, 0.06, 0.15), spot, 0.04, 0.18, 0);
+  add(cow, new THREE.BoxGeometry(0.06, 0.05, 0.15), spot, -0.07, 0.11, 0);
+  add(cow, new THREE.BoxGeometry(0.11, 0.10, 0.11), fur, 0.16, 0.18, 0);
+  add(cow, new THREE.BoxGeometry(0.05, 0.045, 0.07), muzzle, 0.23, 0.15, 0);
+  add(cow, new THREE.BoxGeometry(0.03, 0.045, 0.02), muzzle, 0.14, 0.24, 0.06);
+  add(cow, new THREE.BoxGeometry(0.03, 0.045, 0.02), muzzle, 0.14, 0.24, -0.06);
+  add(cow, new THREE.CylinderGeometry(0.01, 0.014, 0.05, 6), M('#e7e5e4'), 0.15, 0.27, 0.035);
+  add(cow, new THREE.CylinderGeometry(0.01, 0.014, 0.05, 6), M('#e7e5e4'), 0.15, 0.27, -0.035);
+  add(cow, new THREE.SphereGeometry(0.016, 6, 6), spot, 0.21, 0.20, 0.035);
+  add(cow, new THREE.SphereGeometry(0.016, 6, 6), spot, 0.21, 0.20, -0.035);
+  add(cow, new THREE.BoxGeometry(0.035, 0.09, 0.035), fur, 0.07, 0.03, 0.045);
+  add(cow, new THREE.BoxGeometry(0.035, 0.09, 0.035), fur, 0.07, 0.03, -0.045);
+  add(cow, new THREE.BoxGeometry(0.035, 0.09, 0.035), fur, -0.07, 0.03, 0.045);
+  add(cow, new THREE.BoxGeometry(0.035, 0.09, 0.035), fur, -0.07, 0.03, -0.045);
+  add(cow, new THREE.BoxGeometry(0.07, 0.02, 0.02), fur, -0.16, 0.14, 0);
+  cow.position.set(0.08, -0.28, 0);
+  cow.rotation.set(0.15, 0.7, 0.35);
+  cow.scale.setScalar(0.95);
+  g.add(cow);
+  const n = numPlane('TAM', '#1b3a5c', '#d4a017'); n.position.set(0, 0.58, 1.22); n.scale.set(0.95,0.7,1); g.add(n);
+  const n2 = numPlane('TAM', '#1b3a5c', '#d4a017'); n2.position.set(0, 0.58, -1.22); n2.rotation.y = Math.PI; n2.scale.set(0.95,0.7,1); g.add(n2);
+  g.scale.setScalar(1.22);
+  g.userData.hover = 0.14;
+  return g;
+}
+
+function buildChan() {
+  const g = new THREE.Group();
+  const gold = M('#f5c518',{metalness:0.9,roughness:0.22});
+  const dark = M('#1c1917',{metalness:0.4});
+  const chrome = M('#e5e7eb',{metalness:0.95,roughness:0.15});
+  // two large wheels
+  const wr = 0.62;
+  const w1 = wheel(wr, 0.08, '#111', '#f5c518'); w1.position.set(0, wr, 0.85); g.add(w1);
+  const w2 = wheel(wr, 0.08, '#111', '#f5c518'); w2.position.set(0, wr, -0.85); g.add(w2);
+  // gold triangle frame
+  const bar = (len,x,y,z,rx=0,ry=0,rz=0)=>{
+    add(g, new THREE.CylinderGeometry(0.04, 0.04, len, 10), gold, x,y,z, rx,ry,rz);
+  };
+  bar(1.55, 0, 0.95, 0, Math.PI/2,0,0);           // top tube
+  bar(1.2, 0, 0.72, 0.42, 0.7,0,0);              // down tube
+  bar(1.05, 0, 0.72, -0.4, -0.55,0,0);           // seat tube-ish
+  bar(0.85, 0, 0.42, 0, Math.PI/2,0,0);          // chain stay
+  // handlebars
+  bar(0.7, 0, 1.35, 0.82, 0,0,Math.PI/2);
+  add(g, new THREE.CylinderGeometry(0.035, 0.035, 0.35, 8), gold, 0, 1.2, 0.82);
+  add(g, new THREE.SphereGeometry(0.05, 10, 8), chrome, 0.36, 1.35, 0.82);
+  add(g, new THREE.SphereGeometry(0.05, 10, 8), chrome, -0.36, 1.35, 0.82);
+  // crown
+  add(g, new THREE.ConeGeometry(0.09, 0.16, 5), gold, 0, 1.52, 0.82);
+  add(g, new THREE.BoxGeometry(0.16, 0.06, 0.06), gold, 0, 1.42, 0.82);
+  // seat
+  add(g, new THREE.BoxGeometry(0.16, 0.06, 0.32), dark, 0, 1.22, -0.45);
+  // twin nitro tubes at rear
+  for (const s of [-1,1]) {
+    const ex = exhaustGlow(0.07, 0.38);
+    ex.rotation.x = Math.PI/2;
+    ex.position.set(s*0.14, 0.7, -1.15);
+    g.add(ex);
+    add(g, new THREE.CylinderGeometry(0.07, 0.07, 0.45, 10), chrome, s*0.14, 0.7, -0.9, Math.PI/2,0,0);
+  }
+
+  // cranks and pedals
+  add(g, new THREE.CylinderGeometry(0.025, 0.025, 0.22, 8), chrome, 0, 0.52, 0, 0, 0, Math.PI/2);
+  add(g, new THREE.BoxGeometry(0.04, 0.24, 0.04), chrome, 0.11, 0.42, 0.09, 0.75, 0, 0);
+  add(g, new THREE.BoxGeometry(0.10, 0.025, 0.06), dark, 0.14, 0.32, 0.18);
+  add(g, new THREE.BoxGeometry(0.04, 0.24, 0.04), chrome, -0.11, 0.62, -0.09, 0.75, 0, 0);
+  add(g, new THREE.BoxGeometry(0.10, 0.025, 0.06), dark, -0.14, 0.72, -0.18);
+  // suited rider in cycling pose
+  const suit = M('#1a1b20',{roughness:0.42,metalness:0.12});
+  const pant = M('#141518',{roughness:0.5});
+  const shirt = M('#f5f5f4',{roughness:0.6});
+  const skinC = M('#e8c4a8',{roughness:0.65,metalness:0.04});
+  const hair = M('#1c1917',{roughness:0.72});
+  const shoe = M('#0c0c0d',{roughness:0.35,metalness:0.2});
+  const tie = M('#7f1d1d',{roughness:0.45});
+  const hipR = [0.08, 1.30, -0.28], hipL = [-0.08, 1.30, -0.28];
+  const kneeR = [0.11, 0.86, 0.02], kneeL = [-0.11, 0.96, -0.10];
+  const footR = [0.14, 0.34, 0.18], footL = [-0.14, 0.74, -0.16];
+  const shR = [0.11, 1.58, 0.16], shL = [-0.11, 1.58, 0.16];
+  const elR = [0.22, 1.44, 0.46], elL = [-0.22, 1.44, 0.46];
+  const handR = [0.30, 1.35, 0.80], handL = [-0.30, 1.35, 0.80];
+  add(g, new THREE.BoxGeometry(0.18, 0.11, 0.16), pant, 0, 1.30, -0.28);
+  bone(g, pant, hipR, kneeR, 0.045);
+  bone(g, pant, kneeR, footR, 0.04);
+  add(g, new THREE.BoxGeometry(0.08, 0.05, 0.12), shoe, footR[0], footR[1], footR[2]);
+  bone(g, pant, hipL, kneeL, 0.045);
+  bone(g, pant, kneeL, footL, 0.04);
+  add(g, new THREE.BoxGeometry(0.08, 0.05, 0.12), shoe, footL[0], footL[1], footL[2]);
+  add(g, new THREE.BoxGeometry(0.22, 0.34, 0.14), suit, 0, 1.44, -0.06, 0.85, 0, 0);
+  add(g, new THREE.BoxGeometry(0.08, 0.16, 0.04), shirt, 0, 1.46, 0.04, 0.85, 0, 0);
+  add(g, new THREE.BoxGeometry(0.035, 0.14, 0.025), tie, 0, 1.44, 0.06, 0.85, 0, 0);
+  add(g, new THREE.BoxGeometry(0.05, 0.14, 0.03), suit, 0.06, 1.48, 0.05, 0.85, 0, 0.2);
+  add(g, new THREE.BoxGeometry(0.05, 0.14, 0.03), suit, -0.06, 1.48, 0.05, 0.85, 0, -0.2);
+  bone(g, suit, shR, elR, 0.04);
+  bone(g, suit, elR, handR, 0.035);
+  add(g, new THREE.SphereGeometry(0.04, 8, 8), skinC, handR[0], handR[1], handR[2]);
+  bone(g, suit, shL, elL, 0.04);
+  bone(g, suit, elL, handL, 0.035);
+  add(g, new THREE.SphereGeometry(0.04, 8, 8), skinC, handL[0], handL[1], handL[2]);
+  add(g, new THREE.SphereGeometry(0.105, 14, 12), skinC, 0, 1.74, 0.22);
+  add(g, new THREE.SphereGeometry(0.11, 12, 10, 0, Math.PI*2, 0, Math.PI*0.55), hair, 0, 1.76, 0.18, 0.2, 0, 0);
+  add(g, new THREE.BoxGeometry(0.13, 0.02, 0.03), M('#1c1917'), 0, 1.75, 0.31);
+  add(g, new THREE.BoxGeometry(0.03, 0.015, 0.02), M('#444'), 0, 1.75, 0.31);
+  // ding ding bell
+  const bell = new THREE.Group();
+  add(bell, new THREE.SphereGeometry(0.07, 12, 10), chrome, 0,0,0);
+  add(bell, new THREE.CylinderGeometry(0.08, 0.08, 0.03, 16), gold, 0, 0.05, 0);
+  add(bell, new THREE.BoxGeometry(0.02, 0.06, 0.02), dark, 0.06, 0.02, 0);
+  bell.position.set(0.10, 1.28, 0.68);
+  g.add(bell);
+  const n = numPlane('CHAN', '#78350f', '#f5c518'); n.position.set(0.22, 0.82, 0.0); n.rotation.y = Math.PI/2; n.scale.set(1.1,0.9,1); g.add(n);
+  return g;
+}
+
+/* ===== 專屬低多邊形戰車（已批核預覽車型） =====
+   每個車手 kind 對應預覽裡的 builder。車身放在子群組，根群組維持縮放 1，
+   閃電縮小／星星放大（updKartFX）同埋加速火焰先至繼續有效。 */
+
+const EXCLUSIVE_BUILDERS={
+  headband:buildBolt,
+  bow:buildRocket,
+  cap:buildCyclone,
+  glasses:buildMeteor,
+  headphone:buildRainbow,
+  helmetB:buildThunder,
+  helmetP:buildAurora,
+  boy:buildGale,
+  tam:buildTam,
+  chan:buildChan
+};
+/* 目標長度貼近原版卡丁車；過闊或過高就收到上限，保持賽道上的體積。 */
+const KART_FIT={
+  headband:{len:5.05,maxW:3.2,maxH:2.4},
+  bow:{len:5.05,maxW:3.2,maxH:2.6},
+  cap:{len:3.9,maxW:4.05,maxH:2.45},
+  glasses:{len:5.0,maxW:3.2,maxH:2.5},
+  headphone:{len:4.4,maxW:3.3,maxH:2.7},
+  helmetB:{len:4.7,maxW:3.6,maxH:2.95},
+  helmetP:{len:4.75,maxW:3.5,maxH:2.35},
+  boy:{len:5.15,maxW:2.8,maxH:2.5},
+  tam:{len:4.2,maxW:3.6,maxH:2.8},
+  chan:{len:4.75,maxW:2.3,maxH:2.85}
+};
+
+function fitExclusiveBody(model,kind){
+  const spec=KART_FIT[kind]||{len:4.8,maxW:3.4,maxH:2.7};
+  const measure=()=>{
+    const b=new THREE.Box3().setFromObject(model);
+    return {b,sx:b.max.x-b.min.x,sy:b.max.y-b.min.y,sz:b.max.z-b.min.z};
+  };
+  let s=spec.len/Math.max(0.001,measure().sz);
+  model.scale.multiplyScalar(s);
+  let dim=measure();
+  const caps=[];
+  if(spec.maxW&&dim.sx>spec.maxW)caps.push(spec.maxW/dim.sx);
+  if(spec.maxH&&dim.sy>spec.maxH)caps.push(spec.maxH/dim.sy);
+  if(caps.length){
+    const k=Math.min.apply(null,caps);
+    model.scale.multiplyScalar(k);
+    s*=k;
+    dim=measure();
+  }
+  const hover=model.userData.hover?Math.max(0.24,0.18*s):0.02;
+  const cx=(dim.b.min.x+dim.b.max.x)/2, cz=(dim.b.min.z+dim.b.max.z)/2;
+  model.position.set(-cx,-dim.b.min.y+hover,-cz);
+  model.userData.baseY=model.position.y;
+  model.userData.bob=(model.userData.hover||0)*s;
+  const box=new THREE.Box3().setFromObject(model);
+  return {box,scale:s};
 }
 
 function makeKart(d,labelTxt=''){
-  const g=new THREE.Group(), bodyGrp=new THREE.Group();g.add(bodyGrp);
-  const M=c=>new THREE.MeshPhysicalMaterial({color:c,roughness:.22,metalness:.35,clearcoat:1,clearcoatRoughness:.06});
-  const E=(c,i=.85)=>new THREE.MeshStandardMaterial({color:c,emissive:c,emissiveIntensity:i,roughness:.2});
-  const add=(geo,mat,x,y,z,rx=0,ry=0,rz=0)=>{const o=new THREE.Mesh(geo,mat);o.position.set(x,y,z);o.rotation.set(rx,ry,rz);o.castShadow=true;bodyGrp.add(o);return o};
-  const cMain=M(d.color),cWhite=M(d.crown?0xfde047:0xf8fafc),cDark=M(0x0f172a),cSilv=new THREE.MeshStandardMaterial({color:0xe2e8f0,metalness:.85,roughness:.2}),cGold=new THREE.MeshStandardMaterial({color:0xfbbf24,metalness:.9,roughness:.15});
-  const mHood=new THREE.MeshPhysicalMaterial({map:hoodTex(d),roughness:.2,metalness:.2,clearcoat:1});
-  const mWing=new THREE.MeshStandardMaterial({map:wingTex(d),roughness:.25,metalness:.3});
-  const wm=new THREE.MeshStandardMaterial({color:0x18181b,roughness:.75});
-  const addWheels=(r=.58,w=.62,pos=[[1.32,1.25],[-1.32,1.25],[1.38,-1.22],[-1.38,-1.22]],rimMat=cGold)=>{
-    const wg=new THREE.CylinderGeometry(r,r,w,18);wg.rotateZ(Math.PI/2);
-    const rg=new THREE.CylinderGeometry(r*.58,r*.58,w+.02,14);rg.rotateZ(Math.PI/2);
-    pos.forEach(([x,z])=>{add(wg,wm,x,r,z);add(rg,rimMat,x,r,z)});
-  };
-  let exhaustPos=[[-.45,.65,-1.85],[.45,.65,-1.85]], drvPos=[0,.92,-.2];
+  const g=new THREE.Group();
+  const build=EXCLUSIVE_BUILDERS[d.kind]||buildBolt;
+  const body=build();
+  const fit=fitExclusiveBody(body,d.kind);
+  g.add(body);
+  g.userData.body=body;
+  g.userData.kind=d.kind;
 
-  if(d.num==='03'){
-    // 🚀 03 火箭號：航天火箭戰車（雙側助推火箭筒＋三噴射口）
-    add(new THREE.CylinderGeometry(.55,.78,3.6,16),cMain,0,.72,.2,Math.PI/2,0,0);
-    add(new THREE.ConeGeometry(.55,1.45,16),E(0xef4444,.35),0,.72,2.72,Math.PI/2,0,0);
-    add(new THREE.BoxGeometry(.92,.12,1.65),mHood,0,1.26,.55);
-    [-1.28,1.28].forEach(x=>{
-      add(new THREE.CylinderGeometry(.36,.4,2.85,14),cWhite,x,.68,-.15,Math.PI/2,0,0);
-      add(new THREE.ConeGeometry(.36,.85,14),M(0xef4444),x,.68,1.68,Math.PI/2,0,0);
-      add(new THREE.BoxGeometry(.4,.14,.4),cSilv,x>0?x-.45:x+.45,.68,-.2);
-      add(new THREE.BoxGeometry(.08,.75,.95),M(0xef4444),x>0?x+.35:x-.35,.9,-.95,0,0,x>0?-.35:.35);
-    });
-    add(new THREE.BoxGeometry(2.5,.14,.75),mWing,0,1.68,-1.65,-.1,0,0);
-    [-.75,.75].forEach(x=>add(new THREE.BoxGeometry(.1,.8,.3),cDark,x,1.25,-1.6));
-    addWheels(.52,.52,[[1.1,1.3],[-1.1,1.3],[1.48,-1.15],[-1.48,-1.15]],cSilv);
-    exhaustPos=[[-1.28,.68,-1.65],[0,.72,-1.72],[1.28,.68,-1.65]];
-    drvPos=[0,1.02,-.25];
-  }else if(d.num==='04'){
-    // 🌀 04 旋風號：雙體氣墊飛翼車（懸浮渦輪風扇＋前掠翼）
-    add(new THREE.BoxGeometry(1.35,.42,2.8),cMain,0,.68,0);
-    add(new THREE.BoxGeometry(.95,.45,1.8),mHood,0,.7,.45);
-    [-1.22,1.22].forEach(x=>{
-      add(new THREE.BoxGeometry(.55,.38,3.6),cWhite,x,.58,.25);
-      add(new THREE.ConeGeometry(.32,.9,12),cMain,x,.58,2.45,Math.PI/2,0,0);
-      add(new THREE.BoxGeometry(.95,.1,.75),cMain,x*1.35,.68,.4,0,x>0?-.38:.38,0);
-    });
-    [[1.25,1.15],[-1.25,1.15],[1.25,-1.15],[-1.25,-1.15]].forEach(([x,z])=>{
-      add(new THREE.TorusGeometry(.52,.13,10,20),cDark,x,.32,z,Math.PI/2,0,0);
-      add(new THREE.CylinderGeometry(.42,.42,.08,14),E(0x34d399,.9),x,.3,z);
-    });
-    add(new THREE.BoxGeometry(2.6,.14,.72),mWing,0,1.58,-1.65,-.12,0,0);
-    [-.95,.95].forEach(x=>add(new THREE.BoxGeometry(.12,.85,.35),cMain,x,1.12,-1.6));
-    exhaustPos=[[-.55,.65,-1.75],[.55,.65,-1.75]];
-  }else if(d.num==='05'){
-    // ☄️ 05 流星號：未來流線超跑（發光霓虹大尾翼）
-    add(new THREE.BoxGeometry(2.15,.38,3.5),cMain,0,.48,.1);
-    add(new THREE.BoxGeometry(1.35,.32,1.5),mHood,0,.58,1.25,.16,0,0);
-    add(new THREE.BoxGeometry(2.2,.18,.9),cMain,0,.38,2.2,.25,0,0);
-    add(new THREE.BoxGeometry(2.22,.07,.12),E(0x38bdf8,1.3),0,.42,2.66);
-    [-1.12,1.12].forEach(x=>{
-      add(new THREE.BoxGeometry(.32,.42,3.2),cDark,x,.48,0);
-      add(new THREE.BoxGeometry(.06,.12,3.0),E(0xfef08a,1.2),x>0?x+.16:x-.16,.48,0);
-    });
-    add(new THREE.BoxGeometry(2.85,.14,.82),mWing,0,1.68,-1.75,-.16,0,0);
-    add(new THREE.BoxGeometry(2.9,.06,.86),E(0x38bdf8,1.2),0,1.62,-1.75,-.16,0,0);
-    [-.95,.95].forEach(x=>add(new THREE.BoxGeometry(.12,1.05,.45),E(0xfacc15,.8),x,1.1,-1.68,-.15,0,0));
-    addWheels(.58,.62,[[1.28,1.3],[-1.28,1.3],[1.32,-1.22],[-1.32,-1.22]],E(0xfacc15,.6));
-  }else if(d.num==='06'){
-    // 🌈 06 彩虹號：雲朵糖果開篷車（圓潤可愛車身＋彩虹拱門尾翼）
-    add(new THREE.SphereGeometry(1.18,18,14),cMain,0,.68,0).scale.set(1,.52,1.65);
-    add(new THREE.BoxGeometry(.95,.35,1.5),mHood,0,.78,.85,.12,0,0);
-    const cloudM=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.35});
-    [[-1.1,.52,.8],[1.1,.52,.8],[-1.15,.52,-.2],[1.15,.52,-.2],[-1.05,.52,-1.1],[1.05,.52,-1.1],[0,.5,1.85]].forEach(([x,y,z])=>{
-      add(new THREE.SphereGeometry(.46,12,10),cloudM,x,y,z);
-    });
-    [0xef4444,0xf97316,0xfacc15,0x22c55e,0x38bdf8,0xa855f7].forEach((rc,i)=>{
-      add(new THREE.TorusGeometry(1.38-i*.09,.055,8,24,Math.PI),E(rc,.55),0,.85,-1.55);
-    });
-    add(new THREE.BoxGeometry(2.2,.12,.62),mWing,0,1.52,-1.8,-.08,0,0);
-    addWheels(.56,.62,[[1.28,1.15],[-1.28,1.15],[1.28,-1.15],[-1.28,-1.15]],M(0xf472b6));
-  }else if(d.num==='07'){
-    // 🚜 07 雷霆號：重裝越野大腳怪（特大越野巨輪＋金屬防撞欄）
-    add(new THREE.BoxGeometry(1.95,.68,3.2),cMain,0,1.18,0);
-    add(new THREE.BoxGeometry(1.25,.52,1.55),mHood,0,1.32,.85,.08,0,0);
-    add(new THREE.BoxGeometry(1.7,.18,2.2),cDark,0,.68,0);
-    add(new THREE.CylinderGeometry(.1,.1,2.3,10),cSilv,0,1.02,1.82,0,0,Math.PI/2);
-    add(new THREE.CylinderGeometry(.08,.08,2.1,10),cSilv,0,1.28,1.9,0,0,Math.PI/2);
-    [-.75,.75].forEach(x=>add(new THREE.CylinderGeometry(.09,.09,.55,8),cSilv,x,1.12,1.85));
-    [-.8,.8].forEach(x=>{
-      add(new THREE.CylinderGeometry(.07,.07,.95,8),cSilv,x,1.72,-.85,-.25,0,0);
-      add(new THREE.CylinderGeometry(.1,.12,1.35,10),cSilv,x*1.28,1.45,-1.25);
-    });
-    [-.45,0,.45].forEach(x=>add(new THREE.SphereGeometry(.16,10,8),E(0xfef08a,1.2),x,1.98,-.55));
-    add(new THREE.BoxGeometry(2.45,.14,.72),mWing,0,1.95,-1.68,-.1,0,0);
-    addWheels(.92,.88,[[1.58,1.25],[-1.58,1.25],[1.58,-1.25],[-1.58,-1.25]],cGold);
-    exhaustPos=[[-.55,1.05,-1.85],[.55,1.05,-1.85]];
-    drvPos=[0,1.45,-.15];
-  }else if(d.num==='08'){
-    // ⚡ 08 極光號：科幻電磁懸浮概念車（三角形未來戰機造型＋雙垂直尾翼）
-    add(new THREE.ConeGeometry(1.45,4.2,4),cMain,0,.66,.35,Math.PI/2,Math.PI/4,0).scale.set(1,.36,1);
-    add(new THREE.BoxGeometry(.95,.32,1.75),mHood,0,.78,.55,.12,0,0);
-    [-1.25,1.25].forEach(x=>{
-      add(new THREE.BoxGeometry(.95,.12,2.1),cWhite,x,.58,-.35,0,x>0?-.32:.32,0);
-      add(new THREE.BoxGeometry(.1,1.05,1.1),E(0x06b6d4,.75),x*1.12,1.05,-1.35,-.22,0,x>0?-.22:.22);
-      add(new THREE.BoxGeometry(.22,.16,2.6),E(0x22d3ee,1.2),x*.95,.32,.1);
-    });
-    add(new THREE.BoxGeometry(2.55,.12,.68),mWing,0,1.56,-1.68,-.1,0,0);
-    exhaustPos=[[-.48,.62,-1.82],[.48,.62,-1.82]];
-  }else if(d.num==='09'){
-    // 🏎️ 09 疾風號：輕量化極速子彈車（破風尖頭＋碳纖維高尾翼）
-    add(new THREE.CylinderGeometry(.42,.72,3.4,16),cMain,0,.58,-.1,Math.PI/2,0,0);
-    add(new THREE.ConeGeometry(.42,1.85,16),cWhite,0,.58,2.52,Math.PI/2,0,0);
-    add(new THREE.BoxGeometry(.78,.14,1.65),mHood,0,.98,.5);
-    add(new THREE.BoxGeometry(.1,1.1,1.4),cDark,0,1.15,-1.25);
-    [-1.25,1.25].forEach(x=>{
-      add(new THREE.CylinderGeometry(.08,.08,1.1,8),cDark,x*.5,.48,1.45,0,0,Math.PI/2);
-      add(new THREE.CylinderGeometry(.08,.08,1.1,8),cDark,x*.5,.48,-1.25,0,0,Math.PI/2);
-    });
-    add(new THREE.BoxGeometry(2.65,.14,.75),mWing,0,1.88,-1.72,-.15,0,0);
-    [-.65,.65].forEach(x=>add(new THREE.BoxGeometry(.08,1.25,.28),cDark,x,1.25,-1.68));
-    addWheels(.52,.38,[[1.28,1.45],[-1.28,1.45],[1.32,-1.25],[-1.32,-1.25]],E(0x84cc16,.6));
-  }else if(d.num==='TAM'){
-    // 🕶️ TAM 譚主任：暗夜特工超跑（消光黑銀裝甲＋雙刀鋒尾翼）
-    const mStealth=new THREE.MeshStandardMaterial({color:0x111827,roughness:.42,metalness:.68});
-    const mArmor=new THREE.MeshStandardMaterial({color:0x334155,roughness:.3,metalness:.82});
-    add(new THREE.BoxGeometry(2.05,.46,3.45),mStealth,0,.54,.1);
-    add(new THREE.BoxGeometry(1.15,.36,1.8),mHood,0,.66,.8,.14,0,0);
-    add(new THREE.BoxGeometry(2.25,.24,.75),mArmor,0,.44,2.15,.25,0,0);
-    [-.65,.65].forEach(x=>add(new THREE.BoxGeometry(.48,.09,.12),E(0x14b8a6,1.4),x,.52,2.52));
-    [-1.12,1.12].forEach(x=>{
-      add(new THREE.BoxGeometry(.38,.48,2.5),mArmor,x,.56,-.15);
-      add(new THREE.BoxGeometry(.1,1.08,1.25),mArmor,x,1.15,-1.55,-.28,0,x>0?-.18:.18);
-      add(new THREE.BoxGeometry(.04,1.05,1.2),E(0x14b8a6,.9),x>0?x+.06:x-.06,1.15,-1.55,-.28,0,x>0?-.18:.18);
-    });
-    add(new THREE.BoxGeometry(2.65,.14,.78),mWing,0,1.68,-1.78,-.14,0,0);
-    addWheels(.62,.66,[[1.36,1.28],[-1.36,1.28],[1.42,-1.25],[-1.42,-1.25]],cSilv);
-    exhaustPos=[[-.65,.58,-1.88],[-.25,.58,-1.88],[.25,.58,-1.88],[.65,.58,-1.88]];
-  }else if(d.num==='CHAN'){
-    // 👑 CHAN 陳校長：皇家黃金極速單車（金色三角車架＋雙大輪＋車尾雙管氮氣噴射＋單車鈴）
-    [1.42,-1.38].forEach(z=>{
-      const tire=new THREE.Mesh(new THREE.TorusGeometry(.88,.14,14,28),wm);
-      tire.rotation.y=Math.PI/2;tire.position.set(0,.96,z);tire.castShadow=true;bodyGrp.add(tire);
-      const rim=new THREE.Mesh(new THREE.TorusGeometry(.74,.06,10,24),cGold);
-      rim.rotation.y=Math.PI/2;rim.position.set(0,.96,z);bodyGrp.add(rim);
-      const hub=new THREE.Mesh(new THREE.CylinderGeometry(.16,.16,.28,12),cGold);
-      hub.rotation.z=Math.PI/2;hub.position.set(0,.96,z);bodyGrp.add(hub);
-      for(let k=0;k<6;k++){
-        const spk=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,1.48,6),cGold);
-        spk.rotation.x=k*Math.PI/6;spk.position.set(0,.96,z);bodyGrp.add(spk);
-      }
-    });
-    // 黃金三角單車架＋前叉＋把手＋車頭「叮叮」金鈴
-    add(new THREE.CylinderGeometry(.08,.08,1.95,10),cGold,0,1.35,.22,Math.PI/2-.12,0,0);
-    add(new THREE.CylinderGeometry(.08,.08,1.85,10),cGold,0,.95,.28,Math.PI/2+.36,0,0);
-    add(new THREE.CylinderGeometry(.09,.09,1.25,10),cGold,0,1.12,-.52,-.2,0,0);
-    [-.16,.16].forEach(x=>{
-      add(new THREE.CylinderGeometry(.06,.06,1.15,10),cGold,x,1.38,1.22,.28,0,0);
-      add(new THREE.CylinderGeometry(.055,.055,1.1,8),cGold,x,.96,-.95,Math.PI/2-.05,0,0);
-      add(new THREE.CylinderGeometry(.055,.055,1.15,8),cGold,x,1.28,-.92,Math.PI/2+.42,0,0);
-    });
-    add(new THREE.CylinderGeometry(.07,.07,1.45,12),cGold,0,1.92,.98,0,0,Math.PI/2);
-    [-.72,.72].forEach(x=>add(new THREE.CylinderGeometry(.09,.09,.28,10),cDark,x,1.92,.98,0,0,Math.PI/2));
-    add(new THREE.SphereGeometry(.16,14,12),E(0xfacc15,.6),.42,2.04,.98);
-    add(new THREE.BoxGeometry(.82,.82,.1),mHood,0,1.62,1.18,-.22,0,0);
-    add(new THREE.BoxGeometry(.52,.16,.68),cDark,0,1.52,-.58);
-    // 車尾雙管黃金氮氣加速樽＋皇家尾翼
-    [-.38,.38].forEach(x=>{
-      add(new THREE.CylinderGeometry(.18,.18,1.15,14),E(0x38bdf8,.45),x,1.45,-1.28,Math.PI/2+.22,0,0);
-      add(new THREE.CylinderGeometry(.19,.19,.25,14),cGold,x,1.52,-1.0,Math.PI/2+.22,0,0);
-    });
-    add(new THREE.BoxGeometry(1.95,.12,.58),mWing,0,2.05,-1.58,-.12,0,0);
-    exhaustPos=[[-.38,1.32,-1.85],[.38,1.32,-1.85]];
-    drvPos=[0,1.25,-.42];
-  }else{
-    // 🏎️ 02 閃電號：經典 F1 方程式
-    add(new THREE.BoxGeometry(1.75,.48,3.2),cMain,0,.55,0);
-    add(new THREE.BoxGeometry(.95,.51,2.2),mHood,0,.57,.35);
-    add(new THREE.BoxGeometry(1.35,.32,1.25),mHood,0,.45,2.0,.18,0,0);
-    add(new THREE.BoxGeometry(2.65,.14,.55),cDark,0,.32,2.72);
-    add(new THREE.BoxGeometry(2.68,.06,.22),cWhite,0,.38,2.82);
-    [-1.08,1.08].forEach(x=>add(new THREE.BoxGeometry(.48,.42,1.85),d.crown?cGold:cMain,x,.54,-.1));
-    add(new THREE.BoxGeometry(2.55,.14,.78),mWing,0,1.62,-1.75,-.12,0,0);
-    add(new THREE.BoxGeometry(2.55,.1,.5),cWhite,0,1.35,-1.7,-.08,0,0);
-    [-.85,.85].forEach(x=>add(new THREE.BoxGeometry(.12,.85,.35),cDark,x,1.15,-1.68));
-    addWheels(.58,.62,[[1.32,1.25],[-1.32,1.25],[1.38,-1.22],[-1.38,-1.22]],cGold);
-  }
-
-  const flMat=new THREE.MeshBasicMaterial({color:0x38bdf8,transparent:true,opacity:.9}), flInMat=new THREE.MeshBasicMaterial({color:0xfef08a}), flames=[];
-  exhaustPos.forEach(([x,y,z])=>{
-    const p=new THREE.Mesh(new THREE.CylinderGeometry(.16,.18,.5,10),cGold);p.rotation.x=Math.PI/2;p.position.set(x,y,z);g.add(p);
-    const fl=new THREE.Group();fl.position.set(x,y,z-.25);
-    const c1=new THREE.Mesh(new THREE.ConeGeometry(.24,1.6,10),flMat);c1.rotation.x=-Math.PI/2;c1.position.z=-.7;
-    const c2=new THREE.Mesh(new THREE.ConeGeometry(.13,1.0,8),flInMat);c2.rotation.x=-Math.PI/2;c2.position.z=-.45;
-    fl.add(c1,c2);fl.visible=false;g.add(fl);flames.push(fl);
+  const box=fit.box, sc=body.scale.x||1, u=1/sc;
+  const width=box.max.x-box.min.x, height=box.max.y-box.min.y;
+  const toLocal=(x,y,z)=>[(x-body.position.x)*u,(y-body.position.y)*u,(z-body.position.z)*u];
+  const flMat=new THREE.MeshBasicMaterial({color:0x38bdf8,transparent:true,opacity:.9});
+  const flInMat=new THREE.MeshBasicMaterial({color:0xfef08a});
+  const flames=[];
+  const yJet=box.min.y+height*0.36;
+  const zRear=box.min.z;
+  const xJet=Math.min(0.62,width*0.2);
+  [[-xJet,yJet,zRear],[xJet,yJet,zRear]].forEach(([x,y,z])=>{
+    const lp=toLocal(x,y,z-0.12);
+    const fl=new THREE.Group();fl.position.set(lp[0],lp[1],lp[2]);
+    const c1=new THREE.Mesh(new THREE.ConeGeometry(.22*u,1.45*u,10),flMat);c1.rotation.x=-Math.PI/2;c1.position.z=-.62*u;
+    const c2=new THREE.Mesh(new THREE.ConeGeometry(.12*u,.95*u,8),flInMat);c2.rotation.x=-Math.PI/2;c2.position.z=-.4*u;
+    fl.add(c1,c2);fl.visible=false;body.add(fl);flames.push(fl);
   });
   g.userData.flames=flames;
-  const drv=new THREE.Group();drv.position.set(...drvPos);g.add(drv);
-  const dm=(geo,mat,x,y,z,rx=0,ry=0,rz=0)=>{const o=new THREE.Mesh(geo,mat);o.position.set(x,y,z);o.rotation.set(rx,ry,rz);o.castShadow=true;drv.add(o);return o};
-  const suitCol=d.kind==='chan'?0x1e293b:d.kind==='tam'?0x1f2937:0xffffff;
-  dm(new THREE.CylinderGeometry(.44,.54,.85,12),M(suitCol),0,.42,0);
-  dm(new THREE.SphereGeometry(.54,18,14),M(0xffd7b5),0,1.2,0);
-  const hairMat=M(0x3b2314);
-  if(d.kind==='helmetB'||d.kind==='helmetP'){
-    dm(new THREE.SphereGeometry(.62,18,14),M(d.kind==='helmetB'?0x2563eb:0xf3e8ff),0,1.24,0);
-    dm(new THREE.BoxGeometry(.78,.28,.35),M(0x0ea5e9),0,1.24,.42);
-  }else{
-    dm(new THREE.SphereGeometry(.58,18,14,0,Math.PI*2,0,Math.PI*.58),hairMat,0,1.25,0);
-    if(d.kind==='headband')dm(new THREE.CylinderGeometry(.59,.59,.14,16,1,true),M(0x1e40af),0,1.34,0);
-    else if(d.kind==='bow'){dm(new THREE.SphereGeometry(.24,10,10),hairMat,0,1.18,-.62);dm(new THREE.BoxGeometry(.42,.18,.12),M(0x7c3aed),.28,1.58,-.35,0,0,-.3)}
-    else if(d.kind==='cap'){dm(new THREE.SphereGeometry(.6,16,12,0,Math.PI*2,0,Math.PI*.5),M(0x1e40af),0,1.3,0);dm(new THREE.BoxGeometry(.75,.08,.45),M(0x1e3a8a),0,1.38,.52,.15,0,0)}
-    else if(d.kind==='headphone')[-.58,.58].forEach(x=>dm(new THREE.CylinderGeometry(.18,.18,.15,12),M(0x1e3a8a),x,1.22,0,0,0,Math.PI/2));
-    else if(d.kind==='tam')dm(new THREE.BoxGeometry(.82,.2,.2),M(0x111827),0,1.24,.48);
-    else if(d.kind==='chan'){dm(new THREE.CylinderGeometry(.46,.38,.34,10),cGold,0,1.88,0);for(let k=0;k<5;k++){const a=k/5*Math.PI*2;dm(new THREE.ConeGeometry(.1,.28,5),cGold,Math.cos(a)*.42,2.14,Math.sin(a)*.42)}}
+
+  const noseY=box.min.y+height*0.4, noseZ=box.max.z-0.02, noseX=Math.min(0.58,width*0.2);
+  const nose=toLocal(noseX,noseY,noseZ);
+  g.userData.nose={x:nose[0],y:nose[1],z:nose[2],u};
+
+  if(labelTxt){
+    const sp=makeNameSprite(labelTxt,'#'+d.color.toString(16).padStart(6,'0'));
+    sp.position.y=box.max.y+0.72;
+    g.add(sp);
   }
-  if(labelTxt)g.add(makeNameSprite(labelTxt,'#'+d.color.toString(16).padStart(6,'0')));
-  g.userData.col='#'+d.color.toString(16).padStart(6,'0');scene.add(g);return g;
+  g.userData.col='#'+d.color.toString(16).padStart(6,'0');
+  scene.add(g);
+  return g;
+}
+
+function animExclusiveKarts(dt){
+  if(!cars.length)return;
+  const t=performance.now()*0.001;
+  const speedOf=new Map();
+  if(race){
+    if(race.p&&race.p.mesh)speedOf.set(race.p.mesh,race.p.v||0);
+    (race.ai||[]).forEach(a=>{if(a.mesh)speedOf.set(a.mesh,a.v||0)});
+  }
+  cars.forEach(mesh=>{
+    const body=mesh.userData&&mesh.userData.body;
+    if(!body)return;
+    if(body.userData.hover)body.position.y=body.userData.baseY+Math.sin(t*2.2)*(body.userData.bob||0);
+    const spd=speedOf.get(mesh)||0;
+    const sc=body.scale.x||1;
+    body.traverse(o=>{
+      if(o.userData.spin)o.rotation.z+=o.userData.spin*dt*60;
+      if(o.userData.pulse&&o.material&&o.material.emissive){
+        o.material.emissiveIntensity=1.1+Math.sin(t*10)*0.5;
+        o.scale.y=0.85+Math.sin(t*12)*0.2;
+      }
+      if(o.userData.wheelR)o.rotation.x+=spd/Math.max(0.05,o.userData.wheelR*sc)*dt;
+    });
+  });
 }
 
 const LCOL=['#2563eb','#db2777','#16a34a'];
@@ -1924,8 +2399,9 @@ async function startRace(roomDoc=null){
  const rc=user.type==='guest'?[]:((await store.get('records'))||[]).filter(r=>r.uid===uid()).slice(-3),ra=rc.length?rc.reduce((s,r)=>s+r.acc,0)/rc.length:100,adapt=ra<50?.85:ra<70?.93:1;
  const drv=DRIVERS[driverIdx]||DRIVERS[0], dst=drv.stats||[3,3,3,3,3];
  const pm=makeKart(drv,mpState.active?shortName():'');cars.push(pm);
- if(curTod==='night'){const hl=new THREE.SpotLight(0xfff2cc,180,80,.55,.5,1.2);hl.position.set(0,1.3,2.6);hl.target.position.set(0,0,24);pm.add(hl,hl.target);
-  [-.6,.6].forEach(x=>{const lb=new THREE.Mesh(new THREE.BoxGeometry(.4,.2,.1),new THREE.MeshBasicMaterial({color:0xfff6dd}));lb.position.set(x,.7,2.66);pm.add(lb)})}
+ if(curTod==='night'){const nose=pm.userData.nose||{x:.35,y:.45,z:1.5,u:1}, host=pm.userData.body||pm;
+  const hl=new THREE.SpotLight(0xfff2cc,180,80,.55,.5,1.2);hl.position.set(0,nose.y,nose.z);hl.target.position.set(0,nose.y*.35,nose.z+16);host.add(hl,hl.target);
+  [-1,1].forEach(s=>{const lb=new THREE.Mesh(new THREE.BoxGeometry(.36*(nose.u||1),.16*(nose.u||1),.1*(nose.u||1)),new THREE.MeshBasicMaterial({color:0xfff6dd}));lb.position.set(s*nose.x,nose.y,nose.z);host.add(lb)})}
  const grid=[[-6,LANES[0]],[-6,LANES[2]],[-15,0]];
  let ai=[];
  if(mpState.active&&roomDoc){
@@ -2164,6 +2640,7 @@ const clock=new THREE.Clock();let idle=0;
 function loop(){requestAnimationFrame(loop);const dt=Math.min(.05,clock.getDelta());
  if(race&&race.state!=='done'&&race.state!=='quit'){if(!paused)update(dt)}
  else{idle+=dt*.05;const f=frame(idle*L*.3);cam.position.copy(f.p).add(new THREE.Vector3(0,30,0)).addScaledVector(f.r,60);cam.lookAt(f.p);sun.position.set(f.p.x+40,80,f.p.z+30);sun.target.position.copy(f.p)}
+ animExclusiveKarts(dt);
  skies.forEach(s=>s.position.copy(cam.position));stars.position.copy(cam.position);renderer.render(scene,cam)}
 setQ(false);loop();initLogin();
 </script></body></html>
