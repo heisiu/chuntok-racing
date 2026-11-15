@@ -1401,10 +1401,10 @@ if('speechSynthesis' in window)window.speechSynthesis.onvoiceschanged=()=>{windo
 async function readCurrentQuestion(){
   if(!race||race.gi>=TOTALQ)return;
   const q=gates[race.gi%GPL].q;if(!q)return;
-  const txt=`${CN[q.a]}乘${CN[q.b]}等於幾多？`;
+  const txt=`${CN[q.a]}乘${CN[q.b]}`;
   if(speakCantonese(txt))return;
   if(window.sayoSpeak){
-    try{const r=await window.sayoSpeak(`${CN[q.a]}乘${CN[q.b]}`);if(r&&r.url){sAudio.src=r.url;sAudio.play().catch(()=>{})}}catch(e){}
+    try{const r=await window.sayoSpeak(txt);if(r&&r.url){sAudio.src=r.url;sAudio.play().catch(()=>{})}}catch(e){}
   }
 }
 
