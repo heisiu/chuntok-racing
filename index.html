@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="zh-HK"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>真鐸學校・極速乘法方程式</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/mqtt@5.3.5/dist/mqtt.min.js"></script>
@@ -40,49 +43,60 @@ html,body{margin:0;width:100%;height:100%;height:100dvh;overflow:hidden;backgrou
 #mini{position:fixed;right:16px;bottom:calc(min(22vh,130px) + 22px);width:min(26vh,140px);height:min(26vh,140px);border-radius:16px;background:#0f172a88;border:3px solid #fff8;box-shadow:0 6px 18px #0007}
 #rot{position:fixed;inset:0;z-index:99;display:none;background:#0b1b33;color:#fff;flex-direction:column;align-items:center;justify-content:center;font-size:22px}
 @media (orientation:portrait){#rot{display:flex}}
-/* 手機打橫專用緊湊微調（配合 JS 自動縮放，確保有瀏覽器網址列都 100% 睇晒） */
+#fsBtn{position:fixed;top:6px;right:8px;z-index:60;background:linear-gradient(180deg,#1e3a8acc,#0f172acc);color:#fde047;border:2px solid #ffffffaa;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:900;backdrop-filter:blur(4px);box-shadow:0 3px 10px #0006;cursor:pointer}
+/* 手機打橫專用超寬屏滿版排版（自動撐滿 99vw 闊度、將底部 4 個大掣合併為 1 行，毋須縮小卡片） */
 @media (max-height: 540px) and (orientation: landscape) {
-  .card{padding:8px 14px;border-radius:20px;width:96%}
-  #sLogin .schoolBadge{font-size:15px;padding:2px 14px 2px 8px}
-  #sLogin h1.gameTitle{font-size:28px!important}
-  #sLogin .speedLine{margin:2px auto 0;height:3px}
-  #sLogin .subTitle{font-size:11px;padding:1px 12px;margin-top:2px}
-  #sLogin #grBox .btn,#sLogin #clsBox .btn{font-size:16px;padding:4px 8px;border-radius:10px}
-  #sLogin #noBox{padding:3px;font-size:15px;margin:2px 0}
-  #sLogin #goLogin{font-size:17px;padding:6px;margin-top:2px}
-  #sLogin .btn{padding:5px 10px;font-size:13px}
-  #sMenu h2.gameTitle{font-size:20px!important}
-  #sMenu .schoolBadge.sm{font-size:11px;padding:1px 10px 1px 6px}
-  #sMenu .grid-cols-2{gap:10px;margin-top:3px}
-  #sMenu p{margin-bottom:2px;font-size:12px}
+  .scr{padding:3px!important}
+  .card{padding:6px 12px!important;border-radius:16px!important;max-width:99vw!important;width:99vw!important}
+  /* 登入頁改為左右雙欄寬屏 */
+  #sLogin .loginHeader{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:2px!important}
+  #sLogin .loginHeader .mt-2{margin-top:0!important}
+  #sLogin .schoolBadge{font-size:13px;padding:2px 10px 2px 6px}
+  #sLogin h1.gameTitle{font-size:22px!important}
+  #sLogin .speedLine{display:none}
+  #sLogin .subTitle{font-size:10px;padding:1px 10px;margin-top:0}
+  #sLogin #grBox .btn,#sLogin #clsBox .btn{font-size:15px;padding:3px 6px;border-radius:10px}
+  #sLogin #noBox{padding:2px;font-size:14px;margin:2px 0}
+  #sLogin #goLogin{font-size:16px;padding:5px;margin-top:2px}
+  #sLogin .btn{padding:4px 8px;font-size:12px}
+  /* 主選單改為超寬屏滿版佈局 */
+  #sMenu .menuHeader{margin-bottom:2px}
+  #sMenu .menuTitleWrap{display:flex;align-items:center;gap:8px}
+  #sMenu h2.gameTitle{font-size:19px!important}
+  #sMenu .schoolBadge.sm{font-size:11px;padding:1px 8px 1px 6px}
+  #sMenu .mainGrid{gap:10px!important;margin-top:2px!important;grid-template-columns:1.08fr 1fr!important}
+  #sMenu p{margin-bottom:1px;font-size:11px}
   #drvBox{gap:4px!important}
-  #drvBox .btn{padding:2px 2px!important;font-size:10px!important;border-radius:10px}
-  #drvBox .drvAvatar{width:32px!important;height:32px!important}
-  #drvRadarBar{padding:3px 8px!important;margin-top:3px!important}
+  #drvBox .btn{padding:3px 2px!important;font-size:10px!important;border-radius:9px}
+  #drvBox .drvAvatar{width:34px!important;height:34px!important;margin-bottom:1px!important}
+  #drvRadarBar{padding:4px 8px!important;margin-top:4px!important;border-radius:12px!important}
   #drvRadarBar svg{width:46px!important;height:46px!important}
-  #dfBox .btn{font-size:13px;padding:3px 8px;border-radius:10px}
-  #tbBox .btn{font-size:12px;padding:2px 2px;border-radius:8px}
-  #qLo,#qHi,#qUl{font-size:12px;padding:3px 6px;border-radius:10px}
-  #myProg{padding:3px 8px!important;margin-top:3px!important;font-size:11px!important;line-height:1.2}
-  #startBtn{font-size:17px!important;padding:5px!important;margin-top:4px!important;border-radius:12px}
-  #mpBtn,#quickMpBtn,#lbBtn{font-size:12px!important;padding:4px 8px!important;border-radius:10px}
+  #dfBox .btn{font-size:13px;padding:2px 8px;border-radius:9px}
+  #tbBox .btn{font-size:12px;padding:2px 1px;border-radius:7px}
+  #qLo,#qHi,#qUl{font-size:11px;padding:2px 6px;border-radius:9px}
+  #myProg{padding:2px 8px!important;margin-top:3px!important;font-size:10px!important;line-height:1.18}
+  /* 手機將「單人練習 + 連機對戰 + 快速加入 + 排行榜」排成同一行，徹底善用橫向闊度 */
+  #menuActionRow{display:grid!important;grid-template-columns:1.35fr 1.15fr 1.05fr 0.85fr!important;gap:6px!important;margin-top:5px!important}
+  #menuSubBtns{display:contents!important}
+  #startBtn{font-size:15px!important;padding:5px 6px!important;margin-top:0!important;border-radius:11px!important}
+  #mpBtn,#quickMpBtn,#lbBtn{font-size:12px!important;padding:5px 6px!important;border-radius:11px!important}
   #sMpLobby h2,#sMpWait h2,#sTrack h2,#sRoute h2{font-size:18px!important}
-  #sMpLobby .p-4{padding:8px 10px!important}
-  #sMpLobby .text-4xl{font-size:22px!important;margin-bottom:0!important}
-  #sMpLobby h3{font-size:15px!important}
-  #inpRoomCode{padding:4px!important;font-size:20px!important;margin-top:6px!important}
-  #btnCreateRoom,#btnJoinRoom{font-size:15px!important;padding:6px!important;margin-top:6px!important}
-  #waitCode{font-size:32px!important;padding:2px 20px!important;margin:2px 0!important}
-  #waitPlayers{gap:6px!important;margin:6px 0!important}
-  #waitPlayers>div{padding:6px 8px!important}
-  #btnHostStart{font-size:17px!important;padding:6px!important}
-  #lockOv .card{padding:10px 14px;max-width:340px!important}
-  #lockOv #lkIcon{width:48px!important;height:48px!important}
-  #lockOv #lkName{font-size:18px!important}
-  #lockOv #lkRadar svg{width:145px!important;height:135px!important}
-  #lockOv #lkHow{font-size:13px!important;margin-top:2px!important}
-  #lockOv #lkProg{font-size:12px!important}
-  #lockOv #lkOk{font-size:15px!important;padding:5px!important;margin-top:4px!important}
+  #sMpLobby .p-4{padding:6px 10px!important}
+  #sMpLobby .text-4xl{font-size:20px!important;margin-bottom:0!important}
+  #sMpLobby h3{font-size:14px!important}
+  #inpRoomCode{padding:3px!important;font-size:18px!important;margin-top:4px!important}
+  #btnCreateRoom,#btnJoinRoom{font-size:14px!important;padding:5px!important;margin-top:4px!important}
+  #waitCode{font-size:28px!important;padding:2px 16px!important;margin:2px 0!important}
+  #waitPlayers{gap:5px!important;margin:4px 0!important}
+  #waitPlayers>div{padding:4px 8px!important}
+  #btnHostStart{font-size:15px!important;padding:5px!important}
+  #lockOv .card{padding:8px 12px;max-width:340px!important}
+  #lockOv #lkIcon{width:44px!important;height:44px!important}
+  #lockOv #lkName{font-size:17px!important}
+  #lockOv #lkRadar svg{width:135px!important;height:125px!important}
+  #lockOv #lkHow{font-size:12px!important;margin-top:2px!important}
+  #lockOv #lkProg{font-size:11px!important}
+  #lockOv #lkOk{font-size:14px!important;padding:4px!important;margin-top:4px!important}
   #hudLeft{top:4px!important;left:8px!important;font-size:12px!important;line-height:1.15!important}
   #hudLeft #hPos{font-size:18px!important}
   #hudCenter{top:4px!important}
@@ -101,11 +115,12 @@ html,body{margin:0;width:100%;height:100%;height:100dvh;overflow:hidden;backgrou
 }
 </style></head><body>
 <canvas id="c"></canvas>
+<button id="fsBtn" title="切換全螢幕模式">⛶ 全螢幕</button>
 <div id="rot"><div style="font-size:64px">📱↻</div><div class="mt-3 font-bold">請將裝置打橫使用</div></div>
 
 <!-- 登入 -->
 <div id="sLogin" class="scr"><div class="card text-center">
-  <div class="text-center mb-2"><div class="schoolBadge"><img class="schoolLogoImg hidden" style="height:30px;width:auto;object-fit:contain;letter-spacing:0" alt="校徽"><span class="schoolLogoFallback" style="font-size:26px;letter-spacing:0">🏫</span>真鐸學校</div>
+  <div class="loginHeader text-center mb-2"><div class="schoolBadge"><img class="schoolLogoImg hidden" style="height:30px;width:auto;object-fit:contain;letter-spacing:0" alt="校徽"><span class="schoolLogoFallback" style="font-size:26px;letter-spacing:0">🏫</span>真鐸學校</div>
   <div class="mt-2"><h1 class="gameTitle text-5xl">🏎️ 極速乘法方程式</h1></div>
   <div class="speedLine"></div><div class="subTitle">答對乘法　衝過終點</div></div>
   <div id="resume" class="my-1"></div>
@@ -127,22 +142,18 @@ html,body{margin:0;width:100%;height:100%;height:100dvh;overflow:hidden;backgrou
 
 <!-- 主選單 -->
 <div id="sMenu" class="scr"><div class="card">
-  <div class="flex justify-between items-center gap-2 flex-wrap">
-    <div><div class="schoolBadge sm"><img class="schoolLogoImg hidden" style="height:20px;width:auto;object-fit:contain;letter-spacing:0" alt="校徽"><span class="schoolLogoFallback" style="letter-spacing:0">🏫</span>真鐸學校</div><div><h2 class="gameTitle text-3xl">🏎️ 極速乘法方程式</h2></div></div>
-    <div class="bg-white rounded-2xl px-3 py-1 shadow"><span id="who" class="font-bold text-slate-700"></span> <button id="logout" class="btn bg-slate-200 text-sm py-1">轉換用戶</button><div id="syncTag" class="text-xs text-slate-400 text-right">連線中…</div></div>
+  <div class="menuHeader flex justify-between items-center gap-2 flex-wrap">
+    <div class="menuTitleWrap"><div class="schoolBadge sm"><img class="schoolLogoImg hidden" style="height:20px;width:auto;object-fit:contain;letter-spacing:0" alt="校徽"><span class="schoolLogoFallback" style="letter-spacing:0">🏫</span>真鐸學校</div><div><h2 class="gameTitle text-3xl">🏎️ 極速乘法方程式</h2></div></div>
+    <div class="bg-white rounded-2xl px-3 py-1 shadow flex items-center gap-2"><span id="who" class="font-bold text-slate-700 text-sm"></span> <button id="logout" class="btn bg-slate-200 text-xs py-1 px-2">轉換用戶</button><span id="syncTag" class="text-xs text-slate-400">連線中…</span></div>
   </div>
-  <div class="grid grid-cols-2 gap-4 mt-2">
+  <div class="mainGrid grid grid-cols-2 gap-4 mt-2">
     <div>
       <div class="flex justify-between items-center mb-1">
         <p class="font-black text-blue-800">🏎️ 選擇真鐸專屬戰車</p>
         <span class="text-xs text-slate-400">撳車手可睇五角雷達圖</span>
       </div>
       <div id="drvBox" class="grid grid-cols-5 gap-2"></div>
-      <div id="drvRadarBar" class="mt-2 bg-white/90 border-2 border-sky-200 rounded-2xl p-2 flex items-center gap-3 cursor-pointer hover:border-amber-400 transition shadow-sm" title="點擊放大查看車手五角雷達圖"></div>
-      <label class="flex items-center gap-2 mt-1.5 bg-sky-50 border border-sky-200 rounded-xl px-3 py-1 text-xs font-bold text-blue-900 cursor-pointer">
-        <input id="glbToggle" type="checkbox" checked class="w-3.5 h-3.5 accent-blue-600">
-        <span>🏎️ 啟用 Kenney 3D 跑車模型庫（不勾選則用真鐸 F1 戰車）</span>
-      </label>
+      <div id="drvRadarBar" class="mt-2 bg-white/90 border-2 border-sky-200 rounded-2xl p-2.5 flex items-center gap-3 cursor-pointer hover:border-amber-400 transition shadow-sm" title="點擊放大查看車手五角雷達圖"></div>
     </div>
     <div>
       <p class="font-black text-blue-800 mb-1">🤖 電腦對手難度</p><div id="dfBox" class="flex gap-2"></div>
@@ -152,11 +163,13 @@ html,body{margin:0;width:100%;height:100%;height:100dvh;overflow:hidden;backgrou
       <div id="myProg" class="mt-2 text-sm bg-sky-50 rounded-xl p-2 text-slate-700"></div>
     </div>
   </div>
-  <button id="startBtn" class="btn text-white text-3xl w-full mt-3 py-3">🏁 單人練習</button>
-  <div class="grid grid-cols-3 gap-2 mt-2">
-    <button id="mpBtn" class="btn bg-gradient-to-b from-sky-400 to-blue-600 text-white text-lg">🌐 連機對戰（開房/入房）</button>
-    <button id="quickMpBtn" class="btn bg-gradient-to-b from-purple-400 to-indigo-600 text-white text-lg">⚡ 快速加入公開房</button>
-    <button id="lbBtn" class="btn bg-gradient-to-b from-amber-100 to-amber-300 text-amber-900 text-lg">🏆 排行榜</button>
+  <div id="menuActionRow">
+    <button id="startBtn" class="btn text-white text-3xl w-full mt-3 py-3">🏁 單人練習</button>
+    <div id="menuSubBtns" class="grid grid-cols-3 gap-2 mt-2">
+      <button id="mpBtn" class="btn bg-gradient-to-b from-sky-400 to-blue-600 text-white text-lg">🌐 連機對戰（開房/入房）</button>
+      <button id="quickMpBtn" class="btn bg-gradient-to-b from-purple-400 to-indigo-600 text-white text-lg">⚡ 快速加入公開房</button>
+      <button id="lbBtn" class="btn bg-gradient-to-b from-amber-100 to-amber-300 text-amber-900 text-lg">🏆 排行榜</button>
+    </div>
   </div>
 </div></div>
 
@@ -322,7 +335,6 @@ html,body{margin:0;width:100%;height:100%;height:100dvh;overflow:hidden;backgrou
 <script type="module">
 import * as THREE from 'three';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
-import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import {getAuth,signInAnonymously} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import {getFirestore,doc,setDoc,getDoc,addDoc,deleteDoc,collection,getDocs,query,orderBy,limit,serverTimestamp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
@@ -332,7 +344,7 @@ const $=id=>document.getElementById(id);
 function fitAllCards(){
   const vw=window.visualViewport?window.visualViewport.width:window.innerWidth;
   const vh=window.visualViewport?window.visualViewport.height:window.innerHeight;
-  const availW=vw-12, availH=vh-12;
+  const availW=vw-8, availH=vh-8;
   document.querySelectorAll('.scr.on .card, #lockOv[style*="flex"] .card, #pauseOv[style*="flex"] .card, #pwOv[style*="flex"] .card').forEach(card=>{
     card.style.setProperty('--ui-scale','1');
     const w=card.offsetWidth||1, h=card.scrollHeight||card.offsetHeight||1;
@@ -342,6 +354,37 @@ function fitAllCards(){
 }
 window.addEventListener('resize', fitAllCards);
 if(window.visualViewport) window.visualViewport.addEventListener('resize', fitAllCards);
+
+/* ===== 全螢幕切換及手機自動進入全螢幕 ===== */
+const isMobileTouch = () => ('ontouchstart' in window) && Math.min(window.screen.width, window.screen.height) <= 560;
+function getFsEl(){return document.fullscreenElement||document.webkitFullscreenElement}
+async function toggleFullscreen(forceEnter=false){
+  try{
+    const el=document.documentElement;
+    if(!getFsEl()){
+      if(el.requestFullscreen)await el.requestFullscreen();
+      else if(el.webkitRequestFullscreen)await el.webkitRequestFullscreen();
+      if(screen.orientation&&screen.orientation.lock){try{await screen.orientation.lock('landscape')}catch(e){}}
+    }else if(!forceEnter){
+      if(document.exitFullscreen)await document.exitFullscreen();
+      else if(document.webkitExitFullscreen)await document.webkitExitFullscreen();
+    }
+  }catch(e){}
+  updateFsBtn();
+  setTimeout(fitAllCards,120);
+}
+function updateFsBtn(){
+  const b=$('fsBtn');if(!b)return;
+  b.textContent=getFsEl()?'🗗 退出全螢幕':'⛶ 全螢幕';
+}
+$('fsBtn').onclick=()=>toggleFullscreen(false);
+document.addEventListener('fullscreenchange',()=>{updateFsBtn();setTimeout(fitAllCards,100)});
+document.addEventListener('webkitfullscreenchange',()=>{updateFsBtn();setTimeout(fitAllCards,100)});
+// 手機玩家撳主要按鈕時自動收起瀏覽器網址列進入全螢幕
+['goLogin','guestBtn','startBtn','mpBtn','quickMpBtn'].forEach(id=>{
+  const el=$(id);
+  if(el)el.addEventListener('click',()=>{if(isMobileTouch()&&!getFsEl())toggleFullscreen(true)},{capture:true});
+});
 
 const GITHUB_SHEET_PATH='./drivers_sheet.png', GITHUB_BADGE_PATH='./school_badge.png';
 let schoolBadgeImg=null;
@@ -391,19 +434,18 @@ function makeChunTokAvatarDataURI(kind){
 
 /* ===== 10 位真鐸車手（連同 5 項技能數值 [極速, 加速, 操控, 耐力, 衝刺] 及特色） ===== */
 const GRADES=[1,2,3,4,5,6], GNAME=['','一','二','三','四','五','六'], CLASSES=['信','望','愛'], MAXNO=35, LAPS=3, GPL=5, TOTALQ=LAPS*GPL;
-const KENNEY_CDN='https://cdn.jsdelivr.net/gh/anasron/threejs-kenney-car-kit@master/public/gltf/';
 const STAT_NAMES=['極速','加速','操控','耐力','衝刺'];
 const DRIVERS=[
- {name:'閃電號',color:0xef4444,num:'02',row:1,col:0,kind:'headband',stats:[3,3,3,3,3],desc:'平均，新手易上手',glb:KENNEY_CDN+'race.glb'},
- {name:'火箭號',color:0x3b82f6,num:'03',row:1,col:1,kind:'bow',tbl:3,need:5,stats:[5,2,2,2,4],desc:'直路最快',glb:KENNEY_CDN+'race-future.glb'},
- {name:'旋風號',color:0x22c55e,num:'04',row:2,col:0,kind:'cap',tbl:4,need:5,stats:[2,3,5,3,2],desc:'轉線最靈活',glb:KENNEY_CDN+'sedan-sports.glb'},
- {name:'流星號',color:0xfacc15,num:'05',row:2,col:1,kind:'glasses',tbl:5,need:5,stats:[3,2,3,2,5],desc:'答啱衝得最耐',glb:KENNEY_CDN+'hatchback-sports.glb'},
- {name:'彩虹號',color:0xa855f7,num:'06',row:3,col:0,kind:'headphone',tbl:6,need:5,stats:[3,3,4,3,2],desc:'穩陣易揸',glb:KENNEY_CDN+'suv-luxury.glb'},
- {name:'雷霆號',color:0xf97316,num:'07',row:3,col:1,kind:'helmetB',tbl:7,need:5,stats:[3,2,2,5,3],desc:'最捱得撞',glb:KENNEY_CDN+'police.glb'},
- {name:'極光號',color:0x06b6d4,num:'08',row:4,col:0,kind:'helmetP',tbl:8,need:5,stats:[2,5,3,2,3],desc:'起步最快',glb:KENNEY_CDN+'kart.glb'},
- {name:'疾風號',color:0x84cc16,num:'09',row:4,col:1,kind:'boy',tbl:9,need:5,stats:[4,4,3,2,2],desc:'快但易損壞',glb:KENNEY_CDN+'Convertible.glb'},
- {name:'譚主任',color:0x0f766e,num:'TAM',row:0,col:1,kind:'tam',boss:'tam',need:5,crown:true,stats:[4,4,4,4,4],desc:'全面高手',glb:KENNEY_CDN+'race-future.glb'},
- {name:'陳校長',color:0xd4a017,num:'CHAN',row:0,col:0,kind:'chan',boss:'chan',need:10,crown:true,stats:[5,5,5,5,5],desc:'全能',glb:KENNEY_CDN+'race.glb'}
+ {name:'閃電號',color:0xef4444,num:'02',row:1,col:0,kind:'headband',stats:[3,3,3,3,3],desc:'平均，新手易上手'},
+ {name:'火箭號',color:0x3b82f6,num:'03',row:1,col:1,kind:'bow',tbl:3,need:5,stats:[5,2,2,2,4],desc:'直路最快'},
+ {name:'旋風號',color:0x22c55e,num:'04',row:2,col:0,kind:'cap',tbl:4,need:5,stats:[2,3,5,3,2],desc:'轉線最靈活'},
+ {name:'流星號',color:0xfacc15,num:'05',row:2,col:1,kind:'glasses',tbl:5,need:5,stats:[3,2,3,2,5],desc:'答啱衝得最耐'},
+ {name:'彩虹號',color:0xa855f7,num:'06',row:3,col:0,kind:'headphone',tbl:6,need:5,stats:[3,3,4,3,2],desc:'穩陣易揸'},
+ {name:'雷霆號',color:0xf97316,num:'07',row:3,col:1,kind:'helmetB',tbl:7,need:5,stats:[3,2,2,5,3],desc:'最捱得撞'},
+ {name:'極光號',color:0x06b6d4,num:'08',row:4,col:0,kind:'helmetP',tbl:8,need:5,stats:[2,5,3,2,3],desc:'起步最快'},
+ {name:'疾風號',color:0x84cc16,num:'09',row:4,col:1,kind:'boy',tbl:9,need:5,stats:[4,4,3,2,2],desc:'快但易損壞'},
+ {name:'譚主任',color:0x0f766e,num:'TAM',row:0,col:1,kind:'tam',boss:'tam',need:5,crown:true,stats:[4,4,4,4,4],desc:'全面高手'},
+ {name:'陳校長',color:0xd4a017,num:'CHAN',row:0,col:0,kind:'chan',boss:'chan',need:10,crown:true,stats:[5,5,5,5,5],desc:'全能'}
 ];
 DRIVERS.forEach(d=>{d.img=makeChunTokAvatarDataURI(d.kind)});
 
@@ -506,10 +548,6 @@ function tryAutoLoadBadge(url){
 tryAutoLoadSheet(GITHUB_SHEET_PATH);
 tryAutoLoadBadge(GITHUB_BADGE_PATH);
 
-let useExternalGLB=true;
-$('glbToggle').onchange=e=>{useExternalGLB=e.target.checked};
-const gltfLoader=new GLTFLoader(), glbCache={};
-
 const winsOf=(d,tw)=>(d.tbl?tw[d.tbl]:tw.all)||0;
 function lockOf(d,tw){if(user&&user.type==='teacher'||!d.need)return false;return winsOf(d,tw)<d.need}
 
@@ -552,7 +590,7 @@ let mySessionId='';
 const label=()=>user.type==='student'?`${GNAME[user.grade]}年級 ${user.cls}班 ${user.no}號`:user.type==='guest'?'訪客（成績不會記錄）':'老師（不計入報告）';
 const shortName=()=>user.type==='student'?`${user.grade}${user.cls}(${user.no})`:user.type==='guest'?'訪客':'老師';
 const ALL_SCR=['sLogin','sMenu','sResult','sTrack','sRoute','sLb','sRp','sAdmin','sMpLobby','sMpWait'];
-const show=id=>{for(const s of ALL_SCR)$(s).classList.toggle('on',s===id);$('hud').style.display=id?'none':'block';requestAnimationFrame(fitAllCards)};
+const show=id=>{for(const s of ALL_SCR)$(s).classList.toggle('on',s===id);$('hud').style.display=id?'none':'block';$('fsBtn').style.display=id?'block':'none';requestAnimationFrame(fitAllCards)};
 
 /* ===== 登入 ===== */
 let selGr=null, selCls=null, selNo=null;
@@ -1106,18 +1144,6 @@ function makeKart(d,labelTxt=''){
     else if(d.kind==='headphone')[-.58,.58].forEach(x=>dm(new THREE.CylinderGeometry(.18,.18,.15,12),M(0x1e3a8a),x,1.22,0,0,0,Math.PI/2));
     else if(d.kind==='tam')dm(new THREE.BoxGeometry(.82,.2,.2),M(0x111827),0,1.24,.48);
     else if(d.kind==='chan'){dm(new THREE.CylinderGeometry(.46,.38,.34,10),cGold,0,1.88,0);for(let k=0;k<5;k++){const a=k/5*Math.PI*2;dm(new THREE.ConeGeometry(.1,.28,5),cGold,Math.cos(a)*.42,2.14,Math.sin(a)*.42)}}
-  }
-  if(useExternalGLB&&d.glb){
-    const applyGlb=gltf=>{
-      const model=gltf.scene.clone(true), box=new THREE.Box3().setFromObject(model),sz=new THREE.Vector3(),ctr=new THREE.Vector3();
-      box.getSize(sz);box.getCenter(ctr);const scale=3.8/Math.max(sz.x,sz.y,sz.z,.01);
-      model.scale.setScalar(scale);model.position.set(-ctr.x*scale,-box.min.y*scale,-ctr.z*scale);
-      const tint=new THREE.Color(d.color);
-      model.traverse(n=>{if(n.isMesh){n.castShadow=n.receiveShadow=true;if(n.material&&n.material.color&&n.name&&/body|paint|hull|car/i.test(n.name)){n.material=n.material.clone();n.material.color.lerp(tint,.65)}}});
-      bodyGrp.clear();bodyGrp.add(model);
-      const wPlate=new THREE.Mesh(new THREE.BoxGeometry(2.2,.14,.65),mWing);wPlate.position.set(0,1.45,-1.65);bodyGrp.add(wPlate);
-    };
-    if(glbCache[d.glb])applyGlb(glbCache[d.glb]);else gltfLoader.load(d.glb,gltf=>{glbCache[d.glb]=gltf;applyGlb(gltf)},undefined,()=>{});
   }
   if(labelTxt)g.add(makeNameSprite(labelTxt,'#'+d.color.toString(16).padStart(6,'0')));
   g.userData.col='#'+d.color.toString(16).padStart(6,'0');scene.add(g);return g;
