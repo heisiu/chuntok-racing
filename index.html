@@ -1,23 +1,20 @@
 <!DOCTYPE html>
 <html lang="zh-HK"><head><meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>真鐸學校・極速乘法方程式</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/mqtt@5.3.5/dist/mqtt.min.js"></script>
 <script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}</script>
 <style>
-html,body{margin:0;width:100%;height:100%;height:100dvh;overflow:hidden;background:#0b1b33;font-family:system-ui,"PingFang HK","Microsoft JhengHei",sans-serif;touch-action:none;user-select:none;-webkit-user-select:none}
+html,body{margin:0;height:100dvh;overflow:hidden;background:#0b1b33;font-family:system-ui,"PingFang HK","Microsoft JhengHei",sans-serif;touch-action:none;user-select:none;-webkit-user-select:none}
 #c{position:fixed;inset:0;width:100%;height:100%}
-.scr{position:fixed;inset:0;width:100%;height:100dvh;display:none;align-items:center;justify-content:center;padding:6px;box-sizing:border-box;z-index:20;background:radial-gradient(circle at 20% 15%,#38bdf855,transparent 45%),radial-gradient(circle at 85% 90%,#f472b655,transparent 45%),linear-gradient(135deg,#0f1f5acc,#1d4ed8bb 55%,#0ea5e9aa)}
+.scr{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:20;background:radial-gradient(circle at 20% 15%,#38bdf855,transparent 45%),radial-gradient(circle at 85% 90%,#f472b655,transparent 45%),linear-gradient(135deg,#0f1f5acc,#1d4ed8bb 55%,#0ea5e9aa)}
 .scr.on{display:flex}
-.scr.on .card{animation:pop .3s cubic-bezier(.2,1.3,.4,1)}
-@keyframes pop{from{opacity:0;transform:translateY(14px) scale(calc(var(--ui-scale,1) * .94))}to{opacity:1;transform:scale(var(--ui-scale,1))}}
-.card{background:linear-gradient(180deg,#fff,#eef5ff);border:3px solid #ffffffcc;border-radius:28px;padding:14px 20px;max-width:920px;width:95%;box-sizing:border-box;box-shadow:0 18px 50px #0007,inset 0 2px 0 #fff;transform:scale(var(--ui-scale,1));transform-origin:center center}
+.scr.on .card{animation:pop .35s cubic-bezier(.2,1.3,.4,1)}
+@keyframes pop{from{opacity:0;transform:translateY(18px) scale(.94)}to{opacity:1;transform:none}}
+.card{background:linear-gradient(180deg,#fff,#eef5ff);border:3px solid #ffffffcc;border-radius:28px;padding:16px 22px;max-width:920px;width:95%;max-height:96dvh;overflow:auto;box-shadow:0 18px 50px #0007,inset 0 2px 0 #fff}
 .card h1,.card h2{background:linear-gradient(90deg,#1d4ed8,#7c3aed);-webkit-background-clip:text;background-clip:text;color:transparent!important}
-.btn{border-radius:16px;font-weight:800;padding:8px 14px;transition:transform .1s,box-shadow .15s,filter .15s;box-shadow:0 4px 0 #0002,0 6px 12px #0001}
+.btn{border-radius:16px;font-weight:800;padding:8px 14px;transition:transform .1s,box-shadow .15s,filter .15s;box-shadow:0 4px 0 #0002,0 6px 12px #0001;cursor:pointer}
 .btn:hover:not(:disabled){filter:brightness(1.06);transform:translateY(-1px)}
 .btn:active{transform:translateY(2px) scale(.96);box-shadow:0 1px 0 #0002}
 .btn:disabled{opacity:.4;box-shadow:none}
@@ -43,60 +40,50 @@ html,body{margin:0;width:100%;height:100%;height:100dvh;overflow:hidden;backgrou
 #mini{position:fixed;right:16px;bottom:calc(min(22vh,130px) + 22px);width:min(26vh,140px);height:min(26vh,140px);border-radius:16px;background:#0f172a88;border:3px solid #fff8;box-shadow:0 6px 18px #0007}
 #rot{position:fixed;inset:0;z-index:99;display:none;background:#0b1b33;color:#fff;flex-direction:column;align-items:center;justify-content:center;font-size:22px}
 @media (orientation:portrait){#rot{display:flex}}
-#fsBtn{position:fixed;top:6px;right:8px;z-index:60;background:linear-gradient(180deg,#1e3a8acc,#0f172acc);color:#fde047;border:2px solid #ffffffaa;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:900;backdrop-filter:blur(4px);box-shadow:0 3px 10px #0006;cursor:pointer}
-/* 手機打橫專用超寬屏滿版排版（自動撐滿 99vw 闊度、將底部 4 個大掣合併為 1 行，毋須縮小卡片） */
+/* 手機打橫專用自適應縮放及滿版排版 */
 @media (max-height: 540px) and (orientation: landscape) {
-  .scr{padding:3px!important}
-  .card{padding:6px 12px!important;border-radius:16px!important;max-width:99vw!important;width:99vw!important}
-  /* 登入頁改為左右雙欄寬屏 */
-  #sLogin .loginHeader{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:2px!important}
-  #sLogin .loginHeader .mt-2{margin-top:0!important}
-  #sLogin .schoolBadge{font-size:13px;padding:2px 10px 2px 6px}
-  #sLogin h1.gameTitle{font-size:22px!important}
-  #sLogin .speedLine{display:none}
-  #sLogin .subTitle{font-size:10px;padding:1px 10px;margin-top:0}
-  #sLogin #grBox .btn,#sLogin #clsBox .btn{font-size:15px;padding:3px 6px;border-radius:10px}
-  #sLogin #noBox{padding:2px;font-size:14px;margin:2px 0}
-  #sLogin #goLogin{font-size:16px;padding:5px;margin-top:2px}
-  #sLogin .btn{padding:4px 8px;font-size:12px}
-  /* 主選單改為超寬屏滿版佈局 */
-  #sMenu .menuHeader{margin-bottom:2px}
-  #sMenu .menuTitleWrap{display:flex;align-items:center;gap:8px}
-  #sMenu h2.gameTitle{font-size:19px!important}
-  #sMenu .schoolBadge.sm{font-size:11px;padding:1px 8px 1px 6px}
-  #sMenu .mainGrid{gap:10px!important;margin-top:2px!important;grid-template-columns:1.08fr 1fr!important}
-  #sMenu p{margin-bottom:1px;font-size:11px}
+  .card{padding:6px 12px;border-radius:20px;max-height:98dvh;width:99vw;max-width:none}
+  #sLogin .schoolBadge{font-size:15px;padding:2px 14px 2px 8px}
+  #sLogin h1.gameTitle{font-size:28px!important}
+  #sLogin .speedLine{margin:2px auto 0;height:3px}
+  #sLogin .subTitle{font-size:11px;padding:1px 12px;margin-top:2px}
+  #sLogin #grBox .btn,#sLogin #clsBox .btn{font-size:16px;padding:4px 8px;border-radius:10px}
+  #sLogin #noBox{padding:3px;font-size:15px;margin:2px 0}
+  #sLogin #goLogin{font-size:17px;padding:6px;margin-top:2px}
+  #sLogin .btn{padding:5px 10px;font-size:13px}
+  #sMenu .grid-cols-2{display:flex;gap:12px;margin-top:4px}
+  #sMenu .grid-cols-2 > div{flex:1}
+  #sMenu .bottom-btns{display:flex;flex-direction:row;gap:8px;margin-top:8px}
+  #sMenu .bottom-btns .btn{flex:1;font-size:15px!important;padding:8px!important;margin:0!important;border-radius:12px}
+  #sMenu h2.gameTitle{font-size:21px!important}
+  #sMenu .schoolBadge.sm{font-size:11px;padding:1px 10px 1px 6px}
+  #sMenu p{margin-bottom:2px;font-size:12px}
   #drvBox{gap:4px!important}
-  #drvBox .btn{padding:3px 2px!important;font-size:10px!important;border-radius:9px}
-  #drvBox .drvAvatar{width:34px!important;height:34px!important;margin-bottom:1px!important}
-  #drvRadarBar{padding:4px 8px!important;margin-top:4px!important;border-radius:12px!important}
-  #drvRadarBar svg{width:46px!important;height:46px!important}
-  #dfBox .btn{font-size:13px;padding:2px 8px;border-radius:9px}
-  #tbBox .btn{font-size:12px;padding:2px 1px;border-radius:7px}
-  #qLo,#qHi,#qUl{font-size:11px;padding:2px 6px;border-radius:9px}
-  #myProg{padding:2px 8px!important;margin-top:3px!important;font-size:10px!important;line-height:1.18}
-  /* 手機將「單人練習 + 連機對戰 + 快速加入 + 排行榜」排成同一行，徹底善用橫向闊度 */
-  #menuActionRow{display:grid!important;grid-template-columns:1.35fr 1.15fr 1.05fr 0.85fr!important;gap:6px!important;margin-top:5px!important}
-  #menuSubBtns{display:contents!important}
-  #startBtn{font-size:15px!important;padding:5px 6px!important;margin-top:0!important;border-radius:11px!important}
-  #mpBtn,#quickMpBtn,#lbBtn{font-size:12px!important;padding:5px 6px!important;border-radius:11px!important}
+  #drvBox .btn{padding:3px 2px!important;font-size:10px!important;border-radius:10px}
+  #drvBox .drvAvatar{width:34px!important;height:34px!important}
+  #drvRadarBar{padding:4px 8px!important;margin-top:4px!important}
+  #drvRadarBar svg{width:52px!important;height:52px!important}
+  #dfBox .btn{font-size:14px;padding:4px 8px;border-radius:10px}
+  #tbBox .btn{font-size:13px;padding:3px 2px;border-radius:8px}
+  #qLo,#qHi,#qUl{font-size:12px;padding:4px 6px;border-radius:10px}
+  #myProg{padding:4px 8px!important;margin-top:4px!important;font-size:11px!important;line-height:1.25}
   #sMpLobby h2,#sMpWait h2,#sTrack h2,#sRoute h2{font-size:18px!important}
-  #sMpLobby .p-4{padding:6px 10px!important}
-  #sMpLobby .text-4xl{font-size:20px!important;margin-bottom:0!important}
-  #sMpLobby h3{font-size:14px!important}
-  #inpRoomCode{padding:3px!important;font-size:18px!important;margin-top:4px!important}
-  #btnCreateRoom,#btnJoinRoom{font-size:14px!important;padding:5px!important;margin-top:4px!important}
-  #waitCode{font-size:28px!important;padding:2px 16px!important;margin:2px 0!important}
-  #waitPlayers{gap:5px!important;margin:4px 0!important}
-  #waitPlayers>div{padding:4px 8px!important}
-  #btnHostStart{font-size:15px!important;padding:5px!important}
-  #lockOv .card{padding:8px 12px;max-width:340px!important}
-  #lockOv #lkIcon{width:44px!important;height:44px!important}
-  #lockOv #lkName{font-size:17px!important}
-  #lockOv #lkRadar svg{width:135px!important;height:125px!important}
-  #lockOv #lkHow{font-size:12px!important;margin-top:2px!important}
-  #lockOv #lkProg{font-size:11px!important}
-  #lockOv #lkOk{font-size:14px!important;padding:4px!important;margin-top:4px!important}
+  #sMpLobby .p-4{padding:8px 10px!important}
+  #sMpLobby .text-4xl{font-size:22px!important;margin-bottom:0!important}
+  #sMpLobby h3{font-size:15px!important}
+  #inpRoomCode{padding:4px!important;font-size:20px!important;margin-top:6px!important}
+  #btnCreateRoom,#btnJoinRoom{font-size:15px!important;padding:6px!important;margin-top:6px!important}
+  #waitCode{font-size:32px!important;padding:2px 20px!important;margin:2px 0!important}
+  #waitPlayers{gap:6px!important;margin:6px 0!important}
+  #waitPlayers>div{padding:6px 8px!important}
+  #btnHostStart{font-size:17px!important;padding:6px!important}
+  #lockOv .card{padding:10px 14px;max-width:340px!important}
+  #lockOv #lkIcon{width:48px!important;height:48px!important}
+  #lockOv #lkName{font-size:18px!important}
+  #lockOv #lkRadar svg{width:145px!important;height:135px!important}
+  #lockOv #lkHow{font-size:13px!important;margin-top:2px!important}
+  #lockOv #lkProg{font-size:12px!important}
+  #lockOv #lkOk{font-size:15px!important;padding:5px!important;margin-top:4px!important}
   #hudLeft{top:4px!important;left:8px!important;font-size:12px!important;line-height:1.15!important}
   #hudLeft #hPos{font-size:18px!important}
   #hudCenter{top:4px!important}
@@ -115,14 +102,14 @@ html,body{margin:0;width:100%;height:100%;height:100dvh;overflow:hidden;backgrou
 }
 </style></head><body>
 <canvas id="c"></canvas>
-<button id="fsBtn" title="切換全螢幕模式">⛶ 全螢幕</button>
+<button id="fsBtn" style="position:fixed;top:10px;right:10px;z-index:9999;border-radius:12px;" class="btn bg-slate-800/60 text-white p-2 backdrop-blur">⛶ 全螢幕</button>
 <div id="rot"><div style="font-size:64px">📱↻</div><div class="mt-3 font-bold">請將裝置打橫使用</div></div>
 
 <!-- 登入 -->
 <div id="sLogin" class="scr"><div class="card text-center">
-  <div class="loginHeader text-center mb-2"><div class="schoolBadge"><img class="schoolLogoImg hidden" style="height:30px;width:auto;object-fit:contain;letter-spacing:0" alt="校徽"><span class="schoolLogoFallback" style="font-size:26px;letter-spacing:0">🏫</span>真鐸學校</div>
+  <div class="text-center mb-2"><div class="schoolBadge"><img class="schoolLogoImg hidden" style="height:30px;width:auto;object-fit:contain;letter-spacing:0" alt="校徽"><span class="schoolLogoFallback" style="font-size:26px;letter-spacing:0">🏫</span>真鐸學校</div>
   <div class="mt-2"><h1 class="gameTitle text-5xl">🏎️ 極速乘法方程式</h1></div>
-  <div class="speedLine"></div><div class="subTitle">答對乘法　衝過終點</div></div>
+  <div class="speedLine"></div><div class="subTitle">答對乘法 衝過終點</div></div>
   <div id="resume" class="my-1"></div>
   <div class="text-left">
   <p class="font-bold text-slate-600">① 年級</p>
@@ -135,25 +122,25 @@ html,body{margin:0;width:100%;height:100%;height:100dvh;overflow:hidden;backgrou
   <button id="goLogin" class="btn text-white text-2xl w-full mt-1" disabled>開始比賽 ▶</button>
   <div class="flex gap-2 mt-2">
     <button id="guestBtn" class="btn bg-amber-100 text-amber-800 flex-1">🙋 訪客模式</button>
-    <button id="homeLbBtn" class="btn bg-gradient-to-b from-amber-200 to-amber-400 text-amber-950 flex-1">🏆 排行榜</button>
+    <button id="homeLbBtn" class="btn bg-yellow-300 text-yellow-900 flex-1 font-black shadow-md border-2 border-yellow-400">🏆 排行榜</button>
     <button id="teachBtn" class="btn bg-slate-200 text-slate-700 flex-1">👩‍🏫 老師後台</button>
   </div>
 </div></div>
 
 <!-- 主選單 -->
 <div id="sMenu" class="scr"><div class="card">
-  <div class="menuHeader flex justify-between items-center gap-2 flex-wrap">
-    <div class="menuTitleWrap"><div class="schoolBadge sm"><img class="schoolLogoImg hidden" style="height:20px;width:auto;object-fit:contain;letter-spacing:0" alt="校徽"><span class="schoolLogoFallback" style="letter-spacing:0">🏫</span>真鐸學校</div><div><h2 class="gameTitle text-3xl">🏎️ 極速乘法方程式</h2></div></div>
-    <div class="bg-white rounded-2xl px-3 py-1 shadow flex items-center gap-2"><span id="who" class="font-bold text-slate-700 text-sm"></span> <button id="logout" class="btn bg-slate-200 text-xs py-1 px-2">轉換用戶</button><span id="syncTag" class="text-xs text-slate-400">連線中…</span></div>
+  <div class="flex justify-between items-center gap-2 flex-wrap">
+    <div><div class="schoolBadge sm"><img class="schoolLogoImg hidden" style="height:20px;width:auto;object-fit:contain;letter-spacing:0" alt="校徽"><span class="schoolLogoFallback" style="letter-spacing:0">🏫</span>真鐸學校</div><div><h2 class="gameTitle text-3xl">🏎️ 極速乘法方程式</h2></div></div>
+    <div class="bg-white rounded-2xl px-3 py-1 shadow"><span id="who" class="font-bold text-slate-700"></span> <button id="logout" class="btn bg-slate-200 text-sm py-1">轉換用戶</button><div id="syncTag" class="text-xs text-slate-400 text-right">連線中…</div></div>
   </div>
-  <div class="mainGrid grid grid-cols-2 gap-4 mt-2">
+  <div class="grid grid-cols-2 gap-4 mt-2">
     <div>
       <div class="flex justify-between items-center mb-1">
         <p class="font-black text-blue-800">🏎️ 選擇真鐸專屬戰車</p>
         <span class="text-xs text-slate-400">撳車手可睇五角雷達圖</span>
       </div>
       <div id="drvBox" class="grid grid-cols-5 gap-2"></div>
-      <div id="drvRadarBar" class="mt-2 bg-white/90 border-2 border-sky-200 rounded-2xl p-2.5 flex items-center gap-3 cursor-pointer hover:border-amber-400 transition shadow-sm" title="點擊放大查看車手五角雷達圖"></div>
+      <div id="drvRadarBar" class="mt-2 bg-white/90 border-2 border-sky-200 rounded-2xl p-2 flex items-center gap-3 cursor-pointer hover:border-amber-400 transition shadow-sm" title="點擊放大查看車手五角雷達圖"></div>
     </div>
     <div>
       <p class="font-black text-blue-800 mb-1">🤖 電腦對手難度</p><div id="dfBox" class="flex gap-2"></div>
@@ -163,13 +150,11 @@ html,body{margin:0;width:100%;height:100%;height:100dvh;overflow:hidden;backgrou
       <div id="myProg" class="mt-2 text-sm bg-sky-50 rounded-xl p-2 text-slate-700"></div>
     </div>
   </div>
-  <div id="menuActionRow">
-    <button id="startBtn" class="btn text-white text-3xl w-full mt-3 py-3">🏁 單人練習</button>
-    <div id="menuSubBtns" class="grid grid-cols-3 gap-2 mt-2">
-      <button id="mpBtn" class="btn bg-gradient-to-b from-sky-400 to-blue-600 text-white text-lg">🌐 連機對戰（開房/入房）</button>
-      <button id="quickMpBtn" class="btn bg-gradient-to-b from-purple-400 to-indigo-600 text-white text-lg">⚡ 快速加入公開房</button>
-      <button id="lbBtn" class="btn bg-gradient-to-b from-amber-100 to-amber-300 text-amber-900 text-lg">🏆 排行榜</button>
-    </div>
+  <div class="bottom-btns flex flex-col gap-2 mt-3">
+    <button id="startBtn" class="btn text-white text-3xl flex-1 py-3">🏁 單人練習</button>
+    <button id="mpBtn" class="btn bg-gradient-to-b from-sky-400 to-blue-600 text-white text-xl flex-1">🌐 連機對戰</button>
+    <button id="quickMpBtn" class="btn bg-gradient-to-b from-purple-400 to-indigo-600 text-white text-xl flex-1">⚡ 快速加入</button>
+    <button id="lbBtn" class="btn bg-gradient-to-b from-amber-100 to-amber-300 text-amber-900 text-xl flex-1">🏆 排行榜</button>
   </div>
 </div></div>
 
@@ -233,11 +218,11 @@ html,body{margin:0;width:100%;height:100%;height:100dvh;overflow:hidden;backgrou
   <h2 class="text-3xl font-black">👩‍🏫 老師後台</h2>
   <p class="text-sm text-slate-500 mt-1">此區只供老師使用。老師帳戶的成績不會計入報告。</p>
   <div class="grid gap-2.5 mt-3">
-    <button id="adLb" class="btn bg-gradient-to-b from-amber-100 to-amber-300 text-amber-900 text-xl py-2.5">🏆 排行榜</button>
-    <button id="adRp" class="btn bg-gradient-to-b from-sky-100 to-sky-300 text-sky-900 text-xl py-2.5">📊 老師報告</button>
-    <button id="adTest" class="btn bg-gradient-to-b from-slate-100 to-slate-300 text-slate-800 text-xl py-2.5">🔒 🧪 老師測試（全部車手已解鎖）</button>
-    <button id="adReset" class="btn bg-gradient-to-b from-red-100 to-red-300 text-red-900 text-lg py-2">🔒 🗑️ 新學年資料重設（清空所有成績）</button>
-    <div class="bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-3 text-left text-xs text-slate-700">
+    <button id="adLb" class="btn bg-gradient-to-b from-amber-100 to-amber-300 text-amber-900 text-xl py-3">🏆 排行榜</button>
+    <button id="adRp" class="btn bg-gradient-to-b from-sky-100 to-sky-300 text-sky-900 text-xl py-3">📊 老師報告</button>
+    <button id="adTest" class="btn bg-gradient-to-b from-slate-100 to-slate-300 text-slate-800 text-xl py-3">🧪 老師測試（全部車手已解鎖）</button>
+    <button id="adReset" class="btn bg-red-100 text-red-700 text-xl py-3 mt-2 border-2 border-red-300">🗑️ 新學年資料重設</button>
+    <div class="bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-3 text-left text-xs text-slate-700 mt-2">
       <div class="font-black text-emerald-900 text-sm mb-1">🐙 GitHub Pages 靜態資源直讀狀態</div>
       <div>① 10合1車手圖 (<code>./drivers_sheet.png</code>)：<b id="stDrivers" class="text-amber-600">偵測中…</b></div>
       <div class="mt-0.5">② 真鐸校牌圖 (<code>./school_badge.png</code>)：<b id="stBadge" class="text-amber-600">偵測中…</b></div>
@@ -252,14 +237,14 @@ html,body{margin:0;width:100%;height:100%;height:100dvh;overflow:hidden;backgrou
   <div class="flex gap-2 my-2"><button id="lbA" class="btn bg-slate-100 flex-1 sel">🎯 答對率（本月）</button><button id="lbW" class="btn bg-slate-100 flex-1">🏅 勝出場數</button></div>
   <div class="flex gap-2 mb-2" id="lbGr"></div>
   <p class="text-xs text-slate-500 mb-1" id="lbNote"></p>
-  <div id="lbBox" class="text-slate-700" style="max-height:52vh;overflow:auto">載入中…</div>
+  <div id="lbBox" class="text-slate-700">載入中…</div>
 </div></div>
 
 <!-- 老師報告 -->
 <div id="sRp" class="scr"><div class="card" style="max-width:1000px">
   <div class="flex justify-between items-center flex-wrap gap-2"><h2 class="text-2xl font-black">📊 老師報告</h2><div><button id="rpXls" class="btn bg-green-600 text-white">📥 匯出 Excel</button> <button id="rpBack" class="btn bg-slate-200">⬅ 返回</button></div></div>
   <div class="flex gap-2 my-2 flex-wrap" id="rpGr"></div>
-  <div id="rpBox" class="text-slate-700" style="max-height:60vh;overflow:auto">載入中…</div>
+  <div id="rpBox" class="text-slate-700">載入中…</div>
 </div></div>
 
 <!-- 選擇賽道 -->
@@ -276,7 +261,7 @@ html,body{margin:0;width:100%;height:100%;height:100dvh;overflow:hidden;backgrou
 <!-- 結果 -->
 <div id="sResult" class="scr"><div class="card" id="resBox"></div></div>
 
-<!-- HUD（讀題移至右上角換歌隔離，手機橫屏自動縮放防重疊） -->
+<!-- HUD -->
 <div id="hud">
   <canvas id="fxLines" width="800" height="450" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;opacity:0;transition:opacity .2s"></canvas>
   <div id="hudLeft" class="fixed top-2 left-3 text-lg font-black leading-tight">
@@ -288,7 +273,7 @@ html,body{margin:0;width:100%;height:100%;height:100dvh;overflow:hidden;backgrou
   <canvas id="mini" width="300" height="300"></canvas>
   <div id="hudRight" class="fixed top-2 right-3 text-right font-black">
     <div class="topBtns flex items-center justify-end gap-1.5 mb-1">
-      <button id="readBtn" style="pointer-events:auto" class="btn bg-sky-500/75 text-white text-sm py-1 px-2.5">🔈 讀題</button>
+      <button id="readBtn" style="pointer-events:auto" class="btn bg-slate-500/80 text-white text-sm py-1 px-2.5">🔈 語音:關</button>
       <button id="songBtn" style="pointer-events:auto" class="btn bg-white/30 text-white text-sm py-1 px-2.5">🎵 換歌</button>
       <button id="muteBtn" style="pointer-events:auto" class="btn bg-white/30 text-white text-sm py-1 px-2.5">🔊</button>
       <button id="pauseBtn" style="pointer-events:auto" class="btn bg-white/30 text-white text-sm py-1 px-2.5">⏸ 暫停</button>
@@ -329,62 +314,20 @@ html,body{margin:0;width:100%;height:100%;height:100dvh;overflow:hidden;backgrou
 <button id="resumeBtn" class="btn bg-green-500 text-white text-2xl w-full py-3">▶ 繼續比賽</button>
 <button id="quitBtn" class="btn bg-red-100 text-red-700 text-lg w-full mt-3">🚪 離開比賽（今場不計成績）</button></div></div>
 
-<!-- 老師密碼及新學年重設再三確認彈窗 -->
-<div id="pwOv" style="position:fixed;inset:0;z-index:50;display:none;background:#0009;align-items:center;justify-content:center"><div class="card text-center" style="max-width:440px" id="pwBox"></div></div>
-
 <script type="module">
 import * as THREE from 'three';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import {getAuth,signInAnonymously} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import {getFirestore,doc,setDoc,getDoc,addDoc,deleteDoc,collection,getDocs,query,orderBy,limit,serverTimestamp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import {getFirestore,doc,setDoc,getDoc,addDoc,collection,getDocs,query,orderBy,limit,serverTimestamp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 const $=id=>document.getElementById(id);
 
-/* ===== 自動比例縮放（解決手機瀏覽器頂部網址列導致選單上下被切問題） ===== */
-function fitAllCards(){
-  const vw=window.visualViewport?window.visualViewport.width:window.innerWidth;
-  const vh=window.visualViewport?window.visualViewport.height:window.innerHeight;
-  const availW=vw-8, availH=vh-8;
-  document.querySelectorAll('.scr.on .card, #lockOv[style*="flex"] .card, #pauseOv[style*="flex"] .card, #pwOv[style*="flex"] .card').forEach(card=>{
-    card.style.setProperty('--ui-scale','1');
-    const w=card.offsetWidth||1, h=card.scrollHeight||card.offsetHeight||1;
-    const sc=Math.min(1, availW/w, availH/h);
-    card.style.setProperty('--ui-scale', sc.toFixed(3));
-  });
+function goFullscreen(){
+  if(document.documentElement.requestFullscreen && !document.fullscreenElement){
+    document.documentElement.requestFullscreen().catch(()=>{});
+  }
 }
-window.addEventListener('resize', fitAllCards);
-if(window.visualViewport) window.visualViewport.addEventListener('resize', fitAllCards);
-
-/* ===== 全螢幕切換及手機自動進入全螢幕 ===== */
-const isMobileTouch = () => ('ontouchstart' in window) && Math.min(window.screen.width, window.screen.height) <= 560;
-function getFsEl(){return document.fullscreenElement||document.webkitFullscreenElement}
-async function toggleFullscreen(forceEnter=false){
-  try{
-    const el=document.documentElement;
-    if(!getFsEl()){
-      if(el.requestFullscreen)await el.requestFullscreen();
-      else if(el.webkitRequestFullscreen)await el.webkitRequestFullscreen();
-      if(screen.orientation&&screen.orientation.lock){try{await screen.orientation.lock('landscape')}catch(e){}}
-    }else if(!forceEnter){
-      if(document.exitFullscreen)await document.exitFullscreen();
-      else if(document.webkitExitFullscreen)await document.webkitExitFullscreen();
-    }
-  }catch(e){}
-  updateFsBtn();
-  setTimeout(fitAllCards,120);
-}
-function updateFsBtn(){
-  const b=$('fsBtn');if(!b)return;
-  b.textContent=getFsEl()?'🗗 退出全螢幕':'⛶ 全螢幕';
-}
-$('fsBtn').onclick=()=>toggleFullscreen(false);
-document.addEventListener('fullscreenchange',()=>{updateFsBtn();setTimeout(fitAllCards,100)});
-document.addEventListener('webkitfullscreenchange',()=>{updateFsBtn();setTimeout(fitAllCards,100)});
-// 手機玩家撳主要按鈕時自動收起瀏覽器網址列進入全螢幕
-['goLogin','guestBtn','startBtn','mpBtn','quickMpBtn'].forEach(id=>{
-  const el=$(id);
-  if(el)el.addEventListener('click',()=>{if(isMobileTouch()&&!getFsEl())toggleFullscreen(true)},{capture:true});
-});
+$('fsBtn').onclick = goFullscreen;
 
 const GITHUB_SHEET_PATH='./drivers_sheet.png', GITHUB_BADGE_PATH='./school_badge.png';
 let schoolBadgeImg=null;
@@ -406,7 +349,6 @@ async function fbRestore(){if(user.type!=='student'||!FB.ok)return;
   if(d.tw){const m={...ltw};for(const k in d.tw)m[k]=Math.max(m[k]||0,d.tw[k]);await store.set('tw_'+uid(),m)}
   if(d.stats){const ls=(await store.get('stats_'+uid()))||{};for(const k in d.stats){const a=d.stats[k],b=ls[k]||{n:0,w:0};if(a.n>b.n)ls[k]=a}await store.set('stats_'+uid(),ls)}}}catch(e){}}
 
-/* ===== 內置車手圖後備繪製 ===== */
 function makeChunTokAvatarDataURI(kind){
   const cv=document.createElement('canvas');cv.width=cv.height=180;const g=cv.getContext('2d');
   const skin=g.createRadialGradient(84,78,8,90,88,48);skin.addColorStop(0,'#ffedd5');skin.addColorStop(.7,'#fed7aa');skin.addColorStop(1,'#fdba74');
@@ -426,13 +368,12 @@ function makeChunTokAvatarDataURI(kind){
     if(kind==='cap'){g.fillStyle='#1e40af';g.beginPath();g.arc(90,66,46,Math.PI,0);g.fill()}
     if(kind==='chan'){g.fillStyle='#facc15';g.beginPath();g.moveTo(52,46);g.lineTo(58,18);g.lineTo(74,34);g.lineTo(90,12);g.lineTo(106,34);g.lineTo(122,18);g.lineTo(128,46);g.closePath();g.fill()}
   }
-  if(kind==='tam'){g.fillStyle='#111817';rr(52,72,32,22,8);g.fill();rr(96,72,32,22,8);g.fill();g.fillRect(82,78,16,4)}
+  if(kind==='tam'){g.fillStyle='#111827';rr(52,72,32,22,8);g.fill();rr(96,72,32,22,8);g.fill();g.fillRect(82,78,16,4)}
   else{[71,109].forEach(ex=>{g.fillStyle='#291811';g.beginPath();g.arc(ex,84,6.5,0,Math.PI*2);g.fill();g.fillStyle='#fff';g.beginPath();g.arc(ex-2,82,2.5,0,Math.PI*2);g.fill()})}
   g.fillStyle='#e11d48';g.beginPath();g.moveTo(76,104);g.quadraticCurveTo(90,118,104,104);g.closePath();g.fill();
   return cv.toDataURL('image/png');
 }
 
-/* ===== 10 位真鐸車手（連同 5 項技能數值 [極速, 加速, 操控, 耐力, 衝刺] 及特色） ===== */
 const GRADES=[1,2,3,4,5,6], GNAME=['','一','二','三','四','五','六'], CLASSES=['信','望','愛'], MAXNO=35, LAPS=3, GPL=5, TOTALQ=LAPS*GPL;
 const STAT_NAMES=['極速','加速','操控','耐力','衝刺'];
 const DRIVERS=[
@@ -449,7 +390,6 @@ const DRIVERS=[
 ];
 DRIVERS.forEach(d=>{d.img=makeChunTokAvatarDataURI(d.kind)});
 
-// 五角技能雷達圖 SVG
 function makeRadarSVG(d,compact=false){
   const hex='#'+d.color.toString(16).padStart(6,'0'), st=d.stats||[3,3,3,3,3];
   const W=compact?72:220, H=compact?72:195, cx=W/2, cy=compact?38:102, R=compact?28:64;
@@ -482,7 +422,6 @@ function updateMenuRadarBar(tw={}){
   bar.onclick=()=>showDriverModal(d,tw);
 }
 
-// 切開 10 合 1 原圖並去白底
 function sliceSheetTo10(img){
   const W=img.naturalWidth||img.width, H=img.naturalHeight||img.height;
   const full=document.createElement('canvas');full.width=W;full.height=H;
@@ -511,7 +450,6 @@ function sliceSheetTo10(img){
     return out.toDataURL('image/png');
   });
 }
-
 function cleanBadgeWhiteBg(img){
   const W=img.naturalWidth||img.width, H=img.naturalHeight||img.height;
   const cv=document.createElement('canvas');cv.width=W;cv.height=H;
@@ -526,7 +464,6 @@ function drawImageProp(ctx,img,dx,dy,dw,dh){
   if(!img)return;const iw=img.naturalWidth||img.width, ih=img.naturalHeight||img.height;if(!iw||!ih)return;
   const sc=Math.min(dw/iw,dh/ih), rw=iw*sc, rh=ih*sc;ctx.drawImage(img,dx+(dw-rw)/2,dy+(dh-rh)/2,rw,rh);
 }
-
 function tryAutoLoadSheet(url){
   const im=new Image();im.crossOrigin='anonymous';
   im.onload=async()=>{try{sliceSheetTo10(im).forEach((u,i)=>DRIVERS[i].img=u);if($('stDrivers')){$('stDrivers').textContent='✅ 已成功直讀原圖';$('stDrivers').className='text-emerald-600'}if(user){renderDrivers(await getWins(),await getTW())}}catch(e){}};
@@ -545,12 +482,10 @@ function tryAutoLoadBadge(url){
   im.onerror=()=>{if($('stBadge')){$('stBadge').textContent='ℹ️ 使用預設校徽';$('stBadge').className='text-slate-500'}};
   im.src=url;
 }
-tryAutoLoadSheet(GITHUB_SHEET_PATH);
-tryAutoLoadBadge(GITHUB_BADGE_PATH);
+tryAutoLoadSheet(GITHUB_SHEET_PATH);tryAutoLoadBadge(GITHUB_BADGE_PATH);
 
 const winsOf=(d,tw)=>(d.tbl?tw[d.tbl]:tw.all)||0;
 function lockOf(d,tw){if(user&&user.type==='teacher'||!d.need)return false;return winsOf(d,tw)<d.need}
-
 function showDriverModal(d,tw={}){
   const locked=lockOf(d,tw);
   $('lkIcon').style.background='#'+d.color.toString(16).padStart(6,'0');
@@ -569,7 +504,6 @@ function showDriverModal(d,tw={}){
     $('lkProg').textContent='五項能力平均，最適合新手練習！';
   }
   $('lockOv').style.display='flex';
-  requestAnimationFrame(fitAllCards);
 }
 $('lkOk').onclick=()=>$('lockOv').style.display='none';
 const UNLOCK_ACC=80;let guestWins=0,guestTW={};
@@ -582,7 +516,7 @@ const DIFF={'易':{sp:.80,acc:.55},'中':{sp:.92,acc:.75},'難':{sp:1.0,acc:.9}}
 /* ===== 儲存 ===== */
 const store={
  async get(k){try{const v=window.sayoStorage?await window.sayoStorage.getItem(k):localStorage.getItem(k);return v?JSON.parse(v):null}catch(e){return null}},
- async set(k,v){const s=JSON.stringify(v);try{window.sayoStorage?await window.sayoStorage.setItem(k,s):localStorage.setItem(k,s)}catch(e){}}};
+ async set(k,v){const s=JSON.stringify(v);try{window.sayoStorage?await window.sayoStorage.getItem(k,s):localStorage.setItem(k,s)}catch(e){}}};
 
 let user=null, diff='中', driverIdx=0, hiQ=false, guestStats={};
 const uid=()=>user.type==='student'?`${user.grade}${user.cls}-${user.no}`:user.type+'_'+Math.floor(100+Math.random()*900);
@@ -590,7 +524,7 @@ let mySessionId='';
 const label=()=>user.type==='student'?`${GNAME[user.grade]}年級 ${user.cls}班 ${user.no}號`:user.type==='guest'?'訪客（成績不會記錄）':'老師（不計入報告）';
 const shortName=()=>user.type==='student'?`${user.grade}${user.cls}(${user.no})`:user.type==='guest'?'訪客':'老師';
 const ALL_SCR=['sLogin','sMenu','sResult','sTrack','sRoute','sLb','sRp','sAdmin','sMpLobby','sMpWait'];
-const show=id=>{for(const s of ALL_SCR)$(s).classList.toggle('on',s===id);$('hud').style.display=id?'none':'block';$('fsBtn').style.display=id?'block':'none';requestAnimationFrame(fitAllCards)};
+const show=id=>{for(const s of ALL_SCR)$(s).classList.toggle('on',s===id);$('hud').style.display=id?'none':'block'};
 
 /* ===== 登入 ===== */
 let selGr=null, selCls=null, selNo=null;
@@ -604,115 +538,39 @@ CLASSES.forEach(c=>{const b=document.createElement('button');b.className='btn bg
  b.onclick=()=>{selCls=c;[...$('clsBox').children].forEach(x=>x.classList.toggle('sel',x===b));fillNo();chk()};$('clsBox').appendChild(b)});
 $('noBox').addEventListener('change',()=>{selNo=$('noBox').value?Number($('noBox').value):null;chk()});
 function chk(){$('goLogin').disabled=!(selGr&&selCls&&selNo)}
-$('goLogin').onclick=()=>login({grade:selGr,cls:selCls,no:selNo,type:'student'});
-$('guestBtn').onclick=()=>login({cls:'訪客',no:0,type:'guest'});
-$('homeLbBtn').onclick=()=>{window._lbFrom='sLogin';openLb()};
-$('teachBtn').onclick=()=>{user={cls:'老師',no:0,type:'teacher'};show('sAdmin')};
+$('goLogin').onclick=()=>{goFullscreen();login({grade:selGr,cls:selCls,no:selNo,type:'student'})};
+$('guestBtn').onclick=()=>{goFullscreen();login({cls:'訪客',no:0,type:'guest'})};
+$('teachBtn').onclick=()=>{
+  const pwd=prompt("請輸入老師後台密碼：");
+  if(pwd==="23265111"){user={cls:'老師',no:0,type:'teacher'};show('sAdmin')}
+  else if(pwd!==null)alert("密碼錯誤！");
+};
+$('homeLbBtn').onclick=()=>{
+  user = { type: 'guest' };
+  if(selGr && selCls && selNo) user = {grade: selGr, cls: selCls, no: selNo, type: 'student'};
+  openLb();
+};
 $('adBack').onclick=()=>show('sLogin');
-$('adLb').onclick=()=>{window._lbFrom='sAdmin';openLb()};
+$('adLb').onclick=()=>openLb();
 $('adRp').onclick=()=>openRp();
-
-const TEACHER_PW='23265111';
-function closePwModal(){$('pwOv').style.display='none'}
-function openPwModal(title,subtitle,onSuccess){
-  $('pwBox').innerHTML=`
-    <h3 class="text-2xl font-black text-blue-800">${title}</h3>
-    <p class="text-sm text-slate-600 mt-1">${subtitle}</p>
-    <input id="pwInp" type="password" inputmode="numeric" placeholder="請輸入老師密碼" class="mt-3 w-full rounded-2xl border-2 border-slate-300 bg-slate-50 p-2.5 text-center text-2xl font-black tracking-widest text-slate-800">
-    <p id="pwErr" class="text-red-600 font-bold text-sm mt-1 h-5"></p>
-    <div class="flex gap-2 mt-2">
-      <button id="pwCancel" class="btn bg-slate-200 text-slate-700 flex-1 text-lg">取消</button>
-      <button id="pwOk" class="btn bg-blue-600 text-white flex-1 text-lg">確認</button>
-    </div>`;
-  $('pwOv').style.display='flex';
-  requestAnimationFrame(()=>{fitAllCards();$('pwInp').focus()});
-  const submit=()=>{
-    if(($('pwInp').value||'').trim()===TEACHER_PW){onSuccess()}
-    else{$('pwErr').textContent='❌ 密碼不正確，請重新輸入！';$('pwInp').value='';$('pwInp').focus()}
-  };
-  $('pwCancel').onclick=closePwModal;
-  $('pwOk').onclick=submit;
-  $('pwInp').onkeydown=e=>{if(e.key==='Enter')submit()};
-}
-
 $('adTest').onclick=()=>{
-  openPwModal('🔒 老師測試模式','請輸入老師密碼以解鎖全部 10 位真鐸車手：',()=>{
-    closePwModal();
-    login({cls:'老師測試',no:0,type:'teacher'});
-  });
+  const pwd=prompt("請輸入測試密碼：");
+  if(pwd==="23265111")login({cls:'老師測試',no:0,type:'teacher'});
+  else if(pwd!==null)alert("密碼錯誤！");
 };
-
-$('adReset').onclick=()=>{
-  openPwModal('🔒 新學年資料重設','請先輸入老師密碼以進行驗證：',()=>showResetConfirmStep(1));
+$('adReset').onclick=async()=>{
+  const p=prompt("🔒 進入危險操作，請輸入密碼：");
+  if(p!=="23265111")return alert("密碼錯誤！");
+  if(!confirm("⚠️ 第 1/3 次確認：\n即將清空本機的所有學生成績及排行榜紀錄！確定？"))return;
+  if(!confirm("⚠️ 第 2/3 次確認：\n強烈建議先點擊「老師報告 -> 匯出 Excel」備份。\n你確定已經備份並繼續刪除？"))return;
+  if(!confirm("🚨 最後第 3/3 次確認：\n資料刪除後無法復原，確定要立即重設新學年資料？"))return;
+  await store.set('records',[]);await store.set('pendingUp',[]);
+  for(let i=localStorage.length-1;i>=0;i--){
+    const k=localStorage.key(i);
+    if(k&&(k.startsWith('wins_')||k.startsWith('tw_')||k.startsWith('stats_')||k==='records'||k==='pendingUp'))localStorage.removeItem(k);
+  }
+  alert("✅ 新學年資料已全部重設！");location.reload();
 };
-
-function showResetConfirmStep(step){
-  const msgs=[
-    null,
-    {
-      badge:'⚠️ 第 1 / 3 次確認',
-      title:'確定要啟動「新學年資料重設」嗎？',
-      desc:'此操作將會清除所有同學的比賽紀錄、排行榜分數、勝出場數及已解鎖車手進度。',
-      btn:'我明白，進入第 2 次確認 ▶',
-      btnCls:'bg-amber-500 text-white'
-    },
-    {
-      badge:'🚨 第 2 / 3 次確認',
-      title:'資料刪除後將無法復原！',
-      desc:'建議重設前先到「📊 老師報告」按「📥 匯出 Excel」備份本學年成績。你確定已經備份好並要繼續嗎？',
-      btn:'已備份好，進入最後確認 ▶',
-      btnCls:'bg-orange-600 text-white'
-    },
-    {
-      badge:'🛑 最後第 3 / 3 次確認',
-      title:'最後確認：立即清空全校新學年資料？',
-      desc:'按下「立即永久清空」後，雲端資料庫及本機的所有學生成績與排行榜將會即時歸零！',
-      btn:'🗑️ 立即永久清空所有資料',
-      btnCls:'bg-red-600 text-white'
-    }
-  ][step];
-  $('pwBox').innerHTML=`
-    <div class="inline-block bg-red-100 text-red-800 px-3 py-0.5 rounded-full text-xs font-black">${msgs.badge}</div>
-    <h3 class="text-xl font-black text-red-700 mt-2">${msgs.title}</h3>
-    <p class="text-sm text-slate-600 mt-2 leading-relaxed">${msgs.desc}</p>
-    <div id="rstStatus" class="text-sm font-bold text-blue-700 mt-2"></div>
-    <div class="flex gap-2 mt-4">
-      <button id="rstCancel" class="btn bg-slate-200 text-slate-700 flex-1">取消返回</button>
-      <button id="rstNext" class="btn ${msgs.btnCls} flex-1">${msgs.btn}</button>
-    </div>`;
-  requestAnimationFrame(fitAllCards);
-  $('rstCancel').onclick=closePwModal;
-  $('rstNext').onclick=async()=>{
-    if(step<3){showResetConfirmStep(step+1);return}
-    $('rstCancel').disabled=true;$('rstNext').disabled=true;
-    $('rstStatus').textContent='⏳ 正在清空雲端及本機所有資料，請稍候…';
-    try{
-      // 清空本機學生成績與解鎖紀錄（保留畫面與聲音偏好設定）
-      const prefs=await store.get('prefs');
-      try{localStorage.clear()}catch(e){}
-      if(prefs)await store.set('prefs',prefs);
-      guestWins=0;guestTW={};guestStats={};
-      // 清空 Firebase 雲端資料庫
-      if(FB.ok&&FB.db){
-        const pSnap=await getDocs(collection(FB.db,'players'));
-        for(const d of pSnap.docs){try{await deleteDoc(doc(FB.db,'players',d.id))}catch(e){}}
-        const rSnap=await getDocs(collection(FB.db,'races'));
-        for(const d of rSnap.docs){try{await deleteDoc(doc(FB.db,'races',d.id))}catch(e){}}
-      }
-      $('pwBox').innerHTML=`
-        <div class="text-5xl mb-2">✅</div>
-        <h3 class="text-2xl font-black text-green-700">新學年資料重設完成！</h3>
-        <p class="text-sm text-slate-600 mt-1">全校排行榜、比賽紀錄及車手解鎖進度已全部歸零。</p>
-        <button id="rstDone" class="btn bg-green-600 text-white text-lg w-full mt-4 py-2.5">完成</button>`;
-      requestAnimationFrame(fitAllCards);
-      $('rstDone').onclick=closePwModal;
-    }catch(e){
-      $('rstStatus').textContent='⚠️ 部分雲端資料清除時發生錯誤，請檢查網絡後再試。';
-      $('rstCancel').disabled=false;
-    }
-  };
-}
-
 async function login(u){user=u;mySessionId=u.type==='student'?`${u.grade}${u.cls}-${u.no}`:`${u.type}-${Math.floor(1000+Math.random()*9000)}`;
  window._inTest=u.type==='teacher';if(u.type==='student'){await store.set('lastUser',u);for(let i=0;i<15&&!FB.ok;i++)await new Promise(r=>setTimeout(r,100));await fbRestore();fbRetry()}if(u.type==='guest')guestStats={};showMenu()}
 $('logout').onclick=()=>{leaveMpRoom();window._inTest=false;selGr=selCls=selNo=null;[...$('grBox').children,...$('clsBox').children].forEach(x=>x.classList.remove('sel'));fillNo();chk();$('resume').innerHTML='';show('sLogin')};
@@ -723,7 +581,7 @@ async function initLogin(){
  prefsOK=true;
  const last=await store.get('lastUser');
  if(last&&last.grade&&CLASSES.includes(last.cls)){$('resume').innerHTML=`<div class="bg-amber-50 rounded-2xl p-2 flex items-center justify-between gap-2"><span class="font-bold text-lg">上次：${GNAME[last.grade]}年級 ${last.cls}班 ${last.no}號</span><span><button id="rsY" class="btn bg-green-500 text-white">繼續 ▶</button> <button id="rsN" class="btn bg-slate-200">不是我</button></span></div>`;
-  $('rsY').onclick=()=>login(last);$('rsN').onclick=()=>{($('resume').innerHTML='');fitAllCards()}}
+  $('rsY').onclick=()=>{goFullscreen();login(last)};$('rsN').onclick=()=>$('resume').innerHTML=''}
  show('sLogin')}
 
 /* ===== 主選單 ===== */
@@ -743,7 +601,6 @@ function renderDrivers(w,tw={}){const box=$('drvBox');box.innerHTML='';
     updateMenuRadarBar(tw);
   };box.appendChild(b)});
  updateMenuRadarBar(tw);
- requestAnimationFrame(fitAllCards);
 }
 Object.keys(DIFF).forEach(k=>{const b=document.createElement('button');b.className='btn bg-gradient-to-b from-white to-slate-200 flex-1 text-xl';b.textContent=k;
  b.onclick=()=>{diff=k;[...$('dfBox').children].forEach(x=>x.classList.toggle('sel',x===b))};if(k===diff)b.classList.add('sel');$('dfBox').appendChild(b)});
@@ -760,9 +617,9 @@ async function showMenu(){leaveMpRoom();$('who').textContent=label();
  const w=await getWins(),tw=await getTW();renderDrivers(w,tw);
  $('myProg').innerHTML=`<b>📈 我的進步</b><br>已玩 ${recs.length} 場${recs.length?`，上次答對率 ${recs[recs.length-1].acc}%`:''}<br>較弱的題目：${wk.length?wk.join('、'):'暫時未有'}<br>🏆 ${user.type==='teacher'?'老師：所有車手已解鎖':`勝出 ${w} 場（第 1 名及答對率 ${UNLOCK_ACC}% 或以上）`}`;
  show('sMenu')}
-$('startBtn').onclick=()=>{mpState.active=false;show('sTrack')};
+$('startBtn').onclick=()=>{goFullscreen();mpState.active=false;show('sTrack')};
 
-/* ===== 🌐 連機對戰（MQTT WebSocket 零配額同步） ===== */
+/* ===== 🌐 連機對戰 ===== */
 const MP_BROKERS=['wss://broker.emqx.io:8084/mqtt','wss://broker.hivemq.com:8884/mqtt'];
 let mqClient=null, mpBrowseRooms={};
 const TOPIC_PREFIX='chuntok_racing_v3_hk/';
@@ -822,7 +679,7 @@ function handleRoomPacket(msg){
   }
 }
 $('mpBtn').onclick=()=>{
-  $('mpErr').textContent='';const t=[...TBL].sort();
+  goFullscreen();$('mpErr').textContent='';const t=[...TBL].sort();
   $('mpTblTxt').textContent=t.length===8?'2 至 9 全部':t.join('、')+' 乘數表';
   show('sMpLobby');ensureMqtt().catch(()=>{$('mpErr').textContent='連線雲端對戰頻道中，請稍候再試'});
 };
@@ -857,7 +714,7 @@ $('btnJoinRoom').onclick=async()=>{
   await joinRoomByCode(code);
 };
 $('quickMpBtn').onclick=async()=>{
-  const b=$('quickMpBtn');b.disabled=true;
+  goFullscreen();const b=$('quickMpBtn');b.disabled=true;
   try{
     await ensureMqtt();await new Promise(r=>setTimeout(r,350));
     const codes=Object.keys(mpBrowseRooms).filter(k=>{const r=mpBrowseRooms[k];return r&&r.state==='waiting'&&r.cnt<4&&Date.now()-r.ts<40000});
@@ -883,7 +740,7 @@ function enterWaitRoom(code,isHost){
   if(mpState.roomData)renderWaitRoom(mpState.roomData);show('sMpWait');
 }
 function renderWaitRoom(d){
-  const [sc,ri]=(d.track||'meadow-0').split('-'), rName=ROUTES[sc]&&ROUTES[sc][+ri]?ROUTES[sc][+ri].name:'經典彎道';
+  const [sc,ri]=(d.track||'meadow-0').split('-');const rName=ROUTES[sc]&&ROUTES[sc][+ri]?ROUTES[sc][+ri].name:'經典彎道';
   $('waitTrackBadge').textContent=`${sc==='city'?'🌇 城市':'🌳 綠野'}・${rName}｜乘數表：${(d.tables||[]).length===8?'全部':(d.tables||[]).join(',')}`;
   const pList=Object.values(d.players||{}), slots=[];
   for(let i=0;i<4;i++){
@@ -901,7 +758,6 @@ function renderWaitRoom(d){
       </div>`);
     }
   }$('waitPlayers').innerHTML=slots.join('');
-  requestAnimationFrame(fitAllCards);
 }
 $('btnLeaveRoom').onclick=()=>{leaveMpRoom();showMenu()};
 function leaveMpRoom(){
@@ -931,26 +787,21 @@ let lbMode='acc',lbGr=0;
 function grBtns(box,cur,fn){box.innerHTML='';[['全部',0],...GRADES.map(g=>[GNAME[g]+'年級',g])].forEach(([t,v])=>{const b=document.createElement('button');b.className='btn bg-slate-100 text-sm py-1 px-3'+(v===cur?' sel':'');b.textContent=t;b.onclick=()=>fn(v);box.appendChild(b)})}
 async function openLb(){show('sLb');$('lbBox').textContent='載入中…';await drawLb()}
 async function drawLb(){grBtns($('lbGr'),lbGr,v=>{lbGr=v;drawLb()});$('lbA').classList.toggle('sel',lbMode==='acc');$('lbW').classList.toggle('sel',lbMode==='win');
- const lastU=await store.get('lastUser');
- const me=(user&&user.type==='student')?ID(user.grade,user.cls,user.no):(selGr&&selCls&&selNo)?ID(selGr,selCls,selNo):(lastU&&lastU.grade&&lastU.cls&&lastU.no)?ID(lastU.grade,lastU.cls,lastU.no):null;
- let rows=[];
- if(lbMode==='acc'){$('lbNote').textContent='📌 準則：本月玩滿 3 場或以上才上榜；以平均答對率排名，相同則比較作答速度。';const rs=await fbRaces();if(!rs){$('lbBox').textContent='暫時未能連線，請稍後再試。';return}
+ const me=user&&user.type==='student'?ID(user.grade,user.cls,user.no):null;let rows=[];
+ if(lbMode==='acc'){$('lbNote').textContent='本月玩滿 3 場或以上才上榜；以平均答對率排名，相同則比較作答速度。';const rs=await fbRaces();if(!rs){$('lbBox').textContent='暫時未能連線，請稍後再試。';return}
   const m0=new Date();m0.setDate(1);m0.setHours(0,0,0,0);const by={};rs.filter(r=>r.ms>=m0.getTime()&&(!lbGr||r.grade===lbGr)).forEach(r=>{const k=ID(r.grade,r.cls,r.no);(by[k]=by[k]||{k,n:0,a:0,t:0}).n++;by[k].a+=r.acc;by[k].t+=r.avgT});
   rows=Object.values(by).filter(x=>x.n>=3).map(x=>({k:x.k,v:Math.round(x.a/x.n),sub:`${x.n} 場・${(x.t/x.n).toFixed(1)} 秒/題`,t:x.t/x.n})).sort((a,b)=>b.v-a.v||a.t-b.t)}
- else{$('lbNote').textContent=`📌 準則：學生登入比賽獲得「第 1 名」且「答對率達 ${UNLOCK_ACC}% 或以上」計 1 場勝出；累積滿 1 場即上榜！`;
-  const [ps,rs]=await Promise.all([fbPlayers(),fbRaces()]);if(!ps&&!rs){$('lbBox').textContent='暫時未能連線，請稍後再試。';return}
-  const winMap={};
-  (ps||[]).forEach(p=>{if((p.wins||0)>0&&(!lbGr||p.grade===lbGr)){const k=ID(p.grade,p.cls,p.no);winMap[k]=Math.max(winMap[k]||0,p.wins)}});
-  const rCount={};
-  (rs||[]).forEach(r=>{if(r.rank===1&&(r.acc||0)>=UNLOCK_ACC&&(!lbGr||r.grade===lbGr)){const k=ID(r.grade,r.cls,r.no);rCount[k]=(rCount[k]||0)+1}});
-  Object.entries(rCount).forEach(([k,w])=>{winMap[k]=Math.max(winMap[k]||0,w)});
-  rows=Object.entries(winMap).map(([k,v])=>({k,v,sub:'第1名＋答對≥80%'})).sort((a,b)=>b.v-a.v)}
- if(!rows.length){$('lbBox').textContent='暫時未有資料，快去比賽吧！';requestAnimationFrame(fitAllCards);return}
+ else{$('lbNote').textContent='累積勝出場數（第 1 名及答對率 80% 或以上）。';const ps=await fbPlayers();if(!ps){$('lbBox').textContent='暫時未能連線，請稍後再試。';return}
+  rows=ps.filter(p=>(p.wins||0)>0&&(!lbGr||p.grade===lbGr)).map(p=>({k:ID(p.grade,p.cls,p.no),v:p.wins,sub:''})).sort((a,b)=>b.v-a.v)}
+ if(!rows.length){$('lbBox').textContent='暫時未有資料，快去比賽吧！';return}
  const top=rows.slice(0,10),mi=me?rows.findIndex(r=>r.k===me):-1,md=['🥇','🥈','🥉'],unit=lbMode==='acc'?'%':' 場';
- $('lbBox').innerHTML=top.map((r,i)=>`<div class="flex items-center gap-3 rounded-xl px-3 py-1 mb-1 ${r.k===me?'bg-amber-100 font-black':'bg-slate-50'}"><span class="text-2xl w-10 text-center">${md[i]||i+1}</span><span class="text-xl font-bold flex-1">${esc(r.k)}</span><span class="text-xs text-slate-500">${esc(r.sub)}</span><span class="text-2xl font-black text-blue-700 w-20 text-right">${r.v}${unit}</span></div>`).join('')+(mi>=10?`<div class="mt-2 rounded-xl bg-amber-100 px-3 py-1 font-black">你排第 ${mi+1} 名：${esc(rows[mi].k)}　${rows[mi].v}${unit}</div>`:'');
- requestAnimationFrame(fitAllCards)}
-$('lbBtn').onclick=()=>{window._lbFrom='sMenu';openLb()};
-$('lbBack').onclick=()=>{if(window._lbFrom==='sLogin')show('sLogin');else if(window._lbFrom==='sAdmin'||(user&&user.type==='teacher'&&!window._inTest))show('sAdmin');else showMenu()};
+ $('lbBox').innerHTML=top.map((r,i)=>`<div class="flex items-center gap-3 rounded-xl px-3 py-1 mb-1 ${r.k===me?'bg-amber-100 font-black':'bg-slate-50'}"><span class="text-2xl w-10 text-center">${md[i]||i+1}</span><span class="text-xl font-bold flex-1">${esc(r.k)}</span><span class="text-xs text-slate-500">${esc(r.sub)}</span><span class="text-2xl font-black text-blue-700 w-20 text-right">${r.v}${unit}</span></div>`).join('')+(mi>=10?`<div class="mt-2 rounded-xl bg-amber-100 px-3 py-1 font-black">你排第 ${mi+1} 名：${esc(rows[mi].k)} ${rows[mi].v}${unit}</div>`:'')}
+$('lbBtn').onclick=openLb;
+$('lbBack').onclick=()=>{
+  if(user&&user.type==='teacher'&&!window._inTest)show('sAdmin');
+  else if(!mySessionId)show('sLogin');
+  else showMenu();
+};
 $('lbA').onclick=()=>{lbMode='acc';drawLb()};$('lbW').onclick=()=>{lbMode='win';drawLb()};
 let rpGr=0,rpData=null;
 async function openRp(){show('sRp');$('rpBox').textContent='載入中…';const rs=await fbRaces();if(!rs){$('rpBox').textContent='暫時未能連線，請稍後再試。';return}rpData=rs;drawRp()}
@@ -969,9 +820,8 @@ function drawRp(){grBtns($('rpGr'),rpGr,v=>{rpGr=v;drawRp()});const{rs,ps}=rpAll
  const card=(t,v,s,c)=>`<div class="rounded-2xl p-2 text-center ${c}"><div class="text-xs text-slate-500">${t}</div><div class="text-3xl font-black">${v}</div><div class="text-xs">${s||''}</div></div>`;
  $('rpBox').innerHTML=`<div class="grid grid-cols-4 gap-2">${card('玩過人數',played,`共 ${total} 人・${Math.round(played/total*100)}%`,'bg-sky-50')}${card('總場數',rs.length,'','bg-violet-50')}${card('整體答對率',acc+'%',`平均 ${avT} 秒/題`,'bg-green-50')}${card('平均進步',impAvg===null?'—':(impAvg>0?'+':'')+impAvg+'%','玩 2 場或以上的同學','bg-amber-50')}</div>
  <p class="font-black text-blue-800 mt-3">🏫 各班概況</p><table class="w-full text-sm mt-1"><tr class="text-left text-slate-500"><th>班別</th><th>玩過人數</th><th>場數</th><th>答對率</th></tr>${clsRows.map(r=>`<tr class="border-t"><td>${esc(r.k)}</td><td>${r.pl}/${MAXNO}</td><td>${r.races}</td><td>${r.acc===null?'—':r.acc+'%'}</td></tr>`).join('')}</table>
- <p class="font-black text-blue-800 mt-3">❌ 最常錯的題目</p><div class="flex flex-wrap gap-2 mt-1">${hard.length?hard.map(h=>`<span class="rounded-xl bg-red-50 px-3 py-1 font-bold">${h.k}　錯 ${h.r}%<span class="text-xs text-slate-500">（${h.w}/${h.n}）</span></span>`).join(''):'<span class="text-slate-500">資料未足</span>'}</div>
- <p class="font-black text-blue-800 mt-3">📈 同學進步及作答時間</p><div style="max-height:200px;overflow:auto"><table class="w-full text-sm"><tr class="text-left text-slate-500"><th>學生</th><th>場數</th><th>答對率</th><th>秒/題</th><th>進步</th></tr>${[...ps].sort((a,b)=>a.k.localeCompare(b.k,'zh')).map(p=>`<tr class="border-t"><td>${esc(p.k)}</td><td>${p.n}</td><td>${p.acc}%</td><td>${p.t.toFixed(1)}</td><td class="${p.imp>0?'text-green-600':p.imp<0?'text-red-500':''}">${p.imp===null?'—':(p.imp>0?'+':'')+p.imp+'%'}</td></tr>`).join('')}</table></div>`;
- requestAnimationFrame(fitAllCards)}
+ <p class="font-black text-blue-800 mt-3">❌ 最常錯的題目</p><div class="flex flex-wrap gap-2 mt-1">${hard.length?hard.map(h=>`<span class="rounded-xl bg-red-50 px-3 py-1 font-bold">${h.k} 錯 ${h.r}%<span class="text-xs text-slate-500">（${h.w}/${h.n}）</span></span>`).join(''):'<span class="text-slate-500">資料未足</span>'}</div>
+ <p class="font-black text-blue-800 mt-3">📈 同學進步及作答時間</p><div style="max-height:200px;overflow:auto"><table class="w-full text-sm"><tr class="text-left text-slate-500"><th>學生</th><th>場數</th><th>答對率</th><th>秒/題</th><th>進步</th></tr>${[...ps].sort((a,b)=>a.k.localeCompare(b.k,'zh')).map(p=>`<tr class="border-t"><td>${esc(p.k)}</td><td>${p.n}</td><td>${p.acc}%</td><td>${p.t.toFixed(1)}</td><td class="${p.imp>0?'text-green-600':p.imp<0?'text-red-500':''}">${p.imp===null?'—':(p.imp>0?'+':'')+p.imp+'%'}</td></tr>`).join('')}</table></div>`}
 function xlsEsc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 function sheet(name,rows){return `<Worksheet ss:Name="${xlsEsc(name)}"><Table>${rows.map(r=>`<Row>${r.map(v=>typeof v==='number'?`<Cell><Data ss:Type="Number">${v}</Data></Cell>`:`<Cell><Data ss:Type="String">${xlsEsc(v)}</Data></Cell>`).join('')}</Row>`).join('')}</Table></Worksheet>`}
 $('rpXls').onclick=()=>{if(!rpData)return;const{rs,ps}=rpAll(),fq={};rs.flatMap(r=>r.qs||[]).forEach(x=>{const k=factKey(x.a,x.b),o=fq[k]=fq[k]||{n:0,w:0,t:0};o.n++;o.t+=x.t;if(!x.ok)o.w++});
@@ -1289,7 +1139,7 @@ function updSparks(dt){for(let i=0;i<SP;i++)if(spLife[i]>0){spLife[i]-=dt;spVel[
 function musStop(){clearInterval(AU.timer);AU.timer=null;if(AU.eg)AU.eg.gain.setTargetAtTime(0,AU.ctx.currentTime,.05)}
 $('muteBtn').onclick=()=>{AU.mute=!AU.mute;$('muteBtn').textContent=AU.mute?'🔇':'🔊';if(AU.master)AU.master.gain.value=AU.mute?0:.8;savePrefs()};
 
-/* ===== 道具（不彈出阻擋視野文字） ===== */
+/* ===== 道具 ===== */
 const boxTex=(e,c)=>cvTex(g=>{g.fillStyle=c;g.fillRect(0,0,128,128);g.strokeStyle='#fff';g.lineWidth=10;g.strokeRect(5,5,118,118);g.font='80px system-ui';g.textAlign='center';g.textBaseline='middle';g.fillText(e,64,70)});
 const emoTex=e=>cvTex(g=>{g.font='100px system-ui';g.textAlign='center';g.textBaseline='middle';g.fillText(e,64,72)});
 const IT={boost:boxTex('⚡','#f59e0b'),shield:boxTex('🛡️','#0ea5e9')},HZ={bomb:emoTex('💣'),banana:emoTex('🍌')},itemGeo=new THREE.BoxGeometry(2,2,2);
@@ -1327,7 +1177,7 @@ function mkQ(){
  for(const c of shuffle([a*(b+1),a*(b-1),(a+1)*b,(a-1)*b,ans+10,ans-10,ans+1,ans-1,a+b])){if(set.size>=3)break;if(c>0&&!set.has(c))set.add(c)}
  return{a,b,ans,opts:shuffle([...set])}}
 
-/* ===== 控制及廣東話讀題（移至右上角換歌旁） ===== */
+/* ===== 控制及語音讀題 ===== */
 const keys={l:false,r:false};
 const bind=(el,k)=>{const on=e=>{e.preventDefault();keys[k]=true;el.classList.add('on')},off=()=>{keys[k]=false;el.classList.remove('on')};
  el.addEventListener('pointerdown',on);['pointerup','pointerleave','pointercancel'].forEach(ev=>el.addEventListener(ev,off))};
@@ -1335,11 +1185,12 @@ bind($('bL'),'l');bind($('bR'),'r');
 addEventListener('keydown',e=>{if(['ArrowLeft','a','A'].includes(e.key))keys.l=true;if(['ArrowRight','d','D'].includes(e.key))keys.r=true});
 addEventListener('keyup',e=>{if(['ArrowLeft','a','A'].includes(e.key))keys.l=false;if(['ArrowRight','d','D'].includes(e.key))keys.r=false});
 let paused=false;
-$('pauseBtn').onclick=()=>{if(!race||!['race','count'].includes(race.state))return;paused=true;keys.l=keys.r=false;musStop();$('pauseOv').style.display='flex';requestAnimationFrame(fitAllCards)};
+$('pauseBtn').onclick=()=>{if(!race||!['race','count'].includes(race.state))return;paused=true;keys.l=keys.r=false;musStop();$('pauseOv').style.display='flex'};
 $('resumeBtn').onclick=()=>{paused=false;$('pauseOv').style.display='none';clock.getDelta();musStart()};
 $('quitBtn').onclick=()=>{paused=false;$('pauseOv').style.display='none';musStop();if(race){race.state='quit';clearRace()}showMenu()};
 
 const CN=['零','一','二','三','四','五','六','七','八','九'],sAudio=new Audio();
+let autoRead=false;
 function speakCantonese(text){
   if(!('speechSynthesis' in window))return false;
   try{
@@ -1354,17 +1205,24 @@ function speakCantonese(text){
 }
 if('speechSynthesis' in window)window.speechSynthesis.onvoiceschanged=()=>{window.speechSynthesis.getVoices()};
 
-$('readBtn').onclick=async()=>{
-  if(!race||race.gi>=TOTALQ)return;
-  const q=gates[race.gi%GPL].q;if(!q)return;
-  const txt=`${CN[q.a]}乘${CN[q.b]}等於幾多？`;
-  if(speakCantonese(txt))return;
-  if(window.sayoSpeak){
-    try{const r=await window.sayoSpeak(`${CN[q.a]}乘${CN[q.b]}`);if(r&&r.url){sAudio.src=r.url;sAudio.play().catch(()=>{})}}catch(e){}
-  }
+$('readBtn').onclick=()=>{
+  autoRead = !autoRead;
+  $('readBtn').textContent = autoRead ? '🔊 語音:開' : '🔈 語音:關';
+  $('readBtn').className = autoRead ? 'btn bg-green-500 text-white text-sm py-1 px-2.5' : 'btn bg-slate-500/80 text-white text-sm py-1 px-2.5';
+  if(autoRead && race && race.state === 'race') playCurrentQuestion();
 };
 
-/* ===== 比賽（結合車手 5 項能力值：極速、加速、操控、耐力、衝刺） ===== */
+async function playCurrentQuestion(){
+  if(!race||race.gi>=TOTALQ)return;
+  const q=gates[race.gi%GPL].q;if(!q)return;
+  const txt=`${CN[q.a]}乘${CN[q.b]}`;
+  if(speakCantonese(txt))return;
+  if(window.sayoSpeak){
+    try{const r=await window.sayoSpeak(txt);if(r&&r.url){sAudio.src=r.url;sAudio.play().catch(()=>{})}}catch(e){}
+  }
+}
+
+/* ===== 比賽 ===== */
 const VMAX=30;let race=null,cars=[];
 function clearRace(){cars.forEach(c=>scene.remove(c));cars=[];race=null}
 async function startRace(roomDoc=null){
@@ -1397,7 +1255,6 @@ async function startRace(roomDoc=null){
    ai=others.map((di,k)=>{const m=makeKart(DRIVERS[di]);attachShield(m);cars.push(m);return{s:grid[k][0],x:grid[k][1],v:0,mesh:m,gi:0,lane:1,boost:0,slow:0,ph:Math.random()*6,isRemote:false,name:DRIVERS[di].name}});
  }
  gates.forEach(g=>setGate(g,mkQ()));
- // 將車手 5 項數值轉化為賽車操控加成
  const pObj={
    s:-6,x:0,v:0,mesh:pm,boost:0,slow:0,steer:0,shield:0,spin:0,
    spdMax:VMAX+(dst[0]-3)*1.5,
@@ -1417,7 +1274,7 @@ function place(o,s,x,yaw=0){const f=frame(s);o.position.copy(f.p).addScaledVecto
 
 function update(dt){const R=race;R.t+=dt;const p=R.p;R.hitCD=(R.hitCD||0)-dt;R.wallCD=(R.wallCD||0)-dt;updSparks(dt);
  if(R.state==='count'){R.cd-=dt;const n=Math.ceil(R.cd);$('hMsg').style.color='#fde047';$('hMsg').textContent=R.cd>.5?(n>3?3:n):'開始！';const bk=R.cd>.5?Math.min(3,n):0;if(bk!==R.lastN){R.lastN=bk;sfx(bk?'beep':'go')}
-  if(R.cd<=0){R.state='race';R.shownAt=R.laneAt=R.t;$('hMsg').textContent='';syncMyMpPos(true)}}
+  if(R.cd<=0){R.state='race';R.shownAt=R.laneAt=R.t;$('hMsg').textContent='';syncMyMpPos(true);if(autoRead)playCurrentQuestion();}}
  const racing=R.state==='race'||R.state==='finish';
  const inp=(keys.r?1:0)-(keys.l?1:0);p.steer+=(inp-p.steer)*Math.min(1,dt*10);
  if(racing){const tv=(p.spdMax+(p.boost>0?12:0))*(p.slow>0?.55:1)*(R.state==='finish'?.6:1);p.v+=(tv-p.v)*Math.min(1,dt*p.accRate);
@@ -1425,12 +1282,12 @@ function update(dt){const R=race;R.t+=dt;const p=R.p;R.hitCD=(R.hitCD||0)-dt;R.w
   if(Math.abs(p.x)>=W/2-1.31&&Math.abs(p.steer)>.3&&R.wallCD<=0){R.wallCD=.35;p.v*=1-.15*p.endMul;R.shake=Math.max(R.shake,.25);burst(p.mesh.position,12);sfx('scrape')}
   syncMyMpPos(false)}
  const ln=laneOf(p.x);if(ln!==R.lane){R.lane=ln;R.laneAt=R.t}
- // 過閘口：答啱加速不彈大字遮視野，答錯只短暫顯示正確算式
  if(R.state==='race'&&R.gi<TOTALQ){const gs=Math.floor(R.gi/GPL)*L+gateOff[R.gi%GPL];
   if(p.s>=gs){const gt=gates[R.gi%GPL],q=gt.q,ch=q.opts[ln],ok=ch===q.ans,tm=Math.max(.5,Math.max(R.laneAt,R.shownAt)-R.shownAt);
    R.log.push({q:`${q.a}×${q.b}`,a:q.a,b:q.b,ans:q.ans,choice:ch,correct:ok,time:+tm.toFixed(1)});
    if(ok){p.boost=1.6*p.bstMul;sfx('ok')}else{p.slow=2.4*p.endMul;p.v*=.65;R.shake=.35;msg(`${q.a} × ${q.b} = ${q.ans}`,'#fca5a5',1.2);sfx('bad')}
-   setGate(gt,R.gi+GPL<TOTALQ?mkQ():null);R.gi++;R.shownAt=R.t;showQ();syncMyMpPos(true)}}
+   setGate(gt,R.gi+GPL<TOTALQ?mkQ():null);R.gi++;R.shownAt=R.t;showQ();syncMyMpPos(true);
+   if(autoRead)playCurrentQuestion();}}
  const D=DIFF[diff];
  R.ai.forEach(a=>{if(!racing){place(a.mesh,a.s,a.x);return}
   let dx=0;
@@ -1449,7 +1306,6 @@ function update(dt){const R=race;R.t+=dt;const p=R.p;R.hitCD=(R.hitCD||0)-dt;R.w
    const tx=LANES[a.lane]+Math.sin(R.t+a.ph)*.6;dx=Math.max(-8*dt,Math.min(8*dt,tx-a.x));a.x+=dx;
    updKartFX(a.mesh,a.boost>0);
   }
-  // 撞車不彈大字遮視野
   if(R.state==='race'&&R.hitCD<=0&&Math.abs(a.s-p.s)<3.6&&Math.abs(a.x-p.x)<2.3){R.hitCD=.8;const sd=p.x>=a.x?1:-1;
    p.x=Math.max(-W/2+1.3,Math.min(W/2-1.3,p.x+sd*1.6));a.x-=sd*1.2;
    if(p.shield>0){a.v*=.5}else{p.v*=1-.35*p.endMul;a.v*=.8;p.spin=.15*p.endMul;R.shake=.5}
