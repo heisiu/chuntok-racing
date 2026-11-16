@@ -4,6 +4,25 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<script>
+/* iPhone Safari ignores viewport user-scalable/maximum-scale, and touch-action on html/body does not stop double-tap zoom. */
+(function(){
+  var last=0,x=0,y=0;
+  document.addEventListener('touchend',function(e){
+    var t=e.changedTouches&&e.changedTouches[0],now=Date.now();
+    if(t&&e.cancelable&&(now-last)<=350&&Math.abs(t.clientX-x)<45&&Math.abs(t.clientY-y)<45)e.preventDefault();
+    if(t){x=t.clientX;y=t.clientY}
+    last=now;
+  },{capture:true,passive:false});
+  function blockPinch(e){if(e.cancelable&&e.touches&&e.touches.length>1)e.preventDefault()}
+  document.addEventListener('touchstart',blockPinch,{capture:true,passive:false});
+  document.addEventListener('touchmove',blockPinch,{capture:true,passive:false});
+  ['gesturestart','gesturechange','gestureend'].forEach(function(type){
+    document.addEventListener(type,function(e){e.preventDefault()},{capture:true,passive:false});
+  });
+  document.addEventListener('dblclick',function(e){e.preventDefault()},{capture:true});
+})();
+</script>
 <title>真鐸學校・極速乘法方程式</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/mqtt@5.3.5/dist/mqtt.min.js"></script>
