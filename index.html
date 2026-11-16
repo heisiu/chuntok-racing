@@ -67,6 +67,7 @@ html,body{margin:0;width:100%;height:100%;height:100dvh;overflow:hidden;backgrou
 .chip{border-radius:14px;padding:2px 16px;font-weight:900;font-size:28px;min-width:70px;text-align:center;border:3px solid #fff;box-shadow:0 4px 10px #0006}
 #hQ{background:linear-gradient(180deg,#0b1b33cc,#1e3a8acc)!important;border:3px solid #ffffffaa;box-shadow:0 6px 18px #0008}
 #hud .btn{backdrop-filter:blur(4px);border:2px solid #fff6}
+#songToast{display:none;pointer-events:none;margin:2px 0 0 auto;width:fit-content;background:#0f172acc;color:#fde68a;border:2px solid #ffffffaa;border-radius:999px;padding:2px 10px;font-size:13px;font-weight:900;text-shadow:none;letter-spacing:.04em}
 #mini{position:fixed;left:16px;bottom:calc(min(22vh,130px) + 18px);width:min(24vh,126px);height:min(24vh,126px);border-radius:16px;background:#0f172a88;border:3px solid #fff8;box-shadow:0 6px 18px #0007}
 #item-slot{position:fixed;right:20px;bottom:calc(min(22vh,130px) + 22px);width:76px;height:76px;border-radius:50%;background:radial-gradient(circle,rgba(30,41,59,0.9) 0%,rgba(15,23,42,0.96) 100%);border:3.5px solid rgba(255,255,255,0.45);display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:auto;cursor:pointer;box-shadow:0 6px 18px #0008;transition:transform .12s,border-color .2s,box-shadow .2s}
 #item-slot.ready{border-color:#facc15;box-shadow:0 0 20px rgba(250,204,21,0.9),inset 0 0 12px rgba(250,204,21,0.4);animation:itemPulse 1s infinite alternate}
@@ -148,6 +149,7 @@ html,body{margin:0;width:100%;height:100%;height:100dvh;overflow:hidden;backgrou
   #hudRight{top:4px!important;right:8px!important}
   #hudRight .topBtns{gap:3px!important;margin-bottom:2px!important}
   #hudRight .btn{font-size:11px!important;padding:2px 6px!important;border-radius:8px!important;margin-bottom:0!important}
+  #songToast{font-size:11px!important;padding:1px 8px!important}
   #spdBox{padding:2px 8px!important;margin-top:1px!important;border-radius:10px!important}
   #hSpd{font-size:18px!important}
   #spdBox .w-28{width:64px!important;height:5px!important;margin-top:2px!important}
@@ -355,6 +357,7 @@ html,body{margin:0;width:100%;height:100%;height:100dvh;overflow:hidden;backgrou
       <button id="muteBtn" style="pointer-events:auto" class="btn bg-white/30 text-white text-sm py-1 px-2.5">🔊</button>
       <button id="pauseBtn" style="pointer-events:auto" class="btn bg-white/30 text-white text-sm py-1 px-2.5">⏸ 暫停</button>
     </div>
+    <div id="songToast" aria-live="polite"></div>
     <div id="spdBox" class="bg-slate-900/75 border-2 border-white/50 rounded-2xl px-3 py-1 inline-block">
       <div><span id="hSpd" class="text-3xl text-amber-300">0</span> <span class="text-xs">km/h</span></div>
       <div class="w-28 h-2 bg-slate-700 rounded-full overflow-hidden mt-1"><div id="hRpm" class="h-full bg-gradient-to-r from-green-400 via-yellow-400 to-red-500" style="width:0%"></div></div>
@@ -861,7 +864,38 @@ tryAutoLoadSheet(GITHUB_SHEET_PATH);
 tryAutoLoadBadge(GITHUB_BADGE_PATH);
 
 const winsOf=(d,tw)=>(d.tbl?tw[d.tbl]:tw.all)||0;
-function lockOf(d,tw){if(user&&user.type==='teacher'||!d.need)return false;return winsOf(d,tw)<d.need}
+/* 專屬乘數表戰車只計火箭號至疾風號（有 tbl）。閃電號沒有 tbl，不計入譚主任／陳校長。
+   譚主任要先解鎖其中任何 5 架，再於「全部」勝出 5 場；陳校長要先解鎖全部 7 架，再於「全部」勝出 10 場。
+   每次用目前勝出數重算，舊規則下只靠「全部」勝出而解鎖的，未達戰車條件會再鎖上。 */
+function specCarsUnlocked(tw){
+  let n=0;
+  for(const d of DRIVERS) if(d.tbl&&(tw[d.tbl]|0)>=d.need) n++;
+  return n;
+}
+function bossCarNeed(d){return d.boss==='tam'?5:d.boss==='chan'?7:0}
+function lockOf(d,tw){
+  if(user&&user.type==='teacher'||!d.need)return false;
+  if(d.boss)return specCarsUnlocked(tw)<bossCarNeed(d)||(tw.all|0)<d.need;
+  return (tw[d.tbl]|0)<d.need;
+}
+function bossCarPhrase(d){return d.boss==='tam'?`任何 ${bossCarNeed(d)} 架專屬乘數表戰車`:`全部 ${bossCarNeed(d)} 架專屬乘數表戰車`}
+function bossHowText(d,locked,carsMet){
+  const phrase=bossCarPhrase(d);
+  const rest=`再揀「全部」乘數表，勝出 ${d.need} 場。`;
+  const head=!locked?`✅ 已解鎖：${phrase}，`:carsMet?`🔓 已解鎖：${phrase}，`:`🔓 解鎖方法：先解鎖${phrase}，`;
+  return `${head}<br>${rest}`;
+}
+function bossUnlockHint(tw){
+  for(const d of DRIVERS){
+    if(!d.boss||!lockOf(d,tw))continue;
+    const needC=bossCarNeed(d),got=specCarsUnlocked(tw),left=d.need-(tw.all|0);
+    const cars=d.boss==='tam'?'任何 5 架':'全部 7 架';
+    if(got<needC&&left>0)return `<br>解鎖${d.name}：先解鎖${cars}專屬乘數表戰車（已解 ${got}／${needC}），再揀「全部」勝出 ${left} 場`;
+    if(got<needC)return `<br>解鎖${d.name}：再解鎖專屬乘數表戰車（已解 ${got}／${needC} 架）`;
+    if(left>0)return `<br>再勝 ${left} 場（全部）解鎖${d.name}`;
+  }
+  return '';
+}
 
 function showDriverModal(d,tw={}){
   const locked=lockOf(d,tw);
@@ -871,7 +905,19 @@ function showDriverModal(d,tw={}){
     : `<img src="${d.img}" style="width:100%;height:100%;object-fit:cover">`;
   $('lkName').textContent=d.name;$('lkDesc').textContent=d.desc||'';
   $('lkRadar').innerHTML=makeRadarSVG(d,false);
-  if(d.need){
+  if(d.boss){
+    const needC=bossCarNeed(d);
+    const gotRaw=specCarsUnlocked(tw),winsRaw=tw.all|0;
+    const got=Math.min(gotRaw,needC),wins=Math.min(winsRaw,d.need);
+    const carsMet=gotRaw>=needC;
+    const winLine=`已勝 ${wins}／${d.need} 場（要第 1 名及答對率 ${UNLOCK_ACC}% 或以上）`;
+    $('lkHow').innerHTML=bossHowText(d,locked,carsMet);
+    $('lkBarWrap').style.display='block';
+    const ratio=!locked?1:carsMet?(wins/d.need):(winsRaw>=d.need?got/needC:((got/needC)+(wins/d.need))/2);
+    $('lkBar').style.width=Math.max(0,Math.min(100,ratio*100))+'%';
+    if(locked&&carsMet)$('lkProg').textContent=winLine;
+    else $('lkProg').innerHTML=`已解 ${got}／${needC} 架<br>${winLine}`;
+  }else if(d.need){
     const w=Math.min(winsOf(d,tw),d.need);
     $('lkHow').textContent=(locked?'🔓 解鎖方法：':'✅ 已解鎖：')+(d.tbl?`只揀「${d.tbl}」乘數表，勝出 ${d.need} 場`:`揀「全部」乘數表，勝出 ${d.need} 場`);
     $('lkBarWrap').style.display='block';$('lkBar').style.width=(w/d.need*100)+'%';
@@ -902,7 +948,7 @@ let mySessionId='';
 const label=()=>user.type==='student'?`${GNAME[user.grade]}年級 ${user.cls}班 ${user.no}號`:user.type==='guest'?'訪客（成績不會記錄）':'老師（不計入報告）';
 const shortName=()=>user.type==='student'?`${user.grade}${user.cls}(${user.no})`:user.type==='guest'?'訪客':'老師';
 const ALL_SCR=['sLogin','sMenu','sResult','sTrack','sRoute','sLb','sRp','sAdmin','sMpLobby','sMpWait','sRec'];
-const show=id=>{for(const s of ALL_SCR)$(s).classList.toggle('on',s===id);$('hud').style.display=id?'none':'block';$('fsBtn').style.display=(id&&!isStandaloneMode())?'block':'none';requestAnimationFrame(fitAllCards)};
+const show=id=>{for(const s of ALL_SCR)$(s).classList.toggle('on',s===id);$('hud').style.display=id?'none':'block';$('fsBtn').style.display=(id&&!isStandaloneMode())?'block':'none';requestAnimationFrame(fitAllCards);if(id&&screenWantsMenu(id))startMenuMusic()};
 
 /* ===== 登入 ===== */
 let selGr=null, selCls=null, selNo=null;
@@ -1135,9 +1181,17 @@ async function drawRec(){
   const next=DRIVERS.find(d=>lockOf(d,tw));
   let nextTxt='';
   if(next){
-    const left=Math.max(0,next.need-winsOf(next,tw));
-    const how=next.tbl?`只揀「${next.tbl}」乘數表`:'揀「全部」乘數表';
-    nextTxt=`下一架：${esc(next.name)}（${how}，再勝 ${left} 場）`;
+    if(next.boss){
+      const needC=bossCarNeed(next),got=specCarsUnlocked(tw),wins=tw.all|0;
+      const which=next.boss==='tam'?'任何 5 架':'全部 7 架';
+      nextTxt=got<needC
+        ?`下一架：${esc(next.name)}（先解鎖${which}專屬乘數表戰車，已解 ${got}／${needC} 架；「全部」已勝 ${Math.min(wins,next.need)}／${next.need} 場）`
+        :`下一架：${esc(next.name)}（已解鎖所需專屬戰車，再揀「全部」勝出 ${Math.max(0,next.need-wins)} 場）`;
+    }else{
+      const left=Math.max(0,next.need-winsOf(next,tw));
+      const how=next.tbl?`只揀「${next.tbl}」乘數表`:'揀「全部」乘數表';
+      nextTxt=`下一架：${esc(next.name)}（${how}，再勝 ${left} 場）`;
+    }
   }
   const tile=(t,v,s,c)=>`<div class="rounded-2xl px-2 py-3 text-center ${c}"><div class="text-xs font-bold text-slate-500">${t}</div><div class="text-3xl font-black leading-none my-1">${v}</div>${s?`<div class="text-xs font-bold text-slate-600 mt-1">${s}</div>`:''}</div>`;
   if(!played&&!wins&&!qn){
@@ -2304,7 +2358,7 @@ function applyTOD(k){const t=TOD[k];skies.forEach(s=>{const u=s.material.uniform
  cityWin.forEach(m=>m.emissiveIntensity=t.win);curTod=k;stars.visible=k==='night';$('hTod').textContent=t.name}
 
 /* ===== 音樂及聲效 ===== */
-const AU={ctx:null,mute:false,timer:null};const hz=m=>440*Math.pow(2,(m-69)/12);
+const AU={ctx:null,mute:false,timer:null,heard:false,mode:null,menuSong:0,raceSong:0};const hz=m=>440*Math.pow(2,(m-69)/12);
 function aInit(){if(!AU.ctx){const C=new(window.AudioContext||window.webkitAudioContext)();AU.ctx=C;
   AU.master=C.createGain();AU.master.gain.value=AU.mute?0:.8;AU.master.connect(C.destination);
   AU.mus=C.createGain();AU.mus.gain.value=.35;AU.mus.connect(AU.master);AU.sfx=C.createGain();AU.sfx.gain.value=.7;AU.sfx.connect(AU.master);
@@ -2328,26 +2382,180 @@ function sfx(k){if(!AU.ctx)return;const t=AU.ctx.currentTime;
  else if(k==='crash'){nz(t,.5,1,1500,AU.sfx,'lowpass');tone(90,t,.4,'sine',.6,AU.sfx,40);tone(1800,t,.25,'triangle',.15,AU.sfx,900)}
  else if(k==='scrape')nz(t,.25,.4,3000);
  else if(k==='finish')[523,659,784,1047,784,1047].forEach((f,i)=>tone(f,t+i*.13,.28,'square',.2))}
-const SONGS=[
- {name:'極速歐陸',bpm:155,roots:[45,41,43,40],lead:[0,7,12,15,12,7,3,7]},
- {name:'山道狂飆',bpm:165,roots:[50,46,48,45],lead:[0,3,7,10,12,10,7,3]},
- {name:'夜之甩尾',bpm:148,roots:[40,36,38,43],lead:[12,10,7,5,7,10,12,15]},
- {name:'最後衝刺',bpm:172,roots:[47,43,45,42],lead:[0,12,7,12,3,12,7,15]}];
-AU.song=Math.floor(Math.random()*SONGS.length);
-function beat(s,t){const S=SONGS[AU.song],m=AU.mus,i=s%16,bar=Math.floor(s/16),root=S.roots[bar%4],fill=bar%8===7;
- if(i%4===0)tone(150,t,.2,'sine',.9,m,40);if(i===4||i===12||(fill&&i>=12))nz(t,.16,.5,1800,m);nz(t,.03,i%2?.1:.2,8000,m,'highpass');
- tone(hz(root+(i%2?12:0)),t,.09,'sawtooth',.22,m);
- if(i%2===0)tone(hz(root+24+S.lead[i/2]),t,.12,'square',.08,m);
- if(i===0)[0,3,7].forEach(k=>tone(hz(root+12+k),t,.6,'sawtooth',.035,m))}
-function musStart(){aInit();if(AU.timer)return;AU.step=0;AU.next=AU.ctx.currentTime+.05;
- AU.timer=setInterval(()=>{const d=60/SONGS[AU.song].bpm/4;while(AU.next<AU.ctx.currentTime+.15){beat(AU.step++,AU.next);AU.next+=d}},40)}
-$('songBtn').onclick=()=>{AU.song=(AU.song+1)%SONGS.length;AU.step=0};
+/* 全部旋律都係頁內振盪器現場合成，沒有外來音檔。主頁／選車用輕快菜單曲；比賽只播激烈賽道曲。 */
+const RACE_SONGS=[
+ {name:'極速歐陸',bpm:155,kind:'euro',roots:[45,41,43,40],lead:[0,7,12,15,12,7,3,7]},
+ {name:'山道狂飆',bpm:165,kind:'mountain',roots:[50,46,48,45],lead:[0,3,7,10,12,10,7,3]},
+ {name:'夜之甩尾',bpm:148,kind:'night',roots:[40,36,38,43],lead:[12,10,7,5,7,10,12,15]},
+ {name:'最後衝刺',bpm:172,kind:'sprint',roots:[47,43,45,42],lead:[0,12,7,12,3,12,7,15]},
+ {name:'號角進軍',bpm:132,kind:'march',roots:[48,48,43,48],lead:[0,4,7,12,7,4,0,7]},
+ {name:'霓虹電音',bpm:158,kind:'electro',roots:[45,48,43,46],lead:[0,3,7,10,12,10,7,3]},
+ {name:'八位疾馳',bpm:176,kind:'chip',roots:[60,57,55,58],lead:[0,3,7,12,7,3,12,15]},
+ {name:'戰鼓連擊',bpm:146,kind:'drums',roots:[43,41,38,43],lead:[0,7,3,10,7,0,5,7]}];
+const MENU_SONGS=[
+ {name:'校園晨光',bpm:100,kind:'morn',roots:[60,65,67,60]},
+ {name:'輕快排位',bpm:118,kind:'grid',roots:[62,69,67,64]},
+ {name:'歡樂暖車',bpm:108,kind:'joy',roots:[64,67,69,62]}];
+const MENU_BGM=new Set(['sLogin','sMenu','sTrack','sRoute','sLb','sRec','sRp','sAdmin','sMpLobby','sMpWait']);
+AU.raceSong=Math.floor(Math.random()*RACE_SONGS.length);
+function screenWantsMenu(id){return MENU_BGM.has(id)}
+function currentScreen(){
+  if(race&&race.state!=='quit'&&race.state!=='done')return null;
+  for(const s of ALL_SCR) if($(s)&&$(s).classList.contains('on'))return s;
+  return null;
+}
+function setMusGain(v){if(AU.mus&&AU.ctx)AU.mus.gain.setTargetAtTime(v,AU.ctx.currentTime,.04)}
+function playBeat(S,s,t){
+  const m=AU.mus,i=s%16,bar=(s/16)|0,root=S.roots[bar%S.roots.length],seq=S.lead||[0,4,7,12,7,4,0,7];
+  const lead=seq[(i>>1)%seq.length];
+  if(S.kind==='euro'){
+    const fill=bar%8===7;
+    if(i%4===0)tone(150,t,.2,'sine',.9,m,40);
+    if(i===4||i===12||(fill&&i>=12))nz(t,.16,.5,1800,m);
+    nz(t,.03,i%2?.1:.2,8000,m,'highpass');
+    tone(hz(root+(i%2?12:0)),t,.09,'sawtooth',.22,m);
+    if(i%2===0)tone(hz(root+24+lead),t,.12,'square',.08,m);
+    if(i===0)[0,3,7].forEach(k=>tone(hz(root+12+k),t,.6,'sawtooth',.035,m));
+  }else if(S.kind==='mountain'){
+    if(i%4===0)tone(hz(root-12),t,.16,'triangle',.55,m);
+    if(i===4||i===10||i===14)nz(t,.1,.4,1100,m,'bandpass');
+    if(i%2===1)nz(t,.02,.1,6500,m,'highpass');
+    if(i%4===2)tone(hz(root),t,.12,'sawtooth',.16,m,hz(root+5));
+    if(i%2===0)tone(hz(root+24+lead),t,.11,'triangle',.1,m);
+    if(i===0)[0,7,10].forEach(k=>tone(hz(root+12+k),t,.4,'sawtooth',.03,m));
+  }else if(S.kind==='night'){
+    if(i===0||i===8)tone(48,t,.32,'sine',.75,m,32);
+    if(i===4||i===12)nz(t,.18,.22,1200,m);
+    if(i%4===2)nz(t,.04,.07,6000,m,'highpass');
+    if(i%4===0)tone(hz(root),t,.28,'sine',.16,m);
+    if(i%2===0)tone(hz(root+12+lead),t,.2,'square',.045,m);
+    if(i===0||i===8)[0,3,7].forEach(k=>tone(hz(root+12+k),t,.7,'triangle',.035,m));
+  }else if(S.kind==='sprint'){
+    const fill=bar%4===3;
+    if(i%2===0)tone(170,t,.07,'sine',.6,m,48);
+    if(i===4||i===12||(fill&&i>=12))nz(t,.08,.55,2400,m);
+    nz(t,.015,i%2?.16:.3,9500,m,'highpass');
+    tone(hz(root+(i%4===0?0:12)),t,.06,'square',.18,m);
+    tone(hz(root+24+lead),t,.07,'square',.09,m);
+    if(i%4===0)tone(hz(root+19),t,.09,'sawtooth',.05,m);
+  }else if(S.kind==='march'){
+    if(i===0||i===8)tone(86,t,.16,'sine',.85,m,40);
+    if(i===4||i===12)nz(t,.09,.48,1900,m,'bandpass');
+    if(bar%4===3&&i>=12)nz(t,.04,.32,2100,m,'bandpass');
+    if(i%4===0){
+      tone(hz(root+12+lead),t,.2,'sawtooth',.07,m);
+      tone(hz(root+19+lead),t,.2,'square',.04,m);
+      tone(hz(root+lead),t,.2,'triangle',.06,m);
+    }
+    if(i===6||i===14)tone(hz(root+24+lead),t,.07,'square',.055,m);
+  }else if(S.kind==='electro'){
+    if(i%4===0)tone(52,t,.1,'sine',.9,m,34);
+    if(i%4===2)nz(t,.03,.2,8500,m,'highpass');
+    if(i===4||i===12)nz(t,.06,.22,1700,m);
+    if(i%2===0)tone(hz(root+lead),t,.09,'sawtooth',.13,m,hz(root+lead+(i%4===0?0:7)));
+    const arp=[0,7,12,7,3,12,15,12];
+    tone(hz(root+24+arp[i%8]),t,.05,'square',.05,m);
+  }else if(S.kind==='chip'){
+    const bass=[0,0,7,0,3,0,8,7];
+    if(i%2===0)tone(hz(root-12+bass[(i>>1)%8]),t,.09,'triangle',.3,m);
+    if(i%2===0)nz(t,.015,.07,5200,m,'highpass');
+    const mel=[0,3,7,12,7,3,12,15,12,7,3,0,7,12,15,19];
+    const n=root+12+mel[(i+bar*3)%16];
+    tone(hz(n),t,.06,'square',.065,m);
+    if(i%4===0)tone(hz(n-8),t,.1,'square',.028,m);
+  }else if(S.kind==='drums'){
+    const hit=(i===0||i===6||i===10||i===14)?1:(i===3||i===8||i===12)?0.65:0;
+    if(hit){tone(i%4===0?68:96,t,.14,'sine',.75*hit,m,30);nz(t,.04,.35*hit,380,m,'lowpass')}
+    if(i===2||i===7||i===11||i===15)nz(t,.03,.22,2600,m,'highpass');
+    if(i===0||i===10)[0,7,12].forEach(k=>tone(hz(root+12+k),t,.16,'sawtooth',.045,m));
+    if(i%4===0)tone(hz(root+24+lead),t,.1,'square',.05,m);
+  }else if(S.kind==='morn'){
+    if(i===0||i===8)tone(hz(root-12),t,.42,'sine',.16,m);
+    if(i%4===2)nz(t,.025,.035,7200,m,'highpass');
+    if(i===0||i===6||i===10)[0,4,7].forEach(k=>tone(hz(root+12+k),t,.32,'triangle',.04,m));
+    const mel=[0,4,7,11,12,11,7,4];
+    if(i%2===0)tone(hz(root+24+mel[((i>>1)+bar)%8]),t,.2,'sine',.045,m);
+  }else if(S.kind==='grid'){
+    if(i%4===0)tone(hz(root-12),t,.12,'triangle',.15,m);
+    if(i===4||i===12)nz(t,.04,.07,3200,m,'highpass');
+    if(i%4===2)[0,4,7].forEach(k=>tone(hz(root+12+k),t,.13,'sine',.038,m));
+    const mel=[0,7,4,7,12,9,7,4];
+    if(i%2===0)tone(hz(root+24+mel[(i>>1)%8]),t,.11,'triangle',.05,m);
+  }else if(S.kind==='joy'){
+    if(i===0||i===8)tone(hz(root-12),t,.2,'sine',.15,m);
+    if(i===4||i===12){tone(hz(root+12),t,.08,'triangle',.05,m);nz(t,.035,.05,2400,m,'bandpass')}
+    const mel=[12,7,4,7,9,7,4,0];
+    if(i%2===0){tone(hz(root+12+mel[(i>>1)%8]),t,.16,'sine',.055,m);tone(hz(root+24+mel[(i>>1)%8]),t,.1,'triangle',.02,m)}
+    if(i===0)[0,4,7,11].forEach(k=>tone(hz(root+k),t,.48,'triangle',.028,m));
+  }
+}
+function musStop(){clearInterval(AU.timer);AU.timer=null;if(AU.ctx&&AU.eg)AU.eg.gain.setTargetAtTime(0,AU.ctx.currentTime,.05)}
+function musArm(){
+  aInit();
+  if(AU.timer)return;
+  AU.step=0;AU.next=AU.ctx.currentTime+.05;
+  AU.timer=setInterval(()=>{
+    try{
+      if(!AU.ctx)return;
+      if(AU.next<AU.ctx.currentTime-.4){AU.next=AU.ctx.currentTime+.05;AU.step=0}
+      const menu=AU.mode==='menu';
+      const list=menu?MENU_SONGS:RACE_SONGS;
+      let idx=menu?AU.menuSong:AU.raceSong;
+      if(idx<0||idx>=list.length)idx=0;
+      let S=list[idx];
+      let guard=0;
+      while(AU.next<AU.ctx.currentTime+.15&&guard++<24){
+        if(menu&&AU.step>=256){AU.menuSong=(AU.menuSong+1)%MENU_SONGS.length;AU.step=0;S=MENU_SONGS[AU.menuSong]}
+        playBeat(S,AU.step,AU.next);
+        AU.step++;
+        AU.next+=60/S.bpm/4;
+      }
+    }catch(e){}
+  },40);
+}
+function musStart(){
+  if(AU.mode!=='menu'&&AU.mode!=='race')AU.mode='race';
+  musArm();
+  setMusGain(AU.mode==='menu'?0.26:0.35);
+}
+function startMenuMusic(){
+  if(!AU.heard)return;
+  if(AU.mode==='menu'&&AU.timer)return;
+  AU.mode='menu';
+  musRestart();
+  setMusGain(0.26);
+}
+function startRaceMusic(){
+  AU.heard=true;AU.mode='race';
+  AU.raceSong=(AU.raceSong+1)%RACE_SONGS.length;
+  musRestart();
+  setMusGain(0.35);
+}
+function musRestart(){musStop();musArm()}
+function showSongToast(name){
+  const el=$('songToast');if(!el)return;
+  el.textContent='🎵 '+name;el.style.display='inline-block';
+  clearTimeout(showSongToast._t);
+  showSongToast._t=setTimeout(()=>{el.style.display='none'},1700);
+}
+$('songBtn').onclick=()=>{
+  AU.mode='race';
+  AU.raceSong=(AU.raceSong+1)%RACE_SONGS.length;
+  AU.step=0;
+  showSongToast(RACE_SONGS[AU.raceSong].name);
+};
+function onUserGesture(){
+  const first=!AU.heard;
+  AU.heard=true;
+  if(!AU.ctx||AU.ctx.state==='suspended'||first){aInit();if(AU.ctx&&AU.ctx.state==='suspended')AU.ctx.resume()}
+  if(first||!AU.timer){const id=currentScreen();if(id&&screenWantsMenu(id))startMenuMusic()}
+}
+addEventListener('pointerdown',onUserGesture,{capture:true,passive:true});
 const SP=90,spPos=new Float32Array(SP*3).fill(-999),spVel=new Float32Array(SP*3),spLife=new Float32Array(SP);
 const spGeo=new THREE.BufferGeometry();spGeo.setAttribute('position',new THREE.BufferAttribute(spPos,3));
 const sparks=new THREE.Points(spGeo,new THREE.PointsMaterial({color:0xffb030,size:.4,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}));sparks.frustumCulled=false;scene.add(sparks);
 function burst(pos,n=30){for(let i=0,k=0;i<SP&&k<n;i++)if(spLife[i]<=0){spLife[i]=.4+Math.random()*.4;spPos.set([pos.x,pos.y+.8,pos.z],i*3);spVel.set([(Math.random()-.5)*14,Math.random()*8+2,(Math.random()-.5)*14],i*3);k++}}
 function updSparks(dt){for(let i=0;i<SP;i++)if(spLife[i]>0){spLife[i]-=dt;spVel[i*3+1]-=25*dt;for(let j=0;j<3;j++)spPos[i*3+j]+=spVel[i*3+j]*dt;if(spLife[i]<=0)spPos[i*3+1]=-999}spGeo.attributes.position.needsUpdate=true}
-function musStop(){clearInterval(AU.timer);AU.timer=null;if(AU.eg)AU.eg.gain.setTargetAtTime(0,AU.ctx.currentTime,.05)}
 $('muteBtn').onclick=()=>{AU.mute=!AU.mute;$('muteBtn').textContent=AU.mute?'🔇':'🔊';if(AU.master)AU.master.gain.value=AU.mute?0:.8;savePrefs()};
 
 /* ===== Mario Kart 7 款道具系統 ＋ 彩光問號箱 [?] ＋ 名次平衡機制 ===== */
@@ -2792,7 +3000,7 @@ $('readBtn').onclick=()=>{
 const VMAX=30;let race=null,cars=[];
 function clearRace(){if('speechSynthesis' in window){try{window.speechSynthesis.cancel()}catch(e){}}clearInterval(rollTimer);heldItem=null;itemRolling=false;updateItemSlotUI();const inkEl=$('ink-splat');if(inkEl)inkEl.classList.remove('show');cars.forEach(c=>scene.remove(c));cars=[];race=null}
 async function startRace(roomDoc=null){
- aInit();AU.song=(AU.song+1)%SONGS.length;applyTOD(TODK[Math.floor(Math.random()*TODK.length)]);musStart();clearRace();
+ startRaceMusic();applyTOD(TODK[Math.floor(Math.random()*TODK.length)]);clearRace();
  autoRead=false;updateReadBtnUI();if(tiltOn)resetTiltCalibration();
  const st=await getStats();weak=weakList(st,30).filter(k=>k.split('×').some(n=>TBL.has(+n))).slice(0,6);
  const rc=user.type==='guest'?[]:((await store.get('records'))||[]).filter(r=>r.uid===uid()).slice(-3),ra=rc.length?rc.reduce((s,r)=>s+r.acc,0)/rc.length:100,adapt=ra<50?.85:ra<70?.93:1;
@@ -2920,7 +3128,8 @@ async function finishRace(){musStop();fxCv.style.opacity='0';const R=race,log=R.
   if(key!==null){tw[key]=(tw[key]||0)+1;await setTW(tw);const nu=DRIVERS.filter((d,i)=>before[i]&&!lockOf(d,tw));
    const td=DRIVERS.find(d=>d.tbl===key);
    if(nu.length)tm=`<br>🎉 解鎖新車手：${nu.map(d=>'🏎️ '+d.name).join('、')}！`;
-   else{const nx=key==='all'?DRIVERS.filter(d=>d.boss&&tw.all<d.need)[0]:td;if(nx&&winsOf(nx,tw)<nx.need)tm=`<br>再勝 ${nx.need-winsOf(nx,tw)} 場解鎖${nx.name}`}}
+   else if(td&&winsOf(td,tw)<td.need)tm=`<br>再勝 ${td.need-winsOf(td,tw)} 場解鎖${td.name}`;
+   else if(key==='all')tm=bossUnlockHint(tw)}
   else tm='<br><span class="text-sm font-bold">💡 只揀一個乘數表練習，可以解鎖新車手</span>';
   unlockMsg=`<div class="bg-amber-100 rounded-2xl p-2 mt-2 font-black text-amber-800 text-center text-lg">🏆 勝出 ${w1} 場！${tm}</div>`}
  else if(user.type!=='teacher'&&R.rank===1)unlockMsg=`<div class="bg-slate-100 rounded-2xl p-2 mt-2 text-slate-600 text-center">第 1 名！但答對率要達 ${UNLOCK_ACC}% 或以上才計算勝出場數，加油！</div>`;
